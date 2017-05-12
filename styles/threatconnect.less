@@ -1,0 +1,37 @@
+@threatconnect-label-color: rgb(219, 219, 141); //rgb(255,187,120);// #b2df8a;
+@threatconnect-text-color: #333;
+
+.notification-body-details-container {
+  min-height: 86px;
+
+  b.muted, i.muted {
+    color: #888;
+  }
+
+  a.tc-link-tag {
+    color: darken(@threatconnect-label-color, 40%);
+
+    .threatconnect-summary-tag {
+      margin-bottom: 0px;
+    }
+
+    .threatconnect-summary-tag:hover {
+      text-decoration: none;
+      background-color: @threatconnect-label-color;
+    }
+  }
+
+  a.tc-link-tag:hover {
+    text-decoration: none;
+  }
+
+  .tag-container {
+    padding: 5px 0;
+  }
+
+}
+
+
+
+
+

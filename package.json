@@ -1,0 +1,12 @@
+{
+  "main": "./integration.js",
+  "name": "SQLServerExample",
+  "description": "SQL Server Example",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "lodash": "4.17.4",
+    "async": "2.4.0",
+    "request": "2.81.0"
+  }
+}

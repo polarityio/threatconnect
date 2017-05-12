@@ -1,0 +1,36 @@
+<div class="notification-body-details-container">
+    <div class="padding-0-5">
+        <p class="padded">
+            <a href="{{block.data.details.webLink}}">View in ThreatConnect <i class="btb bt-external-link"></i></a>
+        </p>
+        <p>
+            <b class="muted">{{block.data.details.owner.type}}</b>: {{block.data.details.owner.name}}
+        </p>
+        <p>
+            <b class="muted">Date Added</b>: {{moment-time block.data.details.dateAdded}}
+        </p>
+        <p>
+            <b class="muted">Last Modified</b>: {{moment-time block.data.details.lastModified}}
+        </p>
+        <p>
+            <b class="muted">Rating</b>: {{block.data.details.rating}} / 5 Skulls
+        </p>
+        <p>
+            <b class="muted">Confidence</b>: {{block.data.details.confidence}} / 100
+        </p>
+        <div class="tag-container">
+            <i class="bts bt-label muted"></i> <i class="btb bt-external-link muted"></i>
+            {{#each (limit block.data.details.tags maxTagsToShow) as |tag|}}
+                <a href="{{tag.webLink}}" class="tc-link-tag">
+      <span class="label-notification threatconnect-summary-tag">
+          {{tag.name}}
+      </span>
+                </a>
+            {{/each}}
+            {{#if (gt numAdditionalTags 0)}}
+                +{{numAdditionalTags}}
+            {{/if}}
+        </div>
+    </div>
+</div>
+<div style="clear:both"></div>
