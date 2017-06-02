@@ -1,8 +1,8 @@
 {
   "main": "./integration.js",
-  "name": "SQLServerExample",
-  "description": "SQL Server Example",
-  "version": "0.0.1",
+  "name": "ThreatConnect",
+  "description": "Polarity ThreatConnect Integration",
+  "version": "1.0.0-beta",
   "private": true,
   "dependencies": {
     "lodash": "4.17.4",
