@@ -2,7 +2,7 @@
 
 ThreatConnect is a security operations and analytics platform designed to allow teams to identify, manage, and block threats faster with intelligence.  For more information about ThreatConnect please visit:
 
-
+https://threatconnect.com/
 
 The Polarity ThreatConnect integration allows Polarity to search for address, file, and email indicators in ThreatConnect.
 
