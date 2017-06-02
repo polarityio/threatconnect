@@ -9,47 +9,71 @@ let Logger;
 
 function startup(logger) {
     Logger = logger;
-    tc = new ThreatConnect();
+    tc = new ThreatConnect(Logger);
 }
 
 function doLookup(entities, options, cb) {
-    let lookupResults = [];
-
-    Logger.info(options);
-
     tc.setSecretKey(options.apiKey);
     tc.setHost(options.url);
     tc.setAccessId(options.accessId);
 
-    Logger.trace({entities: entities}, 'doLookup');
+    //Logger.trace({entities: entities}, 'doLookup');
+
+    let organizations = [];
+
+    if (typeof options.defaultOrganizations === 'string' &&
+        options.defaultOrganizations.trim().length > 0) {
+        let tokens = options.defaultOrganizations.split(',');
+        tokens.forEach(token => {
+            token = token.trim();
+            if(token.length > 0){
+                organizations.push(token);
+            }
+        });
+    } else {
+        organizations.push('');
+    }
+
+    Logger.debug({organizations: organizations});
+
+    organizations.forEach(function(org){
+        _lookupOrg(entities, org, cb);
+    });
+}
+
+function _lookupOrg(entities, org, cb){
+    let lookupResults = [];
 
     async.each(entities, function (entityObj, next) {
+        //Logger.info({value: entityObj.value, org:org},'Lookup');
         if (entityObj.isIPv4 || entityObj.isIPv6) {
-            tc.getAddress(entityObj.value, function (err, data) {
+            tc.getAddress(entityObj.value, org, function (err, data) {
                 if (err) {
                     Logger.error({err: err}, 'Could not retrieve IP info');
                     next(err);
+                    return;
                 }
 
                 lookupResults.push(_processLookupResult(entityObj, data));
                 next(null);
             });
         } else if (entityObj.isEmail) {
-            tc.getEmail(entityObj.value, function (err, data) {
+            tc.getEmail(entityObj.value, org, function (err, data) {
                 if (err) {
                     Logger.error({err: err}, 'Could not retrieve email info');
                     next(err);
+                    return;
                 }
 
                 lookupResults.push(_processLookupResult(entityObj, data));
                 next(null);
             });
-
         } else if (entityObj.isHash) {
-            tc.getFile(entityObj.value, function (err, data) {
+            tc.getFile(entityObj.value, org, function (err, data) {
                 if (err) {
                     Logger.error({err: err}, 'Could not retrieve hash info');
                     next(err);
+                    return;
                 }
 
                 lookupResults.push(_processLookupResult(entityObj, data));

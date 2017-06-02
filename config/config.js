@@ -16,8 +16,11 @@ module.exports = {
      * @required
      */
     "acronym":"TC",
-    "logging": {level: 'trace'},
+    "logging": {level: 'info'},
     "entityTypes": ['IPv4', 'IPv6', 'hash', 'email'],
+    "permissions": [
+        "ALLOW_UNRESTRICTED_ENTITY_UPDATES"
+    ],
     /**
      * Description for this integration which is displayed in the Polarity integrations user interface
      *
@@ -50,6 +53,9 @@ module.exports = {
         "template": {
             "file": "./templates/threatconnect.hbs"
         }
+    },
+    "integrationBlock": {
+        "file": "./block/threatconnect.js"
     },
     /**
      * Options that are displayed to the user/admin in the Polarity integration user-interface.  Should be structured

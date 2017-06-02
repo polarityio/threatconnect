@@ -30,6 +30,19 @@ class ThreatConnect {
         }
     }
 
+    // setOrganizations(organizations){
+    //     if(typeof organizations === 'string'){
+    //         let tokens = organizations.split(',');
+    //         tokens.forEach(token => {
+    //             token.trim();
+    //         });
+    //         this.organizations = tokens;
+    //     }else{
+    //         this.organizations = [];
+    //     }
+    //
+    // }
+
     setHost(host) {
         if (!this.url || this.url.href !== host) {
             this.url = url.parse(host);
@@ -177,23 +190,22 @@ class ThreatConnect {
 
     _formatResponse(err, response, body, cb) {
         if (err) {
-            console.info('is error');
             cb(err);
             return;
         }
 
         if (this._isMiss(response)) {
-            console.info('is miss');
             cb(null);
             return;
         }
 
         if (this._isSuccess(response)) {
-            console.info('is success');
             cb(null, body.data);
         } else {
-            console.info('is error');
-            cb({body: body});
+            cb({
+                detail: body.message,
+                body: body
+            });
         }
     }
 
