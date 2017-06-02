@@ -86,9 +86,9 @@ module.exports = {
         {
             "key": "apiKey",
             "name": "API Key",
-            "description": "The API Key associated with the provided Access ID",
+            "description": "The API (secret) Key associated with the provided Access ID",
             "default": "",
-            "type": "text",
+            "type": "password",
             "userCanEdit": true,
             "adminOnly": false
         },
