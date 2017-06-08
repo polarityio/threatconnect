@@ -3,7 +3,10 @@
 let redis = require('redis');
 let _ = require('lodash');
 let async = require('async');
+let url = require('url');
 let ThreatConnect = require('./threatconnect');
+const config = require('./config/config');
+const MAX_SUMMARY_TAGS = 6;
 let tc;
 let Logger;
 
@@ -13,11 +16,13 @@ function startup(logger) {
 }
 
 function doLookup(entities, options, cb) {
+    let lookupResults = [];
+
     tc.setSecretKey(options.apiKey);
     tc.setHost(options.url);
     tc.setAccessId(options.accessId);
 
-    //Logger.trace({entities: entities}, 'doLookup');
+    Logger.trace({entities: entities}, 'doLookup');
 
     let organizations = [];
 
@@ -26,7 +31,7 @@ function doLookup(entities, options, cb) {
         let tokens = options.defaultOrganizations.split(',');
         tokens.forEach(token => {
             token = token.trim();
-            if(token.length > 0){
+            if (token.length > 0) {
                 organizations.push(token);
             }
         });
@@ -36,75 +41,117 @@ function doLookup(entities, options, cb) {
 
     Logger.debug({organizations: organizations});
 
-    organizations.forEach(function(org){
-        _lookupOrg(entities, org, cb);
-    });
-}
-
-function _lookupOrg(entities, org, cb){
-    let lookupResults = [];
-
     async.each(entities, function (entityObj, next) {
-        //Logger.info({value: entityObj.value, org:org},'Lookup');
-        if (entityObj.isIPv4 || entityObj.isIPv6) {
-            tc.getAddress(entityObj.value, org, function (err, data) {
-                if (err) {
-                    Logger.error({err: err}, 'Could not retrieve IP info');
-                    next(err);
-                    return;
-                }
+        _lookupEntity(entityObj, organizations, function (err, entityResults) {
+            if (err) {
+                next(err);
+                return;
+            }
 
-                lookupResults.push(_processLookupResult(entityObj, data));
-                next(null);
-            });
-        } else if (entityObj.isEmail) {
-            tc.getEmail(entityObj.value, org, function (err, data) {
-                if (err) {
-                    Logger.error({err: err}, 'Could not retrieve email info');
-                    next(err);
-                    return;
-                }
-
-                lookupResults.push(_processLookupResult(entityObj, data));
-                next(null);
-            });
-        } else if (entityObj.isHash) {
-            tc.getFile(entityObj.value, org, function (err, data) {
-                if (err) {
-                    Logger.error({err: err}, 'Could not retrieve hash info');
-                    next(err);
-                    return;
-                }
-
-                lookupResults.push(_processLookupResult(entityObj, data));
-                next(null);
-            });
-        }
-        else {
+            lookupResults.push(entityResults);
             next(null);
-        }
+        });
     }, function (err) {
-        Logger.trace({lookupResults: lookupResults}, 'Lookup Results');
         cb(err, lookupResults);
     });
 }
 
-function _processLookupResult(entityObj, data) {
-    if (data) {
-        return {
-            // Required: This is the entity object passed into the integration doLookup method
-            entity: entityObj,
-            // Required: An object containing everything you want passed to the template
-            data: {
-                // Required: These are the tags that are displayed in your template
-                summary: _getSummaryTags(data),
-                // Data that you want to pass back to the notification window details block
-                details: data
+function _lookupEntity(entityObj, organizations, cb) {
+    let orgResults = {
+        entity: entityObj,
+        data: {
+            summary: [],
+            details: []
+        }
+    };
+
+    async.each(organizations, function (org, next) {
+        _lookupOrg(entityObj, org, function (err, data) {
+            if (err) {
+                next(err);
+                return;
             }
-        };
+
+            if(data){
+                _getSummaryTags(data).forEach(function(tag){
+                    orgResults.data.summary.push(tag);
+                });
+
+                data.webLink = _formatWebLink(data.webLink);
+
+                orgResults.data.details.push(data);
+            }
+
+            next(null);
+        });
+    }, function (err) {
+        if(orgResults.data.details.length === 0){
+            cb(err, {entity: entityObj, data: null});
+        }else{
+            cb(err, orgResults);
+        }
+    });
+}
+
+function _lookupOrg(entityObj, org, cb) {
+    //Logger.info({value: entityObj.value, org:org},'Lookup');
+    if (entityObj.isIPv4 || entityObj.isIPv6) {
+
+        // TC does not recognize fully expanded IPv6 addresses so we
+        // remove expanded zeroes to a single
+        if(entityObj.isIPv6){
+            entityObj.value = entityObj.value.replace(/0000/g, '0');
+        }
+
+        // Logger.info({value: entityObj.value, org:org},'Lookup');
+
+        tc.getAddress(entityObj.value, org, function (err, orgData) {
+            if (err) {
+                Logger.error({err: err}, 'Could not retrieve IP info');
+                cb(err);
+                return;
+            }
+
+            cb(null, orgData);
+        });
+    } else if (entityObj.isEmail) {
+        tc.getEmail(entityObj.value, org, function (err, orgData) {
+            if (err) {
+                Logger.error({err: err}, 'Could not retrieve email info');
+                cb(err);
+                return;
+            }
+
+            cb(null, orgData);
+        });
+    } else if (entityObj.isHash) {
+        tc.getFile(entityObj.value, org, function (err, orgData) {
+            if (err) {
+                Logger.error({err: err}, 'Could not retrieve hash info');
+                cb(err);
+                return;
+            }
+
+            cb(null, orgData);
+        });
     } else {
-        return {entity: entityObj, data: null};
+        cb(null);
     }
+}
+
+function _formatWebLink(weblink){
+    let weblinkAsUrl = url.parse(weblink);
+
+    if(config.settings.threatConnectPort !== null){
+        weblinkAsUrl.port = config.settings.threatConnectPort;
+        // We need to delete the host so that url.format() will recreate
+        // it and include the threatConnectPort
+        delete weblinkAsUrl.host;
+    }
+
+    //Logger.info({url: url.format(weblinkAsUrl), port: weblinkAsUrl.port}, 'WebLink');
+
+    return url.format(weblinkAsUrl);
 }
 
 function _getSummaryTags(data) {
@@ -115,9 +162,14 @@ function _getSummaryTags(data) {
     }
 
     if (Array.isArray(data.tags)) {
-        data.tags.forEach(tag => {
+        for(let i=0; i < data.tags.length && i <= MAX_SUMMARY_TAGS; i++){
+            let tag = data.tags[i];
             summaryTags.push(tag.name);
-        })
+        }
+
+        if(data.tags.length > MAX_SUMMARY_TAGS){
+            summaryTags.push('+' + (data.tags.length - MAX_SUMMARY_TAGS));
+        }
     }
     return summaryTags;
 }

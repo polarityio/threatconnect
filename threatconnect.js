@@ -9,7 +9,7 @@ let requestOptions = {
     //key: fs.readFileSync(keyFile),
     //passphrase: 'password',
     //ca: fs.readFileSync(caFile)
-}
+};
 
 class ThreatConnect {
     constructor(logger) {

@@ -18,9 +18,6 @@ module.exports = {
     "acronym":"TC",
     "logging": {level: 'info'},
     "entityTypes": ['IPv4', 'IPv6', 'hash', 'email'],
-    "permissions": [
-        "ALLOW_UNRESTRICTED_ENTITY_UPDATES"
-    ],
     /**
      * Description for this integration which is displayed in the Polarity integrations user interface
      *
@@ -56,6 +53,18 @@ module.exports = {
     },
     "integrationBlock": {
         "file": "./block/threatconnect.js"
+    },
+    "settings":{
+        /**
+         * This value should be set to `null` unless your ThreatConnect instance runs on a port other than
+         * 443. The `threatConnectPort` is required to properly construct the TC webLinks that allow you to
+         * click in the details window to open TC.  This link is provided by the TC REST API and does not include
+         * non-default ports.  As a result, the Polarity TC integration will modify the link returned by TC
+         * to include the port specified by `threatConnectPort`.
+         */
+        "threatConnectPort": null
+        // example for setting this to a non-standard port
+        // "threatConnectPort": 8443
     },
     /**
      * Options that are displayed to the user/admin in the Polarity integration user-interface.  Should be structured

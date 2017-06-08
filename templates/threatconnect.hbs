@@ -1,36 +1,56 @@
-<div class="notification-body-details-container">
-    <div class="padding-0-5">
-        <p class="padded">
-            <a href="{{block.data.details.webLink}}">View in ThreatConnect <i class="btb bt-external-link"></i></a>
-        </p>
-        <p>
-            <b class="muted">{{block.data.details.owner.type}}</b>: {{block.data.details.owner.name}}
-        </p>
-        <p>
-            <b class="muted">Date Added</b>: {{moment-time block.data.details.dateAdded}}
-        </p>
-        <p>
-            <b class="muted">Last Modified</b>: {{moment-time block.data.details.lastModified}}
-        </p>
-        <p>
-            <b class="muted">Rating</b>: {{block.data.details.rating}} / 5 Skulls
-        </p>
-        <p>
-            <b class="muted">Confidence</b>: {{block.data.details.confidence}} / 100
-        </p>
-        <div class="tag-container">
-            <i class="bts bt-label muted"></i> <i class="btb bt-external-link muted"></i>
-            {{#each (limit block.data.details.tags maxTagsToShow) as |tag|}}
-                <a href="{{tag.webLink}}" class="tc-link-tag">
-      <span class="label-notification threatconnect-summary-tag">
-          {{tag.name}}
-      </span>
-                </a>
-            {{/each}}
-            {{#if (gt numAdditionalTags 0)}}
-                +{{numAdditionalTags}}
-            {{/if}}
+{{#each block.data.details as |orgData|}}
+    <div class="notification-body-details-container">
+        <div class="padding-0-5">
+            <p class="padded">
+                <b class="muted">{{orgData.owner.type}}</b>: <a href="{{orgData.webLink}}">{{orgData.owner.name}} <i class="btb bt-external-link"></i></a>
+            </p>
+            <p>
+                <b class="muted">Date Added</b>: {{moment-time orgData.dateAdded}}
+            </p>
+            <p>
+                <b class="muted">Last Modified</b>: {{moment-time orgData.lastModified}}
+            </p>
+            <p>
+                {{#if orgData.rating}}
+                    <b class="muted">Rating</b>: {{orgData.rating}} / 5 Skulls
+                {{else}}
+                    <b class="muted">Rating</b>: No Rating
+                {{/if}}
+            </p>
+            <p>
+                <b class="muted">Confidence</b>: {{orgData.confidence}} / 100
+            </p>
+            <p>
+                {{#if orgData.threatAssessRating}}
+                    <b class="muted">Threat Assess Rating</b>: {{orgData.threatAssessRating}}
+                {{else}}
+                    <b class="muted">Threat Assess Rating</b>: No Threat Assess Rating
+                {{/if}}
+            </p>
+            <p>
+                {{#if orgData.threatAssessRating}}
+                    <b class="muted">Threat Assess Confidence</b>: {{orgData.threatAssessConfidence}}
+                {{else}}
+                    <b class="muted">Threat Assess Confidence</b>: No Threat Assess Confidence
+                {{/if}}
+            </p>
+                {{#if (eq orgData.tags.length 0)}}
+                    <p>
+                        <b class="muted">No Tags</b>
+                    </p>
+                {{else}}
+                    <div class="tag-container">
+                        {{#each orgData.tags as |tag|}}
+                            <a href="{{tag.webLink}}" class="tc-link-tag">
+                              <span class="label-notification threatconnect-summary-tag">
+                                  {{tag.name}}
+                              </span>
+                            </a>
+                        {{/each}}
+                        <i class="bts bt-label muted"></i> <i class="btb bt-external-link muted"></i>
+                    </div>
+                    <div style="clear:both"></div>
+                {{/if}}
         </div>
     </div>
-</div>
-<div style="clear:both"></div>
+{{/each}}
