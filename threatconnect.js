@@ -2,6 +2,14 @@ let request = require('request');
 let querystring = require('querystring');
 let crypto = require('crypto');
 let url = require('url');
+let fs = require('fs');
+
+let requestOptions = {
+    //cert: fs.readFileSync(certFile),
+    //key: fs.readFileSync(keyFile),
+    //passphrase: 'password',
+    //ca: fs.readFileSync(caFile)
+};
 
 class ThreatConnect {
     constructor(logger) {
@@ -29,19 +37,6 @@ class ThreatConnect {
             this.accessId = accessId;
         }
     }
-
-    // setOrganizations(organizations){
-    //     if(typeof organizations === 'string'){
-    //         let tokens = organizations.split(',');
-    //         tokens.forEach(token => {
-    //             token.trim();
-    //         });
-    //         this.organizations = tokens;
-    //     }else{
-    //         this.organizations = [];
-    //     }
-    //
-    // }
 
     setHost(host) {
         if (!this.url || this.url.href !== host) {
@@ -140,12 +135,12 @@ class ThreatConnect {
             encodeURIComponent(indicatorType) + "/" +
             encodeURIComponent(indicatorValue) + "/tags" + qs;
 
-        request({
-            uri: uri,
-            method: 'GET',
-            headers: this._getHeaders(urlPath, 'GET'),
-            json: true
-        }, cb);
+        let options = requestOptions;
+        options.uri = uri;
+        options.method = 'GET';
+        options.headers = this._getHeaders(urlPath, 'GET');
+        options.json = true;
+        request(options, cb);
     }
 
     _getIndicator(indicatorType, indicatorValue, owner, cb) {
@@ -162,12 +157,12 @@ class ThreatConnect {
             encodeURIComponent(indicatorType) + "/" +
             encodeURIComponent(indicatorValue) + qs;
 
-        request({
-            uri: uri,
-            method: 'GET',
-            headers: this._getHeaders(urlPath, 'GET'),
-            json: true
-        }, cb);
+        let options = requestOptions;
+        options.uri = uri;
+        options.method = 'GET';
+        options.headers = this._getHeaders(urlPath, 'GET');
+        options.json = true;
+        request(options, cb);
     }
 
     _isSuccess(response) {
