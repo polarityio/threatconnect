@@ -96,7 +96,7 @@ function _lookupEntity(entityObj, organizations, options, cb) {
 function _lookupOrg(entityObj, org, options, cb) {
     //Logger.info({value: entityObj.value, org:org},'Lookup');
     //Logger.debug({options:options}, 'Lookup Options');
-    
+
     if ((entityObj.isIPv4 || entityObj.isIPv6) && options.lookupIps) {
 
         // TC does not recognize fully expanded IPv6 addresses so we
@@ -130,6 +130,16 @@ function _lookupOrg(entityObj, org, options, cb) {
         tc.getFile(entityObj.value, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve hash info');
+                cb(err);
+                return;
+            }
+
+            cb(null, orgData);
+        });
+    } else if (entityObj.isDomain && options.lookupHosts) {
+        tc.getHost(entityObj.value, org, function (err, orgData) {
+            if (err) {
+                Logger.error({err: err}, 'Could not retrieve host info');
                 cb(err);
                 return;
             }
