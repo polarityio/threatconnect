@@ -17,7 +17,7 @@ module.exports = {
      */
     "acronym":"TC",
     "logging": {level: 'info'},
-    "entityTypes": ['IPv4', 'IPv6', 'hash', 'email'],
+    "entityTypes": ['IPv4', 'IPv6', 'hash', 'email', 'domain'],
     /**
      * Description for this integration which is displayed in the Polarity integrations user interface
      *
@@ -108,6 +108,42 @@ module.exports = {
             "If left blank, will default to your ThreatConnect instance's default organization",
             "default": "",
             "type": "text",
+            "userCanEdit": true,
+            "adminOnly": false
+        },
+        {
+            "key": "lookupIps",
+            "name": "Lookup IP Addresses",
+            "description": "If checked, the integration will lookup IP addresses in ThreatConnect",
+            "default": true,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
+        },
+        {
+            "key": "lookupHashes",
+            "name": "Lookup Files (Hashes)",
+            "description": "If checked, the integration will lookup files (MD5, SHA1, SHA256) in ThreatConnect",
+            "default": true,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
+        },
+        {
+            "key": "lookupEmails",
+            "name": "Lookup Emails",
+            "description": "If checked, the integration will lookup email addresses in ThreatConnect",
+            "default": true,
+            "type": "boolean",
+            "userCanEdit": true,
+            "adminOnly": false
+        },
+        {
+            "key": "lookupHosts",
+            "name": "Lookup Hosts",
+            "description": "If checked, the integration will lookup hosts (i.e., domains) in ThreatConnect",
+            "default": true,
+            "type": "boolean",
             "userCanEdit": true,
             "adminOnly": false
         }
