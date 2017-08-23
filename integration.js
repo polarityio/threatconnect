@@ -42,7 +42,7 @@ function doLookup(entities, options, cb) {
     Logger.debug({organizations: organizations});
 
     async.each(entities, function (entityObj, next) {
-        _lookupEntity(entityObj, organizations, function (err, entityResults) {
+        _lookupEntity(entityObj, organizations, options, function (err, entityResults) {
             if (err) {
                 next(err);
                 return;
@@ -56,7 +56,7 @@ function doLookup(entities, options, cb) {
     });
 }
 
-function _lookupEntity(entityObj, organizations, cb) {
+function _lookupEntity(entityObj, organizations, options, cb) {
     let orgResults = {
         entity: entityObj,
         data: {
@@ -66,7 +66,7 @@ function _lookupEntity(entityObj, organizations, cb) {
     };
 
     async.each(organizations, function (org, next) {
-        _lookupOrg(entityObj, org, function (err, data) {
+        _lookupOrg(entityObj, org, options, function (err, data) {
             if (err) {
                 next(err);
                 return;
@@ -93,9 +93,11 @@ function _lookupEntity(entityObj, organizations, cb) {
     });
 }
 
-function _lookupOrg(entityObj, org, cb) {
+function _lookupOrg(entityObj, org, options, cb) {
     //Logger.info({value: entityObj.value, org:org},'Lookup');
-    if (entityObj.isIPv4 || entityObj.isIPv6) {
+    //Logger.debug({options:options}, 'Lookup Options');
+    
+    if ((entityObj.isIPv4 || entityObj.isIPv6) && options.lookupIps) {
 
         // TC does not recognize fully expanded IPv6 addresses so we
         // remove expanded zeroes to a single
@@ -114,7 +116,7 @@ function _lookupOrg(entityObj, org, cb) {
 
             cb(null, orgData);
         });
-    } else if (entityObj.isEmail) {
+    } else if (entityObj.isEmail && options.lookupEmails) {
         tc.getEmail(entityObj.value, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve email info');
@@ -124,7 +126,7 @@ function _lookupOrg(entityObj, org, cb) {
 
             cb(null, orgData);
         });
-    } else if (entityObj.isHash) {
+    } else if (entityObj.isHash && options.lookupHashes) {
         tc.getFile(entityObj.value, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve hash info');
