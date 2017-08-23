@@ -1,5 +1,7 @@
 # Polarity ThreatConnect Integration
 
+![image](https://img.shields.io/badge/status-beta-green.svg)
+
 ThreatConnect is a security operations and analytics platform designed to allow teams to identify, manage, and block threats faster with intelligence.  For more information about ThreatConnect please visit:
 
 https://threatconnect.com/
