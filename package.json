@@ -6,7 +6,7 @@
   "private": true,
   "dependencies": {
     "lodash": "4.17.4",
-    "async": "2.4.0",
-    "request": "2.81.0"
+    "async": "2.5.0",
+    "request": "2.83.0"
   }
 }
