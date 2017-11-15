@@ -5,14 +5,27 @@ let _ = require('lodash');
 let async = require('async');
 let url = require('url');
 let ThreatConnect = require('./threatconnect');
+let heapdump = require('heapdump');
 const config = require('./config/config');
 const MAX_SUMMARY_TAGS = 6;
 let tc;
 let Logger;
+const ONE_HOUR = 3600000; //milliseconds
 
 function startup(logger) {
     Logger = logger;
     tc = new ThreatConnect(Logger);
+
+    heapdump.writeSnapshot('heapdumps/' + Date.now() + '.heapsnapshot', function(err, fileName) {
+        Logger.info('Heapdump written to', fileName);
+    });
+
+    setInterval(function(){
+        Logger.info("Starting to write snapshot");
+        heapdump.writeSnapshot('heapdumps/' + Date.now(), function(err, fileName) {
+            Logger.info('Heapdump written to', fileName);
+        });
+    }, ONE_HOUR);
 }
 
 function doLookup(entities, options, cb) {
@@ -52,6 +65,7 @@ function doLookup(entities, options, cb) {
             next(null);
         });
     }, function (err) {
+        Logger.trace({lookupResults:lookupResults}, 'Lookup Results');
         cb(err, lookupResults);
     });
 }
