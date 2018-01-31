@@ -104,6 +104,7 @@ function _lookupEntity(entityObj, organizations, options, cb) {
                 data.webLink = _formatWebLink(data.webLink);
 
                 orgResults.data.details.push(data);
+                orgResults.displayValue = entityObj.displayValue;
             }
 
             next(null);
@@ -121,30 +122,38 @@ function _lookupOrg(entityObj, org, options, cb) {
     //Logger.info({value: entityObj.value, org:org},'Lookup');
     //Logger.debug({options:options}, 'Lookup Options');
 
-    if ((entityObj.isIPv4 || entityObj.isIPv6) && options.lookupIps) {
+    // make a copy of the value so when we modify it we aren't changing the original
+    // entityObj.  This will make caching of the entityObj value more consistent.
+    let lookupValue = entityObj.value;
+    // we keep track of a separate displayValue so that for IPv6 we display the format
+    // that TC prefers.
+    entityObj.displayValue = entityObj.value;
 
+    if ((entityObj.isIPv4 || entityObj.isIPv6) && options.lookupIps) {
         // TC does not recognize fully expanded IPv6 addresses so we
         // remove expanded zeroes to a single
         // TC does not recognize leading zeroes in IPv6 address octets so we
         // remove any leading zeroes
         if (entityObj.isIPv6) {
-            entityObj.value = entityObj.value.replace(/0000/g, '0');
-            entityObj.value = entityObj.value.replace(/0([a-fA-F0-9]{3})/, '$1');
+            lookupValue = lookupValue.toLowerCase();
+            lookupValue = lookupValue.replace(/0000/g, '0');
+            lookupValue = lookupValue.replace(/0([a-fA-F0-9]{3})/, '$1');
+            entityObj.displayValue = lookupValue;
         }
 
-        Logger.debug({value: entityObj.value, org: org}, 'IP Lookup (after IPv6 cleanup to support TC)');
+        Logger.debug({value: lookupValue, org: org}, 'IP Lookup (after IPv6 cleanup to support TC)');
 
-        tc.getAddress(entityObj.value, org, function (err, orgData) {
+        tc.getAddress(lookupValue, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve IP info');
                 cb(err);
                 return;
             }
 
-            cb(null, orgData);
+            cb(null, orgData, lookupValue);
         });
     } else if (entityObj.isEmail && options.lookupEmails) {
-        tc.getEmail(entityObj.value, org, function (err, orgData) {
+        tc.getEmail(lookupValue, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve email info');
                 cb(err);
@@ -154,7 +163,7 @@ function _lookupOrg(entityObj, org, options, cb) {
             cb(null, orgData);
         });
     } else if (entityObj.isHash && options.lookupHashes) {
-        tc.getFile(entityObj.value, org, function (err, orgData) {
+        tc.getFile(lookupValue, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve hash info');
                 cb(err);
@@ -164,7 +173,7 @@ function _lookupOrg(entityObj, org, options, cb) {
             cb(null, orgData);
         });
     } else if (entityObj.isDomain && options.lookupHosts) {
-        tc.getHost(entityObj.value, org, function (err, orgData) {
+        tc.getHost(lookupValue, org, function (err, orgData) {
             if (err) {
                 Logger.error({err: err}, 'Could not retrieve host info');
                 cb(err);
