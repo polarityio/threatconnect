@@ -22,7 +22,7 @@ function doLookup(entities, options, cb) {
     tc.setHost(options.url);
     tc.setAccessId(options.accessId);
 
-    Logger.trace({entities: entities}, 'doLookup');
+    //Logger.trace({entities: entities}, 'doLookup');
 
     let organizations = [];
 
@@ -101,11 +101,14 @@ function _lookupOrg(entityObj, org, options, cb) {
 
         // TC does not recognize fully expanded IPv6 addresses so we
         // remove expanded zeroes to a single
+        // TC does not recognize leading zeroes in IPv6 address octets so we
+        // remove any leading zeroes
         if(entityObj.isIPv6){
             entityObj.value = entityObj.value.replace(/0000/g, '0');
+            entityObj.value = entityObj.value.replace(/0([a-fA-F0-9]{3})/, '$1');
         }
 
-        // Logger.info({value: entityObj.value, org:org},'Lookup');
+        Logger.debug({value: entityObj.value, org:org},'IP Lookup (after IPv6 cleanup to support TC)');
 
         tc.getAddress(entityObj.value, org, function (err, orgData) {
             if (err) {
