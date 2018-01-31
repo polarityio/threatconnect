@@ -5,6 +5,7 @@ let _ = require('lodash');
 let async = require('async');
 let url = require('url');
 let ThreatConnect = require('./threatconnect');
+let request = require('request');
 const config = require('./config/config');
 const MAX_SUMMARY_TAGS = 6;
 let tc;
@@ -12,7 +13,30 @@ let Logger;
 
 function startup(logger) {
     Logger = logger;
-    tc = new ThreatConnect(Logger);
+
+    let defaults = {};
+
+    if (typeof config.request.cert === 'string' && config.request.cert.length > 0) {
+        defaults.cert = fs.readFileSync(config.request.cert);
+    }
+
+    if (typeof config.request.key === 'string' && config.request.key.length > 0) {
+        defaults.key = fs.readFileSync(config.request.key);
+    }
+
+    if (typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0) {
+        defaults.passphrase = config.request.passphrase;
+    }
+
+    if (typeof config.request.ca === 'string' && config.request.ca.length > 0) {
+        defaults.ca = fs.readFileSync(config.request.ca);
+    }
+
+    if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
+        defaults.proxy = config.request.proxy;
+    }
+
+    tc = new ThreatConnect(request.defaults(defaults), Logger);
 }
 
 function doLookup(entities, options, cb) {
@@ -72,8 +96,8 @@ function _lookupEntity(entityObj, organizations, options, cb) {
                 return;
             }
 
-            if(data){
-                _getSummaryTags(data).forEach(function(tag){
+            if (data) {
+                _getSummaryTags(data).forEach(function (tag) {
                     orgResults.data.summary.push(tag);
                 });
 
@@ -85,9 +109,9 @@ function _lookupEntity(entityObj, organizations, options, cb) {
             next(null);
         });
     }, function (err) {
-        if(orgResults.data.details.length === 0){
+        if (orgResults.data.details.length === 0) {
             cb(err, {entity: entityObj, data: null});
-        }else{
+        } else {
             cb(err, orgResults);
         }
     });
@@ -103,12 +127,12 @@ function _lookupOrg(entityObj, org, options, cb) {
         // remove expanded zeroes to a single
         // TC does not recognize leading zeroes in IPv6 address octets so we
         // remove any leading zeroes
-        if(entityObj.isIPv6){
+        if (entityObj.isIPv6) {
             entityObj.value = entityObj.value.replace(/0000/g, '0');
             entityObj.value = entityObj.value.replace(/0([a-fA-F0-9]{3})/, '$1');
         }
 
-        Logger.debug({value: entityObj.value, org:org},'IP Lookup (after IPv6 cleanup to support TC)');
+        Logger.debug({value: entityObj.value, org: org}, 'IP Lookup (after IPv6 cleanup to support TC)');
 
         tc.getAddress(entityObj.value, org, function (err, orgData) {
             if (err) {
@@ -154,10 +178,10 @@ function _lookupOrg(entityObj, org, options, cb) {
     }
 }
 
-function _formatWebLink(weblink){
+function _formatWebLink(weblink) {
     let weblinkAsUrl = url.parse(weblink);
 
-    if(config.settings.threatConnectPort !== null){
+    if (config.settings.threatConnectPort !== null) {
         weblinkAsUrl.port = config.settings.threatConnectPort;
         // We need to delete the host so that url.format() will recreate
         // it and include the threatConnectPort
@@ -177,12 +201,12 @@ function _getSummaryTags(data) {
     }
 
     if (Array.isArray(data.tags)) {
-        for(let i=0; i < data.tags.length && i <= MAX_SUMMARY_TAGS; i++){
+        for (let i = 0; i < data.tags.length && i <= MAX_SUMMARY_TAGS; i++) {
             let tag = data.tags[i];
             summaryTags.push(tag.name);
         }
 
-        if(data.tags.length > MAX_SUMMARY_TAGS){
+        if (data.tags.length > MAX_SUMMARY_TAGS) {
             summaryTags.push('+' + (data.tags.length - MAX_SUMMARY_TAGS));
         }
     }

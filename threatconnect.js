@@ -1,18 +1,10 @@
-let request = require('request');
 let querystring = require('querystring');
 let crypto = require('crypto');
 let url = require('url');
 let fs = require('fs');
 
-let requestOptions = {
-    //cert: fs.readFileSync(certFile),
-    //key: fs.readFileSync(keyFile),
-    //passphrase: 'password',
-    //ca: fs.readFileSync(caFile)
-};
-
 class ThreatConnect {
-    constructor(logger) {
+    constructor(request, logger) {
         if (logger) {
             this.log = logger;
         } else {
@@ -24,6 +16,8 @@ class ThreatConnect {
                 error: console.error
             };
         }
+
+        this.request = request;
     }
 
     setSecretKey(secretKey) {
@@ -135,12 +129,14 @@ class ThreatConnect {
             encodeURIComponent(indicatorType) + "/" +
             encodeURIComponent(indicatorValue) + "/tags" + qs;
 
-        let options = requestOptions;
-        options.uri = uri;
-        options.method = 'GET';
-        options.headers = this._getHeaders(urlPath, 'GET');
-        options.json = true;
-        request(options, cb);
+        let requestOptions = {
+            uri: uri,
+            method: 'GET',
+            headers: this._getHeaders(urlPath, 'GET'),
+            json: true
+        };
+
+        this.request(requestOptions, cb);
     }
 
     _getIndicator(indicatorType, indicatorValue, owner, cb) {
@@ -157,12 +153,14 @@ class ThreatConnect {
             encodeURIComponent(indicatorType) + "/" +
             encodeURIComponent(indicatorValue) + qs;
 
-        let options = requestOptions;
-        options.uri = uri;
-        options.method = 'GET';
-        options.headers = this._getHeaders(urlPath, 'GET');
-        options.json = true;
-        request(options, cb);
+        let requestOptions = {
+            uri: uri,
+            method: 'GET',
+            headers: this._getHeaders(urlPath, 'GET'),
+            json: true
+        };
+
+        this.request(requestOptions, cb);
     }
 
     _isSuccess(response) {
