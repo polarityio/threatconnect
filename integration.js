@@ -2,6 +2,7 @@
 
 let redis = require('redis');
 let _ = require('lodash');
+let ipaddr = require('ipaddr.js');
 let async = require('async');
 let url = require('url');
 let ThreatConnect = require('./threatconnect');
@@ -46,7 +47,7 @@ function doLookup(entities, options, cb) {
     tc.setHost(options.url);
     tc.setAccessId(options.accessId);
 
-    //Logger.trace({entities: entities}, 'doLookup');
+    Logger.trace({entities: entities}, 'doLookup');
 
     let organizations = [];
 
@@ -104,7 +105,6 @@ function _lookupEntity(entityObj, organizations, options, cb) {
                 data.webLink = _formatWebLink(data.webLink);
 
                 orgResults.data.details.push(data);
-                orgResults.displayValue = entityObj.displayValue;
             }
 
             next(null);
@@ -125,20 +125,20 @@ function _lookupOrg(entityObj, org, options, cb) {
     // make a copy of the value so when we modify it we aren't changing the original
     // entityObj.  This will make caching of the entityObj value more consistent.
     let lookupValue = entityObj.value;
-    // we keep track of a separate displayValue so that for IPv6 we display the format
-    // that TC prefers.
-    entityObj.displayValue = entityObj.value;
 
     if ((entityObj.isIPv4 || entityObj.isIPv6) && options.lookupIps) {
-        // TC does not recognize fully expanded IPv6 addresses so we
-        // remove expanded zeroes to a single
-        // TC does not recognize leading zeroes in IPv6 address octets so we
-        // remove any leading zeroes
+        // TC does not recognize fully expanded IPv6 addresses
+        // TC does not recognize leading zeroes in IPv6 address octets
+        // TC does not recognize IPv6 addresses unless they are lowercase
+        // TC does not recognize IPv6 addresses if they use the "compressed" :: form for zeroes
         if (entityObj.isIPv6) {
-            lookupValue = lookupValue.toLowerCase();
-            lookupValue = lookupValue.replace(/0000/g, '0');
-            lookupValue = lookupValue.replace(/0([a-fA-F0-9]{3})/, '$1');
-            entityObj.displayValue = lookupValue;
+            if(ipaddr.isValid(lookupValue)){
+                // convert the IPv6 address into a format TC understands
+                lookupValue = ipaddr.parse(lookupValue).toNormalizedString();
+            }else{
+                cb('Integration Received an invalid IPv6 address [' + lookupValue + ']');
+                return;
+            }
         }
 
         Logger.debug({value: lookupValue, org: org}, 'IP Lookup (after IPv6 cleanup to support TC)');
