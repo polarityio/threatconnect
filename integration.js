@@ -7,6 +7,7 @@ let async = require('async');
 let url = require('url');
 let ThreatConnect = require('./threatconnect');
 let request = require('request');
+const fs = require('fs');
 const config = require('./config/config');
 const MAX_SUMMARY_TAGS = 6;
 let tc;
