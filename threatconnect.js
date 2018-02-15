@@ -196,8 +196,9 @@ class ThreatConnect {
             cb(null, body.data);
         } else {
             cb({
-                detail: body.message,
-                body: body
+                detail: body && body.message ? body.message : "[No detail property found (body.message)]",
+                body: body ? body : '[body is undefined]',
+                response: response
             });
         }
     }
