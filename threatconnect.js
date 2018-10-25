@@ -1,7 +1,6 @@
 let querystring = require('querystring');
 let crypto = require('crypto');
 let url = require('url');
-let fs = require('fs');
 
 class ThreatConnect {
     constructor(request, logger) {

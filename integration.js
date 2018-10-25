@@ -1,7 +1,5 @@
 'use strict';
 
-let redis = require('redis');
-let _ = require('lodash');
 let ipaddr = require('ipaddr.js');
 let async = require('async');
 let url = require('url');
@@ -36,6 +34,10 @@ function startup(logger) {
 
     if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
         defaults.proxy = config.request.proxy;
+    }
+
+    if (typeof config.request.rejectUnauthorized === 'boolean') {
+        defaults.rejectUnauthorized = config.request.rejectUnauthorized;
     }
 
     tc = new ThreatConnect(request.defaults(defaults), Logger);
