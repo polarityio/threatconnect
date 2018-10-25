@@ -1,56 +1,65 @@
+<div class="p-non-exfoliate-outer-padding">
 {{#each block.data.details as |orgData|}}
     <div class="notification-body-details-container">
         <div class="padding-0-5">
-            <p class="padded">
-                <b class="muted">{{orgData.owner.type}}</b>: <a href="{{orgData.webLink}}">{{orgData.owner.name}} <i class="btb bt-external-link"></i></a>
-            </p>
-            <p>
-                <b class="muted">Date Added</b>: {{moment-time orgData.dateAdded}}
-            </p>
-            <p>
-                <b class="muted">Last Modified</b>: {{moment-time orgData.lastModified}}
-            </p>
-            <p>
+            <div>
+                <span class="p-key">{{orgData.owner.type}}: </span>
+                <span class="p-value"><a href="{{orgData.webLink}}">{{orgData.owner.name}} <i class="btb bt-external-link"></i></a></span>
+            </div>
+            <div>
+                <span class="p-key">Date Added:</span>
+                <span class="p-value">{{moment-time orgData.dateAdded}}</span>
+            </div>
+            <div>
+                <span class="p-key">Last Modified:</span>
+                <span class="p-value">{{moment-time orgData.lastModified}}</span>
+            </div>
+            <div>
+                <span class="p-key">Rating: </span>
                 {{#if orgData.rating}}
-                    <b class="muted">Rating</b>: {{orgData.rating}} / 5 Skulls
+                    <span class="p-value">{{orgData.rating}} / 5 Skulls</span>
                 {{else}}
-                    <b class="muted">Rating</b>: No Rating
+                    <span class="p-value">No Rating</span>
                 {{/if}}
-            </p>
-            <p>
-                <b class="muted">Confidence</b>: {{orgData.confidence}} / 100
-            </p>
-            <p>
+            </div>
+            <div>
+                <span class="p-key">Confidence</span>
+                <span class="p-value">{{orgData.confidence}} / 100</span>
+            </div>
+            <div>
+                <span class="p-key">Threat Assess Rating: </span>
                 {{#if orgData.threatAssessRating}}
-                    <b class="muted">Threat Assess Rating</b>: {{orgData.threatAssessRating}}
+                    <span class="p-value">{{orgData.threatAssessRating}}</span>
                 {{else}}
-                    <b class="muted">Threat Assess Rating</b>: No Threat Assess Rating
+                    <span class="p-value">No Threat Assess Rating</span>
                 {{/if}}
-            </p>
-            <p>
-                {{#if orgData.threatAssessRating}}
-                    <b class="muted">Threat Assess Confidence</b>: {{orgData.threatAssessConfidence}}
+            </div>
+            <div>
+                <span class="p-key">Threat Assess Confidence: </span>
+                {{#if orgData.threatAssessConfidence}}
+                    <span class="p-value">{{orgData.threatAssessConfidence}}</span>
                 {{else}}
-                    <b class="muted">Threat Assess Confidence</b>: No Threat Assess Confidence
+                    <span class="p-value">No Threat Assess Confidence</span>
                 {{/if}}
-            </p>
-                {{#if (eq orgData.tags.length 0)}}
-                    <p>
-                        <b class="muted">No Tags</b>
-                    </p>
-                {{else}}
-                    <div class="tag-container">
-                        {{#each orgData.tags as |tag|}}
-                            <a href="{{tag.webLink}}" class="tc-link-tag">
-                              <span class="label-notification threatconnect-summary-tag">
-                                  {{tag.name}}
-                              </span>
-                            </a>
-                        {{/each}}
-                        <i class="bts bt-label muted"></i> <i class="btb bt-external-link muted"></i>
-                    </div>
-                    <div style="clear:both"></div>
-                {{/if}}
+            </div>
+            {{#if (eq orgData.tags.length 0)}}
+                <div>
+                    <span class="p-footnote">No Tags</span>
+                </div>
+            {{else}}
+                <div class="tag-container">
+                    {{#each orgData.tags as |tag|}}
+                        <a href="{{tag.webLink}}" class="tc-link-tag">
+                            <span class="label-notification threatconnect-summary-tag">
+                                {{tag.name}}
+                            </span>
+                        </a>
+                    {{/each}}
+                    <i class="bts bt-label muted"></i> <i class="btb bt-external-link muted"></i>
+                </div>
+                <div style="clear:both"></div>
+            {{/if}}
         </div>
     </div>
 {{/each}}
+</div>
