@@ -1,7 +1,5 @@
 'use strict';
 
-let redis = require('redis');
-let _ = require('lodash');
 let ipaddr = require('ipaddr.js');
 let async = require('async');
 let url = require('url');
