@@ -38,6 +38,10 @@ function startup(logger) {
         defaults.proxy = config.request.proxy;
     }
 
+    if (typeof config.request.rejectUnauthorized === 'boolean') {
+        defaults.rejectUnauthorized = config.request.rejectUnauthorized;
+    }
+
     tc = new ThreatConnect(request.defaults(defaults), Logger);
 }
 
