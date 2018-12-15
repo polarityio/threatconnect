@@ -19,6 +19,21 @@ a.tc-link-tag {
   }
 }
 
+.elementToFadeIn {
+  -webkit-animation: fadeinout 1s linear forwards;
+  animation: fadeinout 1s linear forwards;
+  opacity: 0;
+  padding-top: 3px;
+}
+
+@-webkit-keyframes fadeinout {
+  100% { opacity: 1; }
+}
+
+@keyframes fadeinout {
+  100% { opacity: 1; }
+}
+
 .report-false-positive-btn{
   height: 25px;
   font-size: 0.775rem;

@@ -217,9 +217,9 @@ function onDetails(lookupObject, options, cb) {
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
       results.forEach((result) => {
-        if(result.threatAssessScore){
+        if (result.threatAssessScore) {
           result.threatAssessScorePercentage = (result.threatAssessScore / 1000) * 100;
-        }else{
+        } else {
           result.threatAssessScorePercentage = 0;
         }
       });
@@ -249,7 +249,7 @@ function onMessage(payload, options, cb) {
             Logger.error({ err, payload }, 'Error Setting Rating');
             cb(err);
           } else {
-            Logger.debug('Returning SET_RATING');
+            Logger.debug({ result: result }, 'Returning SET_RATING');
             cb(null, result);
           }
         }
@@ -266,7 +266,7 @@ function onMessage(payload, options, cb) {
             Logger.error({ err, payload }, 'Error Setting Rating');
             cb(err);
           } else {
-            Logger.debug('Returning SET_RATING');
+            Logger.debug({ result: result }, 'Returning SET_CONFIDENCE');
             cb(null, result);
           }
         }
@@ -282,7 +282,7 @@ function onMessage(payload, options, cb) {
             Logger.error({ err, payload }, 'Error Reporting False Positive');
             cb(err);
           } else {
-            Logger.debug('Returning REPORT_FALSE_POSITIVE');
+            Logger.debug({ result: result }, 'Returning REPORT_FALSE_POSITIVE');
             cb(null, result);
           }
         }

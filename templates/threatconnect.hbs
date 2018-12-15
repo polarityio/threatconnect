@@ -85,10 +85,13 @@
         </div>
         <div>
             <span class="p-key">False Positive Last Reported: </span>
-            <span class="p-value"> {{moment-format orgData.falsePositiveLastReported 'MM/DD/YYYY' timeZone=timezone}}</span>
+            <span class="p-value"> {{moment-format orgData.falsePositiveLastReported 'MM/DD/YYYY'}}</span>
         </div>
         <div>
             <button class="btn btn-secondary btn-sm report-false-positive-btn" {{action "reportFalsePositive" orgData orgDataIndex}}>Report False Positive</button>
+        </div>
+        <div class="{{if showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}">
+            <span class="p-footnote">False positive already reported today</span>
         </div>
         <div>
             <span class="p-title">{{fa-icon "tags" fixedWidth=true}} Tags</span>
@@ -118,12 +121,8 @@
         <div class="input-group input-group-sm">
             {{input type="text" placeholder="Add Tag" action=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
             <div class="input-group-append">
-                <button class="btn btn-secondary btn-add-tag" type="button" {{action "addTag" orgData orgDataIndex}}>Add Tag</button>
+                <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (eq newTagValue.length 0) true false}} {{action "addTag" orgData orgDataIndex}}>Add Tag</button>
             </div>
-        </div>
-
-        <div class="message-container">
-            {{actionMessage}}
         </div>
     {{/each}}
 {{/if}}

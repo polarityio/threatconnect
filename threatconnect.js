@@ -194,6 +194,22 @@ class ThreatConnect {
     }
   }
 
+  /**
+   * This method is used to encode the URI path which is required by TC for authentication.  The URI Path
+   * must match how the request library encodes the URL or authentication will fail.  The built-in encodeURIComponent
+   * does not encode the following characters `!'()*` which prevents authentication from working.
+   *
+   * See https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/encodeURIComponent
+   * @param str
+   * @returns {string}
+   * @private
+   */
+  _fixedEncodeURIComponent(str) {
+    return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+      return '%' + c.charCodeAt(0).toString(16);
+    });
+  }
+
   reportFalsePositive(indicatorTypePlural, indicatorValue, owner, cb) {
     const self = this;
 
@@ -204,12 +220,16 @@ class ThreatConnect {
       cb = owner;
     }
 
-    let urlPath = `${this.url.path}v2/indicators/${encodeURIComponent(indicatorTypePlural)}/${encodeURIComponent(
+    const urlPath = `${this.url.path}v2/indicators/${indicatorTypePlural}/${this._fixedEncodeURIComponent(
+      indicatorValue
+    )}/falsePositive${qs}`;
+
+    const uri = `${this.url.href}v2/indicators/${indicatorTypePlural}/${this._fixedEncodeURIComponent(
       indicatorValue
     )}/falsePositive${qs}`;
 
     let requestOptions = {
-      uri: `${this.url.href}v2/indicators/${indicatorTypePlural}/${indicatorValue}/falsePositive${qs}`,
+      uri: uri,
       method: 'POST',
       headers: this._getHeaders(urlPath, 'POST'),
       json: true
@@ -242,12 +262,16 @@ class ThreatConnect {
       cb = owner;
     }
 
-    let urlPath = `${this.url.path}v2/indicators/${encodeURIComponent(indicatorTypePlural)}/${encodeURIComponent(
+    const urlPath = `${this.url.path}v2/indicators/${indicatorTypePlural}/${this._fixedEncodeURIComponent(
       indicatorValue
-    )}/tags/${encodeURIComponent(tag)}${qs}`;
+    )}/tags/${this._fixedEncodeURIComponent(tag)}${qs}`;
+
+    const uri = `${this.url.href}v2/indicators/${indicatorTypePlural}/${this._fixedEncodeURIComponent(
+      indicatorValue
+    )}/tags/${this._fixedEncodeURIComponent(tag)}${qs}`;
 
     let requestOptions = {
-      uri: `${this.url.href}v2/indicators/${indicatorTypePlural}/${indicatorValue}/tags/${tag}${qs}`,
+      uri: uri,
       method: 'DELETE',
       headers: this._getHeaders(urlPath, 'DELETE'),
       json: true
@@ -280,12 +304,16 @@ class ThreatConnect {
       cb = owner;
     }
 
-    let urlPath = `${this.url.path}v2/indicators/${encodeURIComponent(indicatorTypePlural)}/${encodeURIComponent(
+    const urlPath = `${this.url.path}v2/indicators/${indicatorTypePlural}/${this._fixedEncodeURIComponent(
       indicatorValue
-    )}/tags/${encodeURIComponent(tag)}${qs}`;
+    )}/tags/${this._fixedEncodeURIComponent(tag)}${qs}`;
+
+    const uri = `${this.url.href}v2/indicators/${indicatorTypePlural}/${this._fixedEncodeURIComponent(
+      indicatorValue
+    )}/tags/${this._fixedEncodeURIComponent(tag)}${qs}`;
 
     let requestOptions = {
-      uri: `${this.url.href}v2/indicators/${indicatorTypePlural}/${indicatorValue}/tags/${tag}${qs}`,
+      uri: uri,
       method: 'POST',
       headers: this._getHeaders(urlPath, 'POST'),
       json: true
@@ -485,7 +513,12 @@ class ThreatConnect {
   }
 
   _isSuccess(response) {
-    if (response.statusCode === 200 && response.body && response.body.status && response.body.status === 'Success') {
+    if (
+      (response.statusCode === 200 || response.statusCode === 201) &&
+      response.body &&
+      response.body.status &&
+      response.body.status === 'Success'
+    ) {
       return true;
     }
     return false;

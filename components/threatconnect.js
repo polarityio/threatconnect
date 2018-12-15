@@ -2,12 +2,13 @@
 
 polarity.export = PolarityComponent.extend({
   newTagValue: '',
+  showFalsePositiveAlreadyReported: false,
   timezone: Ember.computed('Intl', function() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }),
   _flashError: function(msg) {
     this.get('flashMessages').add({
-      message: "ThreatConnect: " + msg,
+      message: 'ThreatConnect: ' + msg,
       type: 'unv-danger',
       timeout: 3000
     });
@@ -31,7 +32,6 @@ polarity.export = PolarityComponent.extend({
       this.sendIntegrationMessage(payload)
         .then(
           function(result) {
-            self.set('actionMessage', 'Set confidence to : ' + orgData.confidence);
             self.set('block.data.details.' + orgDataIndex + '.confidenceHuman', result.confidenceHuman);
           },
           function(err) {
@@ -135,7 +135,11 @@ polarity.export = PolarityComponent.extend({
       this.sendIntegrationMessage(payload)
         .then(
           function(result) {
-            self.set('actionMessage', 'Marked as False Positive');
+            if (self.get('block.data.details.' + orgDataIndex + '.falsePositiveCount') === result.count) {
+              self.set('showFalsePositiveAlreadyReported', true);
+            } else {
+              self.set('showFalsePositiveAlreadyReported', false);
+            }
             self.set('block.data.details.' + orgDataIndex + '.falsePositiveLastReported', result.lastReported);
             self.set('block.data.details.' + orgDataIndex + '.falsePositiveCount', result.count);
           },
