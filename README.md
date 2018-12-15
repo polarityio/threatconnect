@@ -8,16 +8,16 @@ https://threatconnect.com/
 
 The Polarity ThreatConnect integration allows Polarity to search for address, file, host, and email indicators in ThreatConnect.
 
-> Important: When installing this integration the installation directory cannot be called `threatconnect`.  See Installation Instructions for more info.  
+> Important: When installing this integration the installation directory cannot be called `threatconnect`.  See Installation Instructions for more info.
 
 
-| ![image](https://user-images.githubusercontent.com/306319/29619486-3e8e34a4-87e9-11e7-8536-d183654821a1.png) |
+| ![image](https://user-images.githubusercontent.com/306319/50038372-acb97480-ffec-11e8-8505-df920f250447.png) |
 |---|
 |*Indicator Recognition*|
 
 ## Installation Instructions
 
-When installing this integration please ensure the name of the directory within your `integrations` directory is not `threatconnect`.  This is to prevent a collision with the legacy client-side ThreatConnect integration. 
+When installing this integration please ensure the name of the directory within your `integrations` directory is not `threatconnect`.  This is to prevent a collision with the legacy client-side ThreatConnect integration.
 
 As an example you could place this integration into the following directory on a default Polarity Server installation:
 
