@@ -103,13 +103,11 @@ function _lookupEntity(entityObj, organizations, options, cb) {
           return;
         }
 
-        Logger.debug({ data }, 'Tag Information');
         if (data) {
+          Logger.debug({ data }, 'Tag Information');
           _getSummaryTags(data).forEach(function(tag) {
             orgResults.data.summary.push(tag);
           });
-
-          // data.webLink = _formatWebLink(data.webLink);
 
           orgResults.data.details.push(data);
         }
@@ -197,7 +195,8 @@ function _lookupOrg(entityObj, org, options, cb) {
 }
 
 function onDetails(lookupObject, options, cb) {
-  Logger.debug({ lookupObject }, 'onDetails Input');
+  Logger.debug({ lookupObject, options }, 'onDetails Input');
+
   const details = lookupObject.data.details;
   const tasks = [];
 
@@ -205,14 +204,31 @@ function onDetails(lookupObject, options, cb) {
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
 
-  details.forEach((org) => {
-    tasks.push(function(done) {
-      tc.getIndicator(org.meta.indicatorType, org.meta.indicatorValue, org.owner, done);
-    });
-  });
+  for (let i = 0; i < details.length; i++) {
+    let org = details[i];
+    if (org.meta && org.owner && org.owner.name) {
+      tasks.push(function(done) {
+        tc.getIndicator(org.meta.indicatorType, org.meta.indicatorValue, org.owner.name, done);
+      });
+    } else {
+      Logger.error(
+        { org: org },
+        'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+      );
+      return cb({
+        debug: {
+          lookupObject: lookupObject,
+          msg:
+            'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+        },
+        detail: 'Malformed lookupObject received in onDetails hook. Object is missing `meta` or `owner` properties.'
+      });
+    }
+  }
 
   async.parallel(tasks, (err, results) => {
     if (err) {
+      Logger.error({ err: err }, 'Error in onDetails lookup');
       cb(err);
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
@@ -348,7 +364,7 @@ function _getSummaryTags(data) {
   let summaryTags = [];
 
   if (data.owner && data.owner.name) {
-    summaryTags.push('<i class="bts bt-building integration-text-bold-color"></i> ' + data.owner.name);
+    summaryTags.push(data.owner.name);
   }
 
   if (Array.isArray(data.tags)) {
