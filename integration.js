@@ -233,6 +233,7 @@ function onDetails(lookupObject, options, cb) {
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
       results.forEach((result) => {
+        _modifyWebLinksWithPort(result); //this method mutates result
         if (result.threatAssessScore) {
           result.threatAssessScorePercentage = (result.threatAssessScore / 1000) * 100;
         } else {
@@ -345,18 +346,36 @@ function onMessage(payload, options, cb) {
   }
 }
 
-function _formatWebLink(weblink) {
-  let weblinkAsUrl = url.parse(weblink);
-
+/**
+ * Mutates the provided `result` object by modifying the webLink properties to include a port.  This is required
+ * because the TC REST API does not return proper webLinks when you are running an on-prem TC instance on a port that
+ * is not 443.
+ *
+ * @param result
+ * @private
+ */
+function _modifyWebLinksWithPort(result) {
   if (config.settings.threatConnectPort !== null) {
-    weblinkAsUrl.port = config.settings.threatConnectPort;
-    // We need to delete the host so that url.format() will recreate
-    // it and include the threatConnectPort
-    delete weblinkAsUrl.host;
+    const port = config.settings.threatConnectPort;
+
+    if (typeof result.webLink === 'string') {
+      result.webLink = _addPortToLink(result.webLink, port);
+    }
+
+    if (Array.isArray(result.tag)) {
+      result.tag.forEach((tag) => {
+        if (typeof tag.webLink === 'string') {
+          tag.webLink = _addPortToLink(tag.webLink, port);
+        }
+      });
+    }
   }
-
+}
+function _addPortToLink(weblinkToTransform, port) {
+  let weblinkAsUrl = url.parse(weblinkToTransform);
+  weblinkAsUrl.port = port;
+  delete weblinkAsUrl.host;
   //Logger.info({url: url.format(weblinkAsUrl), port: weblinkAsUrl.port}, 'WebLink');
-
   return url.format(weblinkAsUrl);
 }
 
