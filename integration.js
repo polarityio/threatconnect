@@ -103,13 +103,11 @@ function _lookupEntity(entityObj, organizations, options, cb) {
           return;
         }
 
-        Logger.debug({ data }, 'Tag Information');
         if (data) {
+          Logger.debug({ data }, 'Tag Information');
           _getSummaryTags(data).forEach(function(tag) {
             orgResults.data.summary.push(tag);
           });
-
-          // data.webLink = _formatWebLink(data.webLink);
 
           orgResults.data.details.push(data);
         }
@@ -197,7 +195,8 @@ function _lookupOrg(entityObj, org, options, cb) {
 }
 
 function onDetails(lookupObject, options, cb) {
-  Logger.debug({ lookupObject }, 'onDetails Input');
+  Logger.debug({ lookupObject, options }, 'onDetails Input');
+
   const details = lookupObject.data.details;
   const tasks = [];
 
@@ -205,18 +204,36 @@ function onDetails(lookupObject, options, cb) {
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
 
-  details.forEach((org) => {
-    tasks.push(function(done) {
-      tc.getIndicator(org.meta.indicatorType, org.meta.indicatorValue, org.owner, done);
-    });
-  });
+  for (let i = 0; i < details.length; i++) {
+    let org = details[i];
+    if (org.meta && org.owner && org.owner.name) {
+      tasks.push(function(done) {
+        tc.getIndicator(org.meta.indicatorType, org.meta.indicatorValue, org.owner.name, done);
+      });
+    } else {
+      Logger.error(
+        { org: org },
+        'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+      );
+      return cb({
+        debug: {
+          lookupObject: lookupObject,
+          msg:
+            'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+        },
+        detail: 'Malformed lookupObject received in onDetails hook. Object is missing `meta` or `owner` properties.'
+      });
+    }
+  }
 
   async.parallel(tasks, (err, results) => {
     if (err) {
+      Logger.error({ err: err }, 'Error in onDetails lookup');
       cb(err);
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
       results.forEach((result) => {
+        _modifyWebLinksWithPort(result); //this method mutates result
         if (result.threatAssessScore) {
           result.threatAssessScorePercentage = (result.threatAssessScore / 1000) * 100;
         } else {
@@ -329,18 +346,36 @@ function onMessage(payload, options, cb) {
   }
 }
 
-function _formatWebLink(weblink) {
-  let weblinkAsUrl = url.parse(weblink);
-
+/**
+ * Mutates the provided `result` object by modifying the webLink properties to include a port.  This is required
+ * because the TC REST API does not return proper webLinks when you are running an on-prem TC instance on a port that
+ * is not 443.
+ *
+ * @param result
+ * @private
+ */
+function _modifyWebLinksWithPort(result) {
   if (config.settings.threatConnectPort !== null) {
-    weblinkAsUrl.port = config.settings.threatConnectPort;
-    // We need to delete the host so that url.format() will recreate
-    // it and include the threatConnectPort
-    delete weblinkAsUrl.host;
+    const port = config.settings.threatConnectPort;
+
+    if (typeof result.webLink === 'string') {
+      result.webLink = _addPortToLink(result.webLink, port);
+    }
+
+    if (Array.isArray(result.tag)) {
+      result.tag.forEach((tag) => {
+        if (typeof tag.webLink === 'string') {
+          tag.webLink = _addPortToLink(tag.webLink, port);
+        }
+      });
+    }
   }
-
+}
+function _addPortToLink(weblinkToTransform, port) {
+  let weblinkAsUrl = url.parse(weblinkToTransform);
+  weblinkAsUrl.port = port;
+  delete weblinkAsUrl.host;
   //Logger.info({url: url.format(weblinkAsUrl), port: weblinkAsUrl.port}, 'WebLink');
-
   return url.format(weblinkAsUrl);
 }
 
@@ -348,7 +383,7 @@ function _getSummaryTags(data) {
   let summaryTags = [];
 
   if (data.owner && data.owner.name) {
-    summaryTags.push('<i class="bts bt-building integration-text-bold-color"></i> ' + data.owner.name);
+    summaryTags.push(_getOwnerIcon() + data.owner.name);
   }
 
   if (Array.isArray(data.tags)) {
@@ -362,6 +397,10 @@ function _getSummaryTags(data) {
     }
   }
   return summaryTags;
+}
+
+function _getOwnerIcon() {
+  return `<svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" data-icon="building" data-prefix="fas" id="ember1223" class="svg-inline--fa fa-building fa-w-14  ember-view"><path fill="currentColor" d="M436 480h-20V24c0-13.255-10.745-24-24-24H56C42.745 0 32 10.745 32 24v456H12c-6.627 0-12 5.373-12 12v20h448v-20c0-6.627-5.373-12-12-12zM128 76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76zm0 96c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40zm52 148h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12zm76 160h-64v-84c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v84zm64-172c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40z"></path></svg> `;
 }
 
 module.exports = {

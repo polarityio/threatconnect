@@ -10,10 +10,7 @@ The Polarity ThreatConnect integration allows Polarity to search for address, fi
 
 > Important: When installing this integration the installation directory cannot be called `threatconnect`.  See Installation Instructions for more info.
 
-
-| ![image](https://user-images.githubusercontent.com/306319/50038372-acb97480-ffec-11e8-8505-df920f250447.png) |
-|---|
-|*Indicator Recognition*|
+![tc_3 0_demo](https://user-images.githubusercontent.com/306319/50782521-41269800-1276-11e9-9203-f18fa8dcef67.gif)
 
 ## Installation Instructions
 
