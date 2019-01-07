@@ -6,7 +6,7 @@ ThreatConnect is a security operations and analytics platform designed to allow 
 
 https://threatconnect.com/
 
-The Polarity ThreatConnect integration allows Polarity to search for address, file, host, and email indicators in ThreatConnect.
+The Polarity ThreatConnect integration allows Polarity to search for address, file, host, and email indicators in ThreatConnect.  The Polarity-ThreatConnect integrations includes interactive elements that allow Polarity user's to add and remove tags, modify the severity and confidence level of an indicator, and report false positives directly from the Polarity Overlay Window.
 
 > Important: When installing this integration the installation directory cannot be called `threatconnect`.  See Installation Instructions for more info.
 
