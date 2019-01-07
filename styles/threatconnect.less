@@ -1,40 +1,81 @@
-@threatconnect-label-color: rgb(219, 219, 141); //rgb(255,187,120);// #b2df8a;
-@threatconnect-text-color: #333;
-
-.notification-body-details-container {
-  min-height: 86px;
-  border-bottom: 1px solid rgba(0,0,0,.1);
-  padding-bottom: 5px;
-
-  b.muted, i.muted {
-    color: #888;
+a.tc-link-tag {
+  .threatconnect-summary-tag {
+    background-color: #ccc;
+    padding: 1px 5px 2px;
+    border-radius: 16px;
+    color: #07213a;
+    margin: 0 2px 5px 0;
+    display: inline-block;
+    font-weight: normal;
   }
 
-  a.tc-link-tag {
-    color: darken(@threatconnect-label-color, 40%);
-
-    .threatconnect-summary-tag {
-      margin-bottom: 2px;
-    }
-
-    .threatconnect-summary-tag:hover {
-      text-decoration: none;
-      background-color: @threatconnect-label-color;
-    }
+  .tag-close-icon{
+    font-size: 10px;
+    color: #777;
   }
 
-  a.tc-link-tag:hover {
-    text-decoration: none;
+  .tag-close-icon:hover{
+    color: red;
   }
-
-  .tag-container {
-    padding: 5px 0;
-    position: relative;
-  }
-
 }
 
+.elementToFadeIn {
+  -webkit-animation: fadeinout 1s linear forwards;
+  animation: fadeinout 1s linear forwards;
+  opacity: 0;
+  padding-top: 3px;
+}
 
+@-webkit-keyframes fadeinout {
+  100% { opacity: 1; }
+}
 
+@keyframes fadeinout {
+  100% { opacity: 1; }
+}
 
+.report-false-positive-btn{
+  height: 25px;
+  font-size: 0.775rem;
+  margin-top: 5px;
+}
 
+.add-tag-input{
+  cursor: text;
+  height: 30px;
+}
+
+.threat-assess-bar{
+  height: 6px;
+  margin: 3px 0;
+
+  .progress-bar{
+    background-color: rgb(242, 103, 36);
+  }
+}
+
+.btn-add-tag{
+  height: 30px;
+  font-size: 0.775rem !important;
+}
+
+a.tc-link-tag:hover {
+  text-decoration: none;
+}
+
+.tag-container {
+  padding: 5px 0;
+  position: relative;
+}
+
+.rating-icon {
+  font-weight: normal;
+}
+
+.rating-icon-empty {
+  color: #9a9a9a;
+}
+
+.external-icon {
+  font-size: 8px;
+}
