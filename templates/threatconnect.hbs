@@ -119,7 +119,7 @@
         {{/if}}
 
         <div class="input-group input-group-sm">
-            {{input type="text" placeholder="Add Tag" action=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
+            {{input type="text" placeholder="Add Tag" enter=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
             <div class="input-group-append">
                 <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (eq newTagValue.length 0) true false}} {{action "addTag" orgData orgDataIndex}}>Add Tag</button>
             </div>
