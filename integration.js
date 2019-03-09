@@ -206,7 +206,7 @@ function onDetails(lookupObject, options, cb) {
 
   for (let i = 0; i < details.length; i++) {
     let org = details[i];
-    if (org.meta && org.owner && org.owner.name) {
+    if (org.meta && org.owner && typeof org.owner.name === 'string') {
       tasks.push(function(done) {
         tc.getIndicator(org.meta.indicatorType, org.meta.indicatorValue, org.owner.name, done);
       });
