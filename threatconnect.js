@@ -5,7 +5,11 @@ const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
   hosts: 'host',
-  addresses: 'address',
+  addresses: 'address'
+};
+
+const RESOURCE_TYPES = {
+  tags: 'tag',
   groups: 'group',
   attributes: 'attribute'
 };
@@ -192,43 +196,22 @@ class ThreatConnect {
     this.getIndicator('addresses', indicatorValue, owner, cb);
   }
 
-  getGroups(indicatorType, indicatorValue, owner, cb) {
-    if (arguments.length === 2) {
-      cb = owner;
-      owner = null;
-    }
+  getTags(indicatorType, indicatorValue, owner, cb) {
+    this._getResourceOfType('tags', indicatorType, indicatorValue, owner, cb);
+  }
 
-    this._getResourceOfType('groups', indicatorType, indicatorValue, owner, (err, groups, resultCount) => {
-      if (err) {
-        return cb(err);
-      }
-      cb(null, groups, resultCount);
-    });
+  getGroups(indicatorType, indicatorValue, owner, cb) {
+    this._getResourceOfType('groups', indicatorType, indicatorValue, owner, cb);
   }
 
   getAttributes(indicatorType, indicatorValue, owner, cb) {
-    if (arguments.length === 2) {
-      cb = owner;
-      owner = null;
-    }
-
-    this._getResourceOfType('attributes', indicatorType, indicatorValue, owner, (err, attributes, resultCount) => {
-      if (err) {
-        return cb(err);
-      }
-      cb(null, attributes, resultCount);
-    });
+    this._getResourceOfType('attributes', indicatorType, indicatorValue, owner, cb);
   }
 
   _getResourceOfType(resourceTypePlural, indicatorType, indicatorValue, owner, cb) {
     let self = this;
-
-    if (arguments.length === 2) {
-      cb = owner;
-      owner = null;
-    }
-
     let qs = '';
+
     if (typeof owner === 'string' && owner.length > 0) {
       qs = '?' + querystring.stringify({ owner: owner });
     }
@@ -256,7 +239,7 @@ class ThreatConnect {
           return cb(err, data);
         }
 
-        const resourceTypeSingular = INDICATOR_TYPES[resourceTypePlural];
+        const resourceTypeSingular = RESOURCE_TYPES[resourceTypePlural];
         if (typeof resourceTypeSingular === 'undefined') {
           return cb({
             detail: `The provided resource type '${resourceTypePlural}' is invalid`
@@ -264,9 +247,29 @@ class ThreatConnect {
         }
 
         if (Array.isArray(data[resourceTypeSingular])) {
-          cb(null, data[resourceTypeSingular], data.resultCount);
+          let result = {
+            meta: {
+              indicatorType: indicatorType,
+              indicatorValue: indicatorValue
+            },
+            owner: {
+              name: owner
+            },
+            resultCount: data[resourceTypeSingular].resultCount
+          };
+
+          result[resourceTypePlural] = data[resourceTypeSingular];
+
+          cb(null, result);
         } else {
-          cb(null, [], 0);
+          cb({
+            body: body,
+            indicator: indicatorValue,
+            indicatorType: indicatorType,
+            resourceType: resourceTypePlural,
+            owner: owner,
+            detail: `Unexpected response payload:  Expected [body.data.${resourceTypeSingular}] to be an array`
+          });
         }
       });
     });
