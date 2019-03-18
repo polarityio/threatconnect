@@ -5,7 +5,9 @@ const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
   hosts: 'host',
-  addresses: 'address'
+  addresses: 'address',
+  groups: 'group',
+  attributes: 'attribute'
 };
 
 class ThreatConnect {
@@ -79,12 +81,16 @@ class ThreatConnect {
     }
 
     let uri = this._getResourcePath(
-      'indicators/' + encodeURIComponent(indicatorType) + '/' + encodeURIComponent(indicatorValue) + qs
+      'indicators/' +
+        this._fixedEncodeURIComponent(indicatorType) +
+        '/' +
+        this._fixedEncodeURIComponent(indicatorValue) +
+        qs
     );
 
-    let urlPath = `${this.url.path}v2/indicators/${encodeURIComponent(indicatorType)}/${encodeURIComponent(
-      indicatorValue
-    )}${qs}`;
+    let urlPath = `${this.url.path}v2/indicators/${this._fixedEncodeURIComponent(
+      indicatorType
+    )}/${this._fixedEncodeURIComponent(indicatorValue)}${qs}`;
 
     const body = {};
     body[fieldName] = fieldValue;
@@ -184,6 +190,86 @@ class ThreatConnect {
     }
 
     this.getIndicator('addresses', indicatorValue, owner, cb);
+  }
+
+  getGroups(indicatorType, indicatorValue, owner, cb) {
+    if (arguments.length === 2) {
+      cb = owner;
+      owner = null;
+    }
+
+    this._getResourceOfType('groups', indicatorType, indicatorValue, owner, (err, groups, resultCount) => {
+      if (err) {
+        return cb(err);
+      }
+      cb(null, groups, resultCount);
+    });
+  }
+
+  getAttributes(indicatorType, indicatorValue, owner, cb) {
+    if (arguments.length === 2) {
+      cb = owner;
+      owner = null;
+    }
+
+    this._getResourceOfType('attributes', indicatorType, indicatorValue, owner, (err, attributes, resultCount) => {
+      if (err) {
+        return cb(err);
+      }
+      cb(null, attributes, resultCount);
+    });
+  }
+
+  _getResourceOfType(resourceTypePlural, indicatorType, indicatorValue, owner, cb) {
+    let self = this;
+
+    if (arguments.length === 2) {
+      cb = owner;
+      owner = null;
+    }
+
+    let qs = '';
+    if (typeof owner === 'string' && owner.length > 0) {
+      qs = '?' + querystring.stringify({ owner: owner });
+    }
+
+    let uri = this._getResourcePath(`indicators/
+      ${this._fixedEncodeURIComponent(indicatorType)}/
+      ${this._fixedEncodeURIComponent(indicatorValue)}/
+      ${resourceTypePlural}${qs}`);
+
+    let urlPath = `${this.url.path}v2/indicators/
+      ${this._fixedEncodeURIComponent(indicatorType)}/
+      ${this._fixedEncodeURIComponent(indicatorValue)}/
+      ${resourceTypePlural}${qs}`;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, (err, response, body) => {
+      self._formatResponse(err, response, body, function(err, data) {
+        if (err || !data) {
+          return cb(err, data);
+        }
+
+        const resourceTypeSingular = INDICATOR_TYPES[resourceTypePlural];
+        if (typeof resourceTypeSingular === 'undefined') {
+          return cb({
+            detail: `The provided resource type '${resourceTypePlural}' is invalid`
+          });
+        }
+
+        if (Array.isArray(data[resourceTypeSingular])) {
+          cb(null, data[resourceTypeSingular], data.resultCount);
+        } else {
+          cb(null, [], 0);
+        }
+      });
+    });
   }
 
   _isValidIndicatorType(indicatorType) {
@@ -460,15 +546,20 @@ class ThreatConnect {
     }
 
     let uri = this._getResourcePath(
-      'indicators/' + encodeURIComponent(indicatorType) + '/' + encodeURIComponent(indicatorValue) + '/tags' + qs
+      'indicators/' +
+        this._fixedEncodeURIComponent(indicatorType) +
+        '/' +
+        this._fixedEncodeURIComponent(indicatorValue) +
+        '/tags' +
+        qs
     );
 
     let urlPath =
       this.url.path +
       'v2/indicators/' +
-      encodeURIComponent(indicatorType) +
+      this._fixedEncodeURIComponent(indicatorType) +
       '/' +
-      encodeURIComponent(indicatorValue) +
+      this._fixedEncodeURIComponent(indicatorValue) +
       '/tags' +
       qs;
 
@@ -491,15 +582,19 @@ class ThreatConnect {
     }
 
     let uri = this._getResourcePath(
-      'indicators/' + encodeURIComponent(indicatorType) + '/' + encodeURIComponent(indicatorValue) + qs
+      'indicators/' +
+        this._fixedEncodeURIComponent(indicatorType) +
+        '/' +
+        this._fixedEncodeURIComponent(indicatorValue) +
+        qs
     );
 
     let urlPath =
       this.url.path +
       'v2/indicators/' +
-      encodeURIComponent(indicatorType) +
+      this._fixedEncodeURIComponent(indicatorType) +
       '/' +
-      encodeURIComponent(indicatorValue) +
+      this._fixedEncodeURIComponent(indicatorValue) +
       qs;
 
     let requestOptions = {
@@ -569,7 +664,7 @@ class ThreatConnect {
   _getAuthHeader(urlPath, httpMethod, timestamp) {
     let signature = urlPath + ':' + httpMethod + ':' + timestamp;
 
-    this.log.debug({ signature: signature }, 'Auth Signature');
+    this.log.debug({ urlPath, httpMethod, timestamp, signature }, 'Auth Signature');
 
     let hmacSignatureInBase64 = crypto
       .createHmac('sha256', this.secretKey)
