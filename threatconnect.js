@@ -326,7 +326,7 @@ class ThreatConnect {
 
     this.request(requestOptions, (err, response, body) => {
       if (err) {
-        return cb(err);
+        return cb({detail: 'HTTP Request error while reporting false positive', err});
       }
 
       if (self._isSuccess(response)) {
@@ -368,7 +368,7 @@ class ThreatConnect {
 
     this.request(requestOptions, (err, response) => {
       if (err) {
-        return cb(err);
+        return cb({detail: 'HTTP request error while deleting tag', err});
       }
 
       if (self._isSuccess(response)) {
@@ -410,7 +410,7 @@ class ThreatConnect {
 
     this.request(requestOptions, (err, response) => {
       if (err) {
-        return cb(err);
+        return cb({ detail: 'HTTP request error while adding tag', err });
       }
 
       if (self._isSuccess(response)) {
@@ -634,7 +634,11 @@ class ThreatConnect {
     const self = this;
 
     if (err) {
-      cb(err);
+      cb({
+        detail: 'HTTP Request Error',
+        body: body ? body : '[body is undefined]',
+        err
+      });
       return;
     }
 
