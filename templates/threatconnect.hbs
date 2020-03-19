@@ -1,5 +1,5 @@
 {{#if block.detailsLoaded}}
-    {{#each block.data.details as |orgData orgDataIndex|}}
+    {{#each results as |orgData orgDataIndex|}}
         {{#if (gt orgDataIndex 0)}}
             <hr>
         {{/if}}
@@ -53,9 +53,9 @@
         <div>
             <span class="p-key">Rating: </span>
             <span>
-                {{fa-icon "ban" click=(action "setRating" orgData orgDataIndex 0)}}
+                {{fa-icon "ban" click=(action "setRating" orgData orgDataIndex 0) class="rating-icon"}}
                 {{#each (repeat 5) as |empty ratingIndex|}}
-                    {{fa-icon "skull" class=(if (lt ratingIndex orgData.rating) "rating-icon" "rating-icon-empty")
+                    {{fa-icon "skull" class=(if (lt ratingIndex orgData.rating) "rating-icon rating-icon-filled" "rating-icon rating-icon-empty")
                               click=(action "setRating" orgData orgDataIndex (inc ratingIndex))}}
                 {{/each}}
                 {{orgData.ratingHuman}}
@@ -94,11 +94,11 @@
             <span class="p-footnote">False positive already reported today</span>
         </div>
         <div>
-            <span class="p-title">{{fa-icon "tags" fixedWidth=true}} Tags</span>
+          <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}{{fa-icon "tags" fixedWidth=true}}{{/if}} Tags</span>
         </div>
-        {{#if (eq orgData.tags.length 0)}}
-            <div>
-                <span class="p-footnote">No Tags</span>
+        {{#if (eq orgData.tag.length 0)}}
+            <div class="p-footnote mb-2 mt-2">
+                <span>No Tags</span>
             </div>
         {{else}}
             <div class="tag-container">
@@ -121,7 +121,7 @@
         <div class="input-group input-group-sm">
             {{input type="text" placeholder="Add Tag" enter=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
             <div class="input-group-append">
-                <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (eq newTagValue.length 0) true false}} {{action "addTag" orgData orgDataIndex}}>Add Tag</button>
+        <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (or orgData.__addingTag (eq newTagValue.length 0)) true false}} {{action "addTag" orgData orgDataIndex}}>{{#if orgData.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
             </div>
         </div>
     {{/each}}

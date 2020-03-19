@@ -46,6 +46,7 @@ class ThreatConnect {
         this.url.path += '/';
       }
     }
+    this.log.debug({url:this.url}, 'Parsed URL');
   }
 
   setEmailRating(indicatorValue, owner, rating, cb) {
@@ -101,7 +102,11 @@ class ThreatConnect {
 
     this.request(requestOptions, function(err, response, body) {
       self._formatResponse(err, response, body, function(err, data) {
-        cb(err, self._enrichResult(indicatorType, indicatorValue, data[INDICATOR_TYPES[indicatorType]]));
+        if (err) {
+          cb(err);
+        } else {
+          cb(null, self._enrichResult(indicatorType, indicatorValue, data[INDICATOR_TYPES[indicatorType]]));
+        }
       });
     });
   }
@@ -159,6 +164,16 @@ class ThreatConnect {
     this.getIndicator('emailAddresses', indicatorValue, owner, cb);
   }
 
+  /**
+   * Returns all owners for the given email address
+   * @param {String} indicatorValue, an email address
+   * @param owner
+   * @param cb
+   */
+  getEmailOwners(indicatorValue, owner, cb) {
+    this.getOwners('emailAddresses', indicatorValue, cb);
+  }
+
   getFile(indicatorValue, owner, cb) {
     if (arguments.length === 2) {
       cb = owner;
@@ -166,6 +181,15 @@ class ThreatConnect {
     }
 
     this.getIndicator('files', indicatorValue, owner, cb);
+  }
+
+  /**
+   * Returns all owners for the given file (hash)
+   * @param {String} indicatorValue, a file hash
+   * @param cb
+   */
+  getFileOwners(indicatorValue, cb) {
+    this.getOwners('files', indicatorValue, cb);
   }
 
   getHost(indicatorValue, owner, cb) {
@@ -177,6 +201,15 @@ class ThreatConnect {
     this.getIndicator('hosts', indicatorValue, owner, cb);
   }
 
+  /**
+   * Returns all owners for the given host (domain)
+   * @param {String} indicatorValue, a domain
+   * @param cb
+   */
+  getHostOwners(indicatorValue, cb) {
+    this.getOwners('hosts', indicatorValue, cb);
+  }
+
   getAddress(indicatorValue, owner, cb) {
     if (arguments.length === 2) {
       cb = owner;
@@ -184,6 +217,15 @@ class ThreatConnect {
     }
 
     this.getIndicator('addresses', indicatorValue, owner, cb);
+  }
+
+  /**
+   * Returns all owners for the given address (IPv4 or IPv6)
+   * @param {String} indicatorValue, IPv4 or IPv6 address
+   * @param cb
+   */
+  getAddressOwners(indicatorValue, cb) {
+    this.getOwners('addresses', indicatorValue, cb);
   }
 
   _isValidIndicatorType(indicatorType) {
@@ -277,20 +319,14 @@ class ThreatConnect {
       json: true
     };
 
-    this.request(requestOptions, (err, response) => {
-      if (err) {
-        return cb(err);
-      }
-
-      if (self._isSuccess(response)) {
-        cb(null);
-      } else {
-        cb({
-          statusCode: response.statusCode,
-          response: response,
-          detail: 'There was an unexpected error deleting the tag'
-        });
-      }
+    this.request(requestOptions, (err, response, body) => {
+      self._formatResponse(err, response, body, (err) => {
+        if (err) {
+          cb(err);
+        } else {
+          cb(null);
+        }
+      });
     });
   }
 
@@ -319,20 +355,35 @@ class ThreatConnect {
       json: true
     };
 
-    this.request(requestOptions, (err, response) => {
-      if (err) {
-        return cb(err);
-      }
+    this.request(requestOptions, (err, response, body) => {
+      self._formatResponse(err, response, body, (err) => {
+        if (err) {
+          cb(err);
+        } else {
+          cb(null, {
+            link: `${self.url.protocol}//${self.url.host}/auth/tags/tag.xhtml?owner=${owner}&tag=${tag}`
+          });
+        }
+      });
+    });
+  }
 
-      if (self._isSuccess(response)) {
-        cb(null);
-      } else {
-        cb({
-          statusCode: response.statusCode,
-          response: response,
-          detail: `There was an unexpected error adding the tag [${tag}]`
+  getOwners(indicatorTypePlural, indicatorValue, cb) {
+    let self = this;
+    this._getOwners(indicatorTypePlural, indicatorValue, (err, response, body) => {
+      this._formatResponse(err, response, body, (formatErr, ownerData) => {
+        if (formatErr || !ownerData) {
+          return cb(formatErr);
+        }
+
+        cb(null, {
+          meta: {
+            indicatorType: indicatorTypePlural,
+            indicatorValue: indicatorValue
+          },
+          owners: ownerData.owner
         });
-      }
+      });
     });
   }
 
@@ -375,6 +426,7 @@ class ThreatConnect {
         }
 
         let result = data[indicatorTypeSingular];
+        self.log.trace({result}, 'getIndicator result');
         result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
         cb(null, result);
       });
@@ -397,6 +449,10 @@ class ThreatConnect {
       result.confidence = 0;
     }
     result.confidenceHuman = this._getConfidenceHuman(result.confidence);
+
+    if(!Array.isArray(result.tag)){
+      result.tag = [];
+    }
 
     return result;
   }
@@ -442,6 +498,25 @@ class ThreatConnect {
       default:
         return 'Unknown';
     }
+  }
+
+  _getOwners(indicatorType, indicatorValue, cb) {
+    let uri = this._getResourcePath(
+      `indicators/${encodeURIComponent(indicatorType)}/${encodeURIComponent(indicatorValue)}/owners`
+    );
+
+    let urlPath = `${this.url.path}v2/indicators/${encodeURIComponent(indicatorType)}/${encodeURIComponent(
+      indicatorValue
+    )}/owners`;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, cb);
   }
 
   /**
@@ -534,6 +609,8 @@ class ThreatConnect {
 
   _formatResponse(err, response, body, cb) {
     const self = this;
+
+    self.log.trace({ err, status: response ? response.statusCode : 'NA', body }, '_formatResponse');
 
     if (err) {
       cb(err);

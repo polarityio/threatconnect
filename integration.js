@@ -37,100 +37,139 @@ function startup(logger) {
     defaults.proxy = config.request.proxy;
   }
 
+  if (typeof config.request.rejectUnauthorized === 'boolean') {
+    requestOptions.rejectUnauthorized = config.request.rejectUnauthorized;
+  }
+
   tc = new ThreatConnect(request.defaults(defaults), Logger);
 }
 
 function doLookup(entities, options, cb) {
-  let lookupResults = [];
-
   tc.setSecretKey(options.apiKey);
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
 
   Logger.trace({ entities: entities }, 'doLookup');
 
-  let organizations = [];
+  searchAllOwners(entities, options, (err, lookupResults) => {
+    cb(err, lookupResults);
+  });
+}
 
-  if (typeof options.defaultOrganizations === 'string' && options.defaultOrganizations.trim().length > 0) {
-    let tokens = options.defaultOrganizations.split(',');
+function createSearchOrgBlacklist(options) {
+  let blacklistedOrgs = new Set();
+
+  if (typeof options.searchBlacklist === 'string' && options.searchBlacklist.trim().length > 0) {
+    let tokens = options.searchBlacklist.split(',');
     tokens.forEach((token) => {
       token = token.trim();
       if (token.length > 0) {
-        organizations.push(token);
+        blacklistedOrgs.add(token);
       }
     });
-  } else {
-    organizations.push('');
   }
 
-  Logger.debug({ organizations: organizations });
+  Logger.debug({ blacklistedOrgs }, 'Organization Search Blacklist');
+
+  return blacklistedOrgs;
+}
+
+function searchAllOwners(entities, options, cb) {
+  let lookupResults = [];
 
   async.each(
     entities,
-    function(entityObj, next) {
-      _lookupEntity(entityObj, organizations, options, function(err, entityResults) {
-        if (err) {
-          next(err);
-          return;
-        }
+    (entityObj, next) => {
+      let lookupValue = _getSanitizedEntity(entityObj);
+      if (lookupValue !== null) {
+        tc.getOwners(convertPolarityTypeToThreatConnect(entityObj.type), entityObj.value, (err, result) => {
+          if (err) {
+            return cb(err);
+          }
 
-        lookupResults.push(entityResults);
-        next(null);
-      });
+          if (result.owners.length === 0) {
+            lookupResults.push({
+              entity: entityObj,
+              data: null
+            });
+          } else {
+            let blacklistedOrgs = createSearchOrgBlacklist(options);
+            let filteredOwners = result.owners.filter((owner) => {
+              return !blacklistedOrgs.has(owner.name);
+            });
+
+            lookupResults.push({
+              entity: entityObj,
+              data: {
+                summary: _getOwnerSummaryTags(filteredOwners),
+                details: {
+                  meta: result.meta,
+                  owners: filteredOwners
+                }
+              }
+            });
+          }
+
+          next();
+        });
+      } else {
+        // We attempted to lookup an invalid entity (improperly formatted IPv6)
+        lookupResults.push({
+          entity: entityObj,
+          data: null
+        });
+
+        next();
+      }
     },
-    function(err) {
-      Logger.debug({ lookupResults }, 'Lookup Results');
+    (err) => {
       cb(err, lookupResults);
     }
   );
 }
 
-function _lookupEntity(entityObj, organizations, options, cb) {
-  let orgResults = {
-    entity: entityObj,
-    data: {
-      summary: [],
-      details: []
-    }
-  };
+function _getOwnerSummaryTags(owners) {
+  let tags = [];
 
-  async.each(
-    organizations,
-    function(org, next) {
-      _lookupOrg(entityObj, org, options, function(err, data) {
-        if (err) {
-          next(err);
-          return;
-        }
+  for (let i = 0; i < owners.length && i < MAX_SUMMARY_TAGS; i++) {
+    tags.push(`${_getOwnerIcon()} ${owners[i].name}`);
+  }
+  if (owners.length > tags.length) {
+    tags.push(`+${owners.length - tags.length}`);
+  }
 
-        if (data) {
-          Logger.debug({ data }, 'Tag Information');
-          _getSummaryTags(data).forEach(function(tag) {
-            orgResults.data.summary.push(tag);
-          });
-
-          orgResults.data.details.push(data);
-        }
-
-        next(null);
-      });
-    },
-    function(err) {
-      if (orgResults.data.details.length === 0) {
-        cb(err, { entity: entityObj, data: null });
-      } else {
-        cb(err, orgResults);
-      }
-    }
-  );
+  return tags;
 }
 
-function _lookupOrg(entityObj, org, options, cb) {
-  //Logger.info({value: entityObj.value, org:org},'Lookup');
-  //Logger.debug({options:options}, 'Lookup Options');
+/**
+ * When looking up indicators in ThreatConnect the "type" of the indicator must be provided.  This method converts
+ * the type as specified in Polarity's entity object into the appropriate ThreatConnect type.
+ * @param type
+ * @returns {string}
+ */
+function convertPolarityTypeToThreatConnect(type) {
+  switch (type) {
+    case 'IPv4':
+      return 'addresses';
+    case 'IPv6':
+      return 'addresses';
+    case 'hash':
+      return 'files';
+    case 'email':
+      return 'emailAddresses';
+    case 'domain':
+      return 'hosts';
+  }
+}
 
-  // make a copy of the value so when we modify it we aren't changing the original
-  // entityObj.  This will make caching of the entityObj value more consistent.
+/**
+ * ThreatConnect has limited support for IPv6 formats.  This method converts the value of the provided entityObj
+ * into a valid value for ThreatConnect.  If a conversion cannot be done, the method returns null.
+ * @param entityObj
+ * @returns {*}
+ * @private
+ */
+function _getSanitizedEntity(entityObj) {
   let lookupValue = entityObj.value;
 
   if (entityObj.isIPv4 || entityObj.isIPv6) {
@@ -143,55 +182,14 @@ function _lookupOrg(entityObj, org, options, cb) {
         // convert the IPv6 address into a format TC understands
         lookupValue = ipaddr.parse(lookupValue).toNormalizedString();
       } else {
-        cb('Integration Received an invalid IPv6 address [' + lookupValue + ']');
-        return;
+        // Integration Received an invalid IPv6 address
+        Logger.warn(`Unsupported IPv6 address format ignored: [${entityObj.value}]`);
+        lookupValue = null;
       }
     }
-
-    Logger.debug({ value: lookupValue, org: org }, 'IP Lookup (after IPv6 cleanup to support TC)');
-
-    tc.getAddressTags(lookupValue, org, function(err, orgData) {
-      if (err) {
-        Logger.error({ err: err }, 'Could not retrieve IP info');
-        cb(err);
-        return;
-      }
-
-      cb(null, orgData, lookupValue);
-    });
-  } else if (entityObj.isEmail) {
-    tc.getEmailTags(lookupValue, org, function(err, orgData) {
-      if (err) {
-        Logger.error({ err: err }, 'Could not retrieve email info');
-        cb(err);
-        return;
-      }
-
-      cb(null, orgData);
-    });
-  } else if (entityObj.isHash) {
-    tc.getFileTags(lookupValue, org, function(err, orgData) {
-      if (err) {
-        Logger.error({ err: err }, 'Could not retrieve hash info');
-        cb(err);
-        return;
-      }
-
-      cb(null, orgData);
-    });
-  } else if (entityObj.isDomain) {
-    tc.getHostTags(lookupValue, org, function(err, orgData) {
-      if (err) {
-        Logger.error({ err: err }, 'Could not retrieve host info');
-        cb(err);
-        return;
-      }
-
-      cb(null, orgData);
-    });
-  } else {
-    cb(null);
   }
+
+  return lookupValue;
 }
 
 function onDetails(lookupObject, options, cb) {
@@ -204,27 +202,31 @@ function onDetails(lookupObject, options, cb) {
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
 
-  for (let i = 0; i < details.length; i++) {
-    let org = details[i];
-    if (org.meta && org.owner && typeof org.owner.name === 'string') {
-      tasks.push(function(done) {
-        tc.getIndicator(org.meta.indicatorType, org.meta.indicatorValue, org.owner.name, done);
-      });
-    } else {
-      Logger.error(
-        { org: org },
-        'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
-      );
-      return cb({
-        debug: {
-          lookupObject: lookupObject,
-          msg:
-            'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
-        },
-        detail: 'Malformed lookupObject received in onDetails hook. Object is missing `meta` or `owner` properties.'
-      });
-    }
+  if (!details.meta || !Array.isArray(details.owners)) {
+    // invalid data probably due to cached entry
+    Logger.warn(
+      'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+    );
+
+    return cb({
+      debug: {
+        lookupObject: lookupObject,
+        msg:
+          'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+      },
+      detail: 'Malformed lookupObject received in onDetails hook. Object is missing `meta` or `owner` properties.'
+    });
   }
+
+  const owners = details.owners;
+  const indicatorType = details.meta.indicatorType;
+  const indicatorValue = details.meta.indicatorValue;
+
+  owners.forEach((owner) => {
+    tasks.push(function(done) {
+      tc.getIndicator(indicatorType, indicatorValue, owner.name, done);
+    });
+  });
 
   async.parallel(tasks, (err, results) => {
     if (err) {
@@ -232,6 +234,7 @@ function onDetails(lookupObject, options, cb) {
       cb(err);
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
+
       results.forEach((result) => {
         _modifyWebLinksWithPort(result); //this method mutates result
         if (result.threatAssessScore) {
@@ -240,9 +243,14 @@ function onDetails(lookupObject, options, cb) {
           result.threatAssessScorePercentage = 0;
         }
       });
+
       cb(null, {
         summary: lookupObject.data.summary,
-        details: results
+        details: {
+          meta: lookupObject.data.details.meta,
+          owners: lookupObject.data.details.owners,
+          results: results
+        }
       });
     }
   });
@@ -328,13 +336,14 @@ function onMessage(payload, options, cb) {
         payload.data.indicatorValue,
         payload.data.tag,
         payload.data.owner,
-        (err) => {
+        (err, result) => {
           if (err) {
             Logger.error({ err, payload }, 'Error Adding Tag');
             cb(err);
           } else {
-            Logger.debug('Returning ADD_TAG');
-            cb(null, {});
+            Logger.debug({ result }, 'Returning ADD_TAG');
+            // result contains a property called link which is the link to the new tag
+            cb(null, result);
           }
         }
       );
@@ -377,26 +386,6 @@ function _addPortToLink(weblinkToTransform, port) {
   delete weblinkAsUrl.host;
   //Logger.info({url: url.format(weblinkAsUrl), port: weblinkAsUrl.port}, 'WebLink');
   return url.format(weblinkAsUrl);
-}
-
-function _getSummaryTags(data) {
-  let summaryTags = [];
-
-  if (data.owner && data.owner.name) {
-    summaryTags.push(_getOwnerIcon() + data.owner.name);
-  }
-
-  if (Array.isArray(data.tags)) {
-    for (let i = 0; i < data.tags.length && i <= MAX_SUMMARY_TAGS; i++) {
-      let tag = data.tags[i];
-      summaryTags.push(tag.name);
-    }
-
-    if (data.tags.length > MAX_SUMMARY_TAGS) {
-      summaryTags.push('+' + (data.tags.length - MAX_SUMMARY_TAGS));
-    }
-  }
-  return summaryTags;
 }
 
 function _getOwnerIcon() {
