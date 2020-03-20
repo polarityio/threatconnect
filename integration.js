@@ -38,7 +38,7 @@ function startup(logger) {
   }
 
   if (typeof config.request.rejectUnauthorized === 'boolean') {
-    requestOptions.rejectUnauthorized = config.request.rejectUnauthorized;
+    defaults.rejectUnauthorized = config.request.rejectUnauthorized;
   }
 
   tc = new ThreatConnect(request.defaults(defaults), Logger);
@@ -56,13 +56,31 @@ function doLookup(entities, options, cb) {
   });
 }
 
+function createSearchOrgWhitelist(options) {
+  let whitelistedOrgs = new Set();
+
+  if (typeof options.searchWhitelist === 'string' && options.searchWhitelist.trim().length > 0) {
+    let tokens = options.searchWhitelist.split(',');
+    tokens.forEach((token) => {
+      token = token.trim().toLowerCase();
+      if (token.length > 0) {
+        whitelistedOrgs.add(token);
+      }
+    });
+  }
+
+  Logger.debug({ whitelistedOrgs }, 'Organization Search Whitelist');
+
+  return whitelistedOrgs;
+}
+
 function createSearchOrgBlacklist(options) {
   let blacklistedOrgs = new Set();
 
   if (typeof options.searchBlacklist === 'string' && options.searchBlacklist.trim().length > 0) {
     let tokens = options.searchBlacklist.split(',');
     tokens.forEach((token) => {
-      token = token.trim();
+      token = token.trim().toLowerCase();
       if (token.length > 0) {
         blacklistedOrgs.add(token);
       }
@@ -72,6 +90,22 @@ function createSearchOrgBlacklist(options) {
   Logger.debug({ blacklistedOrgs }, 'Organization Search Blacklist');
 
   return blacklistedOrgs;
+}
+
+function getFilteredOwners(owners, options) {
+  if (options.searchBlacklist.trim().length > 0) {
+    let blacklistedOrgs = createSearchOrgBlacklist(options);
+    return owners.filter((owner) => {
+      return !blacklistedOrgs.has(owner.name.toLowerCase());
+    });
+  } else if (options.searchWhitelist.trim().length > 0) {
+    let whitelistedOrgs = createSearchOrgWhitelist(options);
+    return owners.filter((owner) => {
+      return whitelistedOrgs.has(owner.name.toLowerCase());
+    });
+  } else {
+    return owners;
+  }
 }
 
 function searchAllOwners(entities, options, cb) {
@@ -93,23 +127,20 @@ function searchAllOwners(entities, options, cb) {
               data: null
             });
           } else {
-            let blacklistedOrgs = createSearchOrgBlacklist(options);
-            let filteredOwners = result.owners.filter((owner) => {
-              return !blacklistedOrgs.has(owner.name);
-            });
-
-            lookupResults.push({
-              entity: entityObj,
-              data: {
-                summary: _getOwnerSummaryTags(filteredOwners),
-                details: {
-                  meta: result.meta,
-                  owners: filteredOwners
+            const filteredOwners = getFilteredOwners(result.owners, options);
+            if (filteredOwners.length > 0) {
+              lookupResults.push({
+                entity: entityObj,
+                data: {
+                  summary: _getOwnerSummaryTags(filteredOwners),
+                  details: {
+                    meta: result.meta,
+                    owners: filteredOwners
+                  }
                 }
-              }
-            });
+              });
+            }
           }
-
           next();
         });
       } else {
@@ -392,9 +423,63 @@ function _getOwnerIcon() {
   return `<svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" data-icon="building" data-prefix="fas" id="ember1223" class="svg-inline--fa fa-building fa-w-14  ember-view"><path fill="currentColor" d="M436 480h-20V24c0-13.255-10.745-24-24-24H56C42.745 0 32 10.745 32 24v456H12c-6.627 0-12 5.373-12 12v20h448v-20c0-6.627-5.373-12-12-12zM128 76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76zm0 96c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40zm52 148h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12zm76 160h-64v-84c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v84zm64-172c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40z"></path></svg> `;
 }
 
+function isOptionMissing(userOptions, key) {
+  if (
+    typeof userOptions[key].value !== 'string' ||
+    (typeof userOptions[key].value === 'string' && userOptions[key].value.length === 0)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function validateOptions(userOptions, cb) {
+  let errors = [];
+
+  if (isOptionMissing(userOptions, 'url')) {
+    errors.push({
+      key: 'url',
+      message: 'You must provide a valid ThreatConnect Instance URL'
+    });
+  }
+
+  if (isOptionMissing(userOptions, 'accessId')) {
+    errors.push({
+      key: 'accessId',
+      message: 'You must provide a valid Access ID'
+    });
+  }
+
+  if (isOptionMissing(userOptions, 'apiKey')) {
+    errors.push({
+      key: 'apiKey',
+      message: 'You must provide a valid API Key'
+    });
+  }
+
+  if (
+    typeof userOptions.searchWhitelist.value === 'string' &&
+    userOptions.searchWhitelist.value.trim().length > 0 &&
+    typeof userOptions.searchBlacklist.value === 'string' &&
+    userOptions.searchBlacklist.value.trim().length > 0
+  ) {
+    errors.push({
+      key: 'searchWhitelist',
+      message: 'You cannot provide both an "Organization Search Whitelist", and an "Organization Search Blacklist".'
+    });
+    errors.push({
+      key: 'searchBlacklist',
+      message: 'You cannot provide both an "Organization Search Blacklist", and an "Organization Search Whitelist".'
+    });
+  }
+
+  cb(null, errors);
+}
+
 module.exports = {
   doLookup: doLookup,
   startup: startup,
   onMessage: onMessage,
-  onDetails: onDetails
+  onDetails: onDetails,
+  validateOptions: validateOptions
 };

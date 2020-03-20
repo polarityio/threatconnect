@@ -63,16 +63,16 @@ module.exports = {
   },
   request: {
     // Provide the path to your certFile. Leave an empty string to ignore this option.
-    // Relative paths are relative to the VT integration's root directory
+    // Relative paths are relative to the integration's root directory
     cert: '',
     // Provide the path to your private key. Leave an empty string to ignore this option.
-    // Relative paths are relative to the VT integration's root directory
+    // Relative paths are relative to the integration's root directory
     key: '',
     // Provide the key passphrase if required.  Leave an empty string to ignore this option.
-    // Relative paths are relative to the VT integration's root directory
+    // Relative paths are relative to the integration's root directory
     passphrase: '',
     // Provide the Certificate Authority. Leave an empty string to ignore this option.
-    // Relative paths are relative to the VT integration's root directory
+    // Relative paths are relative to the integration's root directory
     ca: '',
     // An HTTP proxy to be used. Supports proxy Auth with Basic Auth, identical to support for
     // the url parameter (by embedding the auth info in the uri)
@@ -123,7 +123,17 @@ module.exports = {
       key: 'searchBlacklist',
       name: 'Organization Search Blacklist',
       description:
-        'A comma delimited list of organizations you do not want searched (i.e., a blacklist of organizations).',
+        'By default all organizations visible to the provided API User will be searched.  This blacklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Whitelist" option.',
+      default: '',
+      type: 'text',
+      userCanEdit: true,
+      adminOnly: false
+    },
+    {
+      key: 'searchWhitelist',
+      name: 'Organization Search Whitelist',
+      description:
+        'By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blacklist" option',
       default: '',
       type: 'text',
       userCanEdit: true,
