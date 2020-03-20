@@ -7,7 +7,7 @@ const ThreatConnect = require('./threatconnect');
 const request = require('request');
 const fs = require('fs');
 const config = require('./config/config');
-const MAX_SUMMARY_TAGS = 6;
+const MAX_SUMMARY_TAGS = 3;
 
 let tc;
 let Logger;
