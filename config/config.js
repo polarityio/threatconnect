@@ -98,8 +98,8 @@ module.exports = {
       description: 'The URL of the ThreatConnect instance you would like to connect to (including http:// or https://)',
       default: '',
       type: 'text',
-      userCanEdit: true,
-      adminOnly: false
+      userCanEdit: false,
+      adminOnly: true
     },
     {
       key: 'accessId',
@@ -107,8 +107,8 @@ module.exports = {
       description: 'Account Identifier that is associated with the API Key',
       default: '',
       type: 'text',
-      userCanEdit: true,
-      adminOnly: false
+      userCanEdit: false,
+      adminOnly: true
     },
     {
       key: 'apiKey',
@@ -116,8 +116,8 @@ module.exports = {
       description: 'The API (secret) Key associated with the provided Access ID',
       default: '',
       type: 'password',
-      userCanEdit: true,
-      adminOnly: false
+      userCanEdit: false,
+      adminOnly: true
     },
     {
       key: 'searchBlacklist',
@@ -126,8 +126,8 @@ module.exports = {
         'By default all organizations visible to the provided API User will be searched.  This blacklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Whitelist" option.',
       default: '',
       type: 'text',
-      userCanEdit: true,
-      adminOnly: false
+      userCanEdit: false,
+      adminOnly: true
     },
     {
       key: 'searchWhitelist',
@@ -136,8 +136,8 @@ module.exports = {
         'By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blacklist" option',
       default: '',
       type: 'text',
-      userCanEdit: true,
-      adminOnly: false
+      userCanEdit: false,
+      adminOnly: true
     }
   ]
 };
