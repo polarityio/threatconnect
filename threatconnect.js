@@ -46,7 +46,7 @@ class ThreatConnect {
         this.url.path += '/';
       }
     }
-    this.log.debug({url:this.url}, 'Parsed URL');
+    this.log.debug({ url: this.url }, 'Parsed URL');
   }
 
   setEmailRating(indicatorValue, owner, rating, cb) {
@@ -372,8 +372,18 @@ class ThreatConnect {
     let self = this;
     this._getOwners(indicatorTypePlural, indicatorValue, (err, response, body) => {
       this._formatResponse(err, response, body, (formatErr, ownerData) => {
-        if (formatErr || !ownerData) {
+        if (formatErr) {
           return cb(formatErr);
+        }
+
+        if (!ownerData) {
+          return cb(null, {
+            meta: {
+              indicatorType: indicatorTypePlural,
+              indicatorValue: indicatorValue
+            },
+            owners: []
+          });
         }
 
         cb(null, {
@@ -426,7 +436,7 @@ class ThreatConnect {
         }
 
         let result = data[indicatorTypeSingular];
-        self.log.trace({result}, 'getIndicator result');
+        self.log.trace({ result }, 'getIndicator result');
         result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
         cb(null, result);
       });
@@ -450,7 +460,7 @@ class ThreatConnect {
     }
     result.confidenceHuman = this._getConfidenceHuman(result.confidence);
 
-    if(!Array.isArray(result.tag)){
+    if (!Array.isArray(result.tag)) {
       result.tag = [];
     }
 
