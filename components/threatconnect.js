@@ -149,9 +149,9 @@ polarity.export = PolarityComponent.extend({
             self._flashError(result.error.detail, 'error');
           } else {
             if (self.get('results.' + orgDataIndex + '.falsePositiveCount') === result.data.count) {
-              self.set('showFalsePositiveAlreadyReported', true);
+              self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', true);
             } else {
-              self.set('showFalsePositiveAlreadyReported', false);
+              self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', false);
             }
             self.set('results.' + orgDataIndex + '.falsePositiveLastReported', result.data.lastReported);
             self.set('results.' + orgDataIndex + '.falsePositiveCount', result.data.count);
