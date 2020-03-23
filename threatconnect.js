@@ -627,6 +627,15 @@ class ThreatConnect {
       return;
     }
 
+    if(body && typeof body.status === 'undefined'){
+      // this is an unexpected response that does not match the normal payload response
+      return cb({
+        detail: 'Received an unexpected response.  Please check your URL.',
+        body: body,
+        statusCode: response && response.statusCode ? response.statusCode : 500
+      })
+    }
+
     if (this._isMiss(response)) {
       cb(null);
       return;
