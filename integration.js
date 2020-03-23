@@ -116,7 +116,7 @@ function searchAllOwners(entities, options, cb) {
     (entityObj, next) => {
       let lookupValue = _getSanitizedEntity(entityObj);
       if (lookupValue !== null) {
-        tc.getOwners(convertPolarityTypeToThreatConnect(entityObj.type), entityObj.value, (err, result) => {
+        tc.getOwners(convertPolarityTypeToThreatConnect(entityObj.type), lookupValue, (err, result) => {
           if (err) {
             return cb(err);
           }
@@ -219,6 +219,7 @@ function _getSanitizedEntity(entityObj) {
       }
     }
   }
+  Logger.info(lookupValue);
 
   return lookupValue;
 }
