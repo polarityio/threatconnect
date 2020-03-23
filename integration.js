@@ -303,10 +303,10 @@ function onMessage(payload, options, cb) {
         function(err, result) {
           if (err) {
             Logger.error({ err, payload }, 'Error Setting Rating');
-            cb(err);
+            cb(null, { error: err });
           } else {
             Logger.debug({ result: result }, 'Returning SET_RATING');
-            cb(null, result);
+            cb(null, { data: result });
           }
         }
       );
@@ -320,10 +320,10 @@ function onMessage(payload, options, cb) {
         function(err, result) {
           if (err) {
             Logger.error({ err, payload }, 'Error Setting Rating');
-            cb(err);
+            cb(null, { error: err });
           } else {
             Logger.debug({ result: result }, 'Returning SET_CONFIDENCE');
-            cb(null, result);
+            cb(null, { data: result });
           }
         }
       );
@@ -336,10 +336,10 @@ function onMessage(payload, options, cb) {
         (err, result) => {
           if (err) {
             Logger.error({ err, payload }, 'Error Reporting False Positive');
-            cb(err);
+            cb(null, { error: err });
           } else {
             Logger.debug({ result: result }, 'Returning REPORT_FALSE_POSITIVE');
-            cb(null, result);
+            cb(null, { data: result });
           }
         }
       );
@@ -353,7 +353,7 @@ function onMessage(payload, options, cb) {
         (err) => {
           if (err) {
             Logger.error({ err, payload }, 'Error Deleting Tag');
-            cb(err);
+            cb(null, { error: err });
           } else {
             Logger.debug('Returning DELETE_TAG');
             cb(null, {});
@@ -370,11 +370,11 @@ function onMessage(payload, options, cb) {
         (err, result) => {
           if (err) {
             Logger.error({ err, payload }, 'Error Adding Tag');
-            cb(err);
+            cb(null, { error: err });
           } else {
             Logger.debug({ result }, 'Returning ADD_TAG');
             // result contains a property called link which is the link to the new tag
-            cb(null, result);
+            cb(null, { data: result });
           }
         }
       );

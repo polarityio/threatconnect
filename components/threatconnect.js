@@ -26,20 +26,26 @@ polarity.export = PolarityComponent.extend({
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
           owner: orgData.owner.name,
-          confidence: orgData.confidence
+          confidence: orgData.__shadowConfidence
         }
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
-            self.set('results.' + orgDataIndex + '.confidenceHuman', result.confidenceHuman);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+
+            let originalValue = self.get('results.' + orgDataIndex + '.confidence');
+            // Note: this is a trick to get the property observers to fire so we can reset the
+            // slider value.  We have to change the value to trigger observers
+            self.set('results.' + orgDataIndex + '.confidence', originalValue + 1);
+            self.set('results.' + orgDataIndex + '.confidence', originalValue);
+          } else {
+            self.set('results.' + orgDataIndex + '.confidence', result.data.confidence);
+            self.set('results.' + orgDataIndex + '.confidenceHuman', result.data.confidenceHuman);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });
@@ -66,19 +72,18 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
             self.set('actionMessage', 'Added Tag');
             self.get('results.' + orgDataIndex + '.tag').pushObject({
               name: newTag,
-              webLink: result.link
+              webLink: result.data.link
             });
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
           }
-        )
+        })
         .finally(() => {
           self.set('newTagValue', '');
           self.set('block.isLoadingDetails', false);
@@ -102,8 +107,11 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
             self.set('actionMessage', 'Deleted Tag');
             const newTags = [];
             let tags = self.get('results.' + orgDataIndex + '.tag');
@@ -114,12 +122,8 @@ polarity.export = PolarityComponent.extend({
             });
 
             self.set('results.' + orgDataIndex + '.tag', newTags);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
           self.set('results.' + orgDataIndex + '.__deletingTag', false);
@@ -139,21 +143,20 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
-            if (self.get('results.' + orgDataIndex + '.falsePositiveCount') === result.count) {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
+            if (self.get('results.' + orgDataIndex + '.falsePositiveCount') === result.data.count) {
               self.set('showFalsePositiveAlreadyReported', true);
             } else {
               self.set('showFalsePositiveAlreadyReported', false);
             }
-            self.set('results.' + orgDataIndex + '.falsePositiveLastReported', result.lastReported);
-            self.set('results.' + orgDataIndex + '.falsePositiveCount', result.count);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+            self.set('results.' + orgDataIndex + '.falsePositiveLastReported', result.data.lastReported);
+            self.set('results.' + orgDataIndex + '.falsePositiveCount', result.data.count);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });
@@ -173,17 +176,16 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
             self.set('actionMessage', 'Set rating to : ' + rating);
             self.set('results.' + orgDataIndex + '.rating', rating);
-            self.set('results.' + orgDataIndex + '.ratingHuman', result.ratingHuman);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+            self.set('results.' + orgDataIndex + '.ratingHuman', result.data.ratingHuman);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });
