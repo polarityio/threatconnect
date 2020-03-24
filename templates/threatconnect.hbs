@@ -142,13 +142,16 @@
             </div>
         {{/if}}
         {{#if (eq orgData.__activeTab "associations")}}
+            {{#if (eq orgData.numAssociations 0)}}
+                <h2>No Associations</h2>
+            {{/if}}
             {{#if (gt orgData.groups.length 0)}}
-            <h1 class="p-title">{{fa-icon "user-secret" fixedWidth=true}} Associated Groups</h1>
+              <h1 class="p-title">{{fa-icon "user-secret" fixedWidth=true}} Associated Groups</h1>
               {{#each orgData.groups as | group |}}
                 <div class="data-block-container">
                   <div>
                     <span class="p-key">Group Name: </span>
-                    <span class="p-value">{{group.name}}</span>
+                    <span class="p-value"><a class="p-link" href="{{group.webLink}}">{{group.name}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
                   </div>
                   <div>
                     <span class="p-key">Type: </span>
@@ -171,7 +174,7 @@
                 <div class="data-block-container">
                   <div>
                     <span class="p-key">Value: </span>
-                    <span class="p-value">{{indicator.summary}}</span>
+                    <span class="p-value"><a class="p-link" href="{{indicator.webLink}}">{{indicator.summary}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
                   </div>
                   <div>
                     <span class="p-key">Owner: </span>

@@ -49,7 +49,7 @@ function doLookup(entities, options, cb) {
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
 
-  Logger.trace({ entities: entities }, 'doLookup');
+  Logger.trace({ entities: entities, options }, 'doLookup');
 
   searchAllOwners(entities, options, (err, lookupResults) => {
     cb(err, lookupResults);
@@ -69,7 +69,7 @@ function createSearchOrgWhitelist(options) {
     });
   }
 
-  Logger.debug({ whitelistedOrgs }, 'Organization Search Whitelist');
+  Logger.debug({ whitelist: [...whitelistedOrgs] }, 'Organization Search Whitelist');
 
   return whitelistedOrgs;
 }
@@ -87,7 +87,7 @@ function createSearchOrgBlacklist(options) {
     });
   }
 
-  Logger.debug({ blacklistedOrgs }, 'Organization Search Blacklist');
+  Logger.debug({ blacklist: [...blacklistedOrgs] }, 'Organization Search Blacklist');
 
   return blacklistedOrgs;
 }
