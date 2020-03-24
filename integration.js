@@ -394,6 +394,7 @@ function onMessage(payload, options, cb) {
             cb(null, { error: err });
           } else {
             Logger.debug({ result }, 'Returning ADD_TAG');
+            result.link = _addPortToLink(result.link, config.settings.threatConnectPort);
             // result contains a property called link which is the link to the new tag
             cb(null, { data: result });
           }
