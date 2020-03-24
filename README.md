@@ -8,25 +8,53 @@ https://threatconnect.com/
 
 The Polarity ThreatConnect integration allows Polarity to search for address, file, host, and email indicators in ThreatConnect.  The Polarity-ThreatConnect integrations includes interactive elements that allow Polarity user's to add and remove tags, modify the severity and confidence level of an indicator, and report false positives directly from the Polarity Overlay Window.
 
-> Important: When installing this integration the installation directory cannot be called `threatconnect`.  See Installation Instructions for more info.
+![tc_3 0_demo](assets/overlay.gif)
 
-![tc_3 0_demo](https://user-images.githubusercontent.com/306319/50782521-41269800-1276-11e9-9203-f18fa8dcef67.gif)
+## ThreatConnect Integration Options
+
+### ThreatConnect Instance URL
+
+The URL of the ThreatConnect instance you would like to connect to (including http:// or https://).  If you are running an internal instance of ThreatConnect on a non-default port, please specify the port here as well.
+
+### Access ID
+
+Account Identifier that is associated with the API Key
+
+### API Key
+
+The API (secret) Key associated with the provided Access ID
+
+### Organization Search Blacklist
+
+By default all organizations visible to the provided API User will be searched. This blacklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Whitelist" option.
+
+### Organization Search Whitelist
+
+By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blacklist" option
+
+> Note that you cannot use both the Organization Search Whitelist and the Organization Search Blacklist.  
+
+## Custom Ports
+
+If your ThreatConnect instance is running on a custom port you will need to modify the `settings.threatConnectPort` property in the integration's `config.js` file:
+
+```
+vi /app/polarity-server/integrations/threatconnect/config/config.js
+```
+
+Find the property `settings.threatConnectPort` and set it to the proper port:
+
+```
+{
+  settings: {
+    threatConnectPort: 8443
+  }
+}
+```
+
+If you are using the default port (443) then you so not need to modify this setting.  This setting is required to rewrite all the links returns by the ThreatConnect REST API.  Without this setting, all external links within the integration will go to the default port of 443.
 
 ## Installation Instructions
-
-When installing this integration please ensure the name of the directory within your `integrations` directory is not `threatconnect`.  This is to prevent a collision with the legacy client-side ThreatConnect integration.
-
-As an example you could place this integration into the following directory on a default Polarity Server installation:
-
-```bash
-/app/polarity-server/integrations/threatconnect-v2
-```
-
-If cloning this repository using git please make sure to specify a custom directory name to clone into:
-
-```bash
-git clone https://github.com/polarityio/threatconnect.git threatconnect-v2
-```
 
 Installation instructions for integrations are provided on the [PolarityIO GitHub Page](https://polarityio.github.io/).
 
