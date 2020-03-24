@@ -38,6 +38,10 @@
                 <span class="p-value">No Threat Assess Confidence</span>
             {{/if}}
         </div>
+        {{#if orgData.description}}
+          <h1 class="p-title">{{fa-icon "sticky-note" fixedWidth=true}} Description</h1>
+          <pre>{{orgData.description}}</pre>
+        {{/if}}
         <div>
             <span class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Details</span>
         </div>
