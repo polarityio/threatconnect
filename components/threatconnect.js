@@ -3,6 +3,7 @@
 polarity.export = PolarityComponent.extend({
   newTagValue: '',
   showFalsePositiveAlreadyReported: false,
+  results: Ember.computed.alias('block.data.details.results'),
   timezone: Ember.computed('Intl', function() {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }),
@@ -14,6 +15,9 @@ polarity.export = PolarityComponent.extend({
     });
   },
   actions: {
+    changeTab: function(tabName, orgDataIndex) {
+      this.set(`results.${orgDataIndex}.__activeTab`, tabName);
+    },
     saveConfidence(orgData, orgDataIndex) {
       console.info('Saving Confidence');
       let self = this;
@@ -25,20 +29,26 @@ polarity.export = PolarityComponent.extend({
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
           owner: orgData.owner.name,
-          confidence: orgData.confidence
+          confidence: orgData.__shadowConfidence
         }
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
-            self.set('block.data.details.' + orgDataIndex + '.confidenceHuman', result.confidenceHuman);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+
+            let originalValue = self.get('results.' + orgDataIndex + '.confidence');
+            // Note: this is a trick to get the property observers to fire so we can reset the
+            // slider value.  We have to change the value to trigger observers
+            self.set('results.' + orgDataIndex + '.confidence', originalValue + 1);
+            self.set('results.' + orgDataIndex + '.confidence', originalValue);
+          } else {
+            self.set('results.' + orgDataIndex + '.confidence', result.data.confidence);
+            self.set('results.' + orgDataIndex + '.confidenceHuman', result.data.confidenceHuman);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });
@@ -53,6 +63,7 @@ polarity.export = PolarityComponent.extend({
       }
 
       self.set('block.isLoadingDetails', true);
+      self.set('results.' + orgDataIndex + '.__addingTag', true);
       const payload = {
         action: 'ADD_TAG',
         data: {
@@ -64,28 +75,30 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function() {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
             self.set('actionMessage', 'Added Tag');
-            self.get('block.data.details.' + orgDataIndex + '.tag').pushObject({
+            self.get('results.' + orgDataIndex + '.tag').pushObject({
               name: newTag,
-              webLink: ''
+              webLink: result.data.link
             });
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
           }
-        )
+        })
         .finally(() => {
           self.set('newTagValue', '');
           self.set('block.isLoadingDetails', false);
+          self.set('results.' + orgDataIndex + '.__addingTag', false);
         });
     },
     deleteTag(tag, orgData, orgDataIndex, tagIndex) {
       let self = this;
 
       self.set('block.isLoadingDetails', true);
+      self.set('results.' + orgDataIndex + '.__deletingTag', true);
+
       const payload = {
         action: 'DELETE_TAG',
         data: {
@@ -97,26 +110,26 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
             self.set('actionMessage', 'Deleted Tag');
             const newTags = [];
-            let tags = self.get('block.data.details.' + orgDataIndex + '.tag');
+            let tags = self.get('results.' + orgDataIndex + '.tag');
             tags.forEach(function(tag, index) {
               if (index !== tagIndex) {
                 newTags.push(tag);
               }
             });
 
-            self.set('block.data.details.' + orgDataIndex + '.tag', newTags);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+            self.set('results.' + orgDataIndex + '.tag', newTags);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
+          self.set('results.' + orgDataIndex + '.__deletingTag', false);
         });
     },
     reportFalsePositive(orgData, orgDataIndex) {
@@ -133,21 +146,20 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
-            if (self.get('block.data.details.' + orgDataIndex + '.falsePositiveCount') === result.count) {
-              self.set('showFalsePositiveAlreadyReported', true);
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
+            if (self.get('results.' + orgDataIndex + '.falsePositiveCount') === result.data.count) {
+              self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', true);
             } else {
-              self.set('showFalsePositiveAlreadyReported', false);
+              self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', false);
             }
-            self.set('block.data.details.' + orgDataIndex + '.falsePositiveLastReported', result.lastReported);
-            self.set('block.data.details.' + orgDataIndex + '.falsePositiveCount', result.count);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+            self.set('results.' + orgDataIndex + '.falsePositiveLastReported', result.data.lastReported);
+            self.set('results.' + orgDataIndex + '.falsePositiveCount', result.data.count);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });
@@ -167,17 +179,16 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(
-          function(result) {
+        .then(function(result) {
+          if (result.error) {
+            console.error(result.error);
+            self._flashError(result.error.detail, 'error');
+          } else {
             self.set('actionMessage', 'Set rating to : ' + rating);
-            self.set('block.data.details.' + orgDataIndex + '.rating', rating);
-            self.set('block.data.details.' + orgDataIndex + '.ratingHuman', result.ratingHuman);
-          },
-          function(err) {
-            console.error(err);
-            self._flashError(err.meta.detail, 'error');
+            self.set('results.' + orgDataIndex + '.rating', rating);
+            self.set('results.' + orgDataIndex + '.ratingHuman', result.data.ratingHuman);
           }
-        )
+        })
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });

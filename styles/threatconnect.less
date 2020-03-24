@@ -1,6 +1,7 @@
 a.tc-link-tag {
   .threatconnect-summary-tag {
-    background-color: #ccc;
+    background-color: #fff;
+    border: 1px solid #f97b06;
     padding: 1px 5px 2px;
     border-radius: 16px;
     color: #07213a;
@@ -9,14 +10,34 @@ a.tc-link-tag {
     font-weight: normal;
   }
 
-  .tag-close-icon{
+  .threatconnect-summary-tag:hover{
+    background-color: #d9d9d9;
+  }
+
+  .tag-close-icon {
     font-size: 10px;
     color: #777;
   }
 
-  .tag-close-icon:hover{
+  .tag-close-icon:hover {
     color: red;
   }
+}
+
+.data-block-container{
+  margin-bottom: 15px;
+}
+
+.data-block-container:last-child{
+  margin-bottom: 0px;
+}
+
+pre {
+  overflow-y: scroll;
+  overflow-x: hidden;
+  max-height: 150px;
+  padding: 5px;
+  background-color: #eee;
 }
 
 .elementToFadeIn {
@@ -27,35 +48,40 @@ a.tc-link-tag {
 }
 
 @-webkit-keyframes fadeinout {
-  100% { opacity: 1; }
+  100% {
+    opacity: 1;
+  }
 }
 
 @keyframes fadeinout {
-  100% { opacity: 1; }
+  100% {
+    opacity: 1;
+  }
 }
 
-.report-false-positive-btn{
+.report-false-positive-btn {
   height: 25px;
   font-size: 0.775rem;
   margin-top: 5px;
 }
 
-.add-tag-input{
+.add-tag-input {
   cursor: text;
   height: 30px;
 }
 
-.threat-assess-bar{
+.threat-assess-bar {
   height: 6px;
   margin: 3px 0;
 
-  .progress-bar{
+  .progress-bar {
     background-color: rgb(242, 103, 36);
   }
 }
 
-.btn-add-tag{
-  height: 30px;
+.btn-add-tag {
+  height: 30px !important;
+  width: 60px;
   font-size: 0.775rem !important;
 }
 
@@ -69,6 +95,10 @@ a.tc-link-tag:hover {
 }
 
 .rating-icon {
+  cursor: pointer;
+}
+
+.rating-icon-filled {
   font-weight: normal;
 }
 

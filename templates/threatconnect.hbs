@@ -1,129 +1,209 @@
 {{#if block.detailsLoaded}}
-    {{#each block.data.details as |orgData orgDataIndex|}}
+    {{#each results as |orgData orgDataIndex|}}
         {{#if (gt orgDataIndex 0)}}
-            <hr>
+          <hr>
         {{/if}}
-        <div>
-            <span class="p-key">{{orgData.owner.type}}: </span>
-            <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
-        </div>
-        <div>
-            <span class="p-title">{{fa-icon "shield" fixedWidth=true}} Indicator Analytics</span>
-        </div>
-        <div>
-            <span class="p-key">Threat Assess Score: </span>
-            {{#if orgData.threatAssessScore}}
-                <span class="p-value">{{orgData.threatAssessScore}}</span>/1000
-                <div class="progress threat-assess-bar">
-                    <div class="progress-bar" role="progressbar" style="width: {{orgData.threatAssessScorePercentage}}%"
-                         aria-valuenow="{{orgData.threatAssessScorePercentage}}" aria-valuemin="0" aria-valuemax="100"></div>
+        <ul class="nav nav-tabs mb-2">
+          <li class="nav-item">
+            <a {{action "changeTab" "info" orgDataIndex}} class="nav-link {{if (or (eq orgData.__activeTab "info")(not orgData.__activeTab)) "active"}}" href="#">Info</a>
+          </li>
+          <li class="nav-item">
+            <a {{action "changeTab" "associations" orgDataIndex}} class="nav-link {{if (eq orgData.__activeTab "associations") "active"}}" href="#">Associations ({{orgData.numAssociations}})</a>
+          </li>
+        </ul>
+
+        {{#if (or (eq orgData.__activeTab "info") (not orgData.__activeTab))}}
+            <div>
+                <span class="p-key">{{orgData.owner.type}}: </span>
+                <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
+            </div>
+            <div>
+                <span class="p-title">{{fa-icon "shield" fixedWidth=true}} Indicator Analytics</span>
+            </div>
+            <div>
+                <span class="p-key">Threat Assess Score: </span>
+                {{#if orgData.threatAssessScore}}
+                    <span class="p-value">{{orgData.threatAssessScore}}</span>/1000
+                    <div class="progress threat-assess-bar">
+                        <div class="progress-bar" role="progressbar" style="width: {{orgData.threatAssessScorePercentage}}%"
+                             aria-valuenow="{{orgData.threatAssessScorePercentage}}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                {{else}}
+                    <span class="p-value">No Threat Assess Score</span>
+                {{/if}}
+            </div>
+            <div>
+                <span class="p-key">Threat Assess Rating: </span>
+                {{#if orgData.threatAssessRating}}
+                    <span class="p-value">{{orgData.threatAssessRating}}</span>
+                {{else}}
+                    <span class="p-value">No Threat Assess Rating</span>
+                {{/if}}
+            </div>
+            <div>
+                <span class="p-key">Threat Assess Confidence: </span>
+                {{#if orgData.threatAssessConfidence}}
+                    <span class="p-value">{{orgData.threatAssessConfidence}}</span>
+                {{else}}
+                    <span class="p-value">No Threat Assess Confidence</span>
+                {{/if}}
+            </div>
+            {{#if orgData.description}}
+              <h1 class="p-title">{{fa-icon "sticky-note" fixedWidth=true}} Description</h1>
+              <pre>{{orgData.description}}</pre>
+            {{/if}}
+            <div>
+                <span class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Details</span>
+            </div>
+            <div>
+                <span class="p-key">Date Added:</span>
+                <span class="p-value">{{moment-time orgData.dateAdded}}</span>
+            </div>
+            <div>
+                <span class="p-key">Last Modified:</span>
+                <span class="p-value">{{moment-time orgData.lastModified}}</span>
+            </div>
+
+            <div>
+                <span class="p-key">Rating: </span>
+                <span>
+                    {{fa-icon "ban" click=(action "setRating" orgData orgDataIndex 0) class="rating-icon"}}
+                    {{#each (repeat 5) as |empty ratingIndex|}}
+                        {{fa-icon "skull" class=(if (lt ratingIndex orgData.rating) "rating-icon rating-icon-filled" "rating-icon rating-icon-empty")
+                                  click=(action "setRating" orgData orgDataIndex (inc ratingIndex))}}
+                    {{/each}}
+                    {{orgData.ratingHuman}}
+                </span>
+            </div>
+            <div>
+                <span class="p-key">Confidence: </span>
+                <span class="p-value">{{orgData.confidence}} - {{orgData.confidenceHuman}}</span>
+                <div>
+                    <input type="range"
+                           onchange={{action "saveConfidence" orgData orgDataIndex}}
+                           oninput={{action (mut orgData.__shadowConfidence) value="target.value"}}
+                           min="0"
+                           max="100"
+                           value={{orgData.confidence}}
+                           steps="1">
                 </div>
-            {{else}}
-                <span class="p-value">No Threat Assess Score</span>
-            {{/if}}
-        </div>
-        <div>
-            <span class="p-key">Threat Assess Rating: </span>
-            {{#if orgData.threatAssessRating}}
-                <span class="p-value">{{orgData.threatAssessRating}}</span>
-            {{else}}
-                <span class="p-value">No Threat Assess Rating</span>
-            {{/if}}
-        </div>
-        <div>
-            <span class="p-key">Threat Assess Confidence: </span>
-            {{#if orgData.threatAssessConfidence}}
-                <span class="p-value">{{orgData.threatAssessConfidence}}</span>
-            {{else}}
-                <span class="p-value">No Threat Assess Confidence</span>
-            {{/if}}
-        </div>
-        <div>
-            <span class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Details</span>
-        </div>
-        <div>
-            <span class="p-key">Date Added:</span>
-            <span class="p-value">{{moment-time orgData.dateAdded}}</span>
-        </div>
-        <div>
-            <span class="p-key">Last Modified:</span>
-            <span class="p-value">{{moment-time orgData.lastModified}}</span>
-        </div>
-
-        <div>
-            <span class="p-key">Rating: </span>
-            <span>
-                {{fa-icon "ban" click=(action "setRating" orgData orgDataIndex 0)}}
-                {{#each (repeat 5) as |empty ratingIndex|}}
-                    {{fa-icon "skull" class=(if (lt ratingIndex orgData.rating) "rating-icon" "rating-icon-empty")
-                              click=(action "setRating" orgData orgDataIndex (inc ratingIndex))}}
-                {{/each}}
-                {{orgData.ratingHuman}}
-            </span>
-        </div>
-        <div>
-            <span class="p-key">Confidence: </span>
-            <span class="p-value">{{orgData.confidence}} - {{orgData.confidenceHuman}}</span>
-            <div>
-                <input type="range"
-                       onchange={{action "saveConfidence" orgData orgDataIndex}}
-                       oninput={{action (mut orgData.confidence) value="target.value"}}
-                               min="0" max="100" value={{orgData.confidence}}
-                       steps="1">
             </div>
-        </div>
-        <div>
-            <span class="p-title">{{fa-icon "eye" fixedWidth=true}} Observations/False Positives</span>
-        </div>
-        <div>
-            <span class="p-key">Observation Count: </span>
-            <span class="p-value">{{orgData.observationCount}}</span>
-        </div>
-        <div>
-            <span class="p-key">False Positive Count: </span>
-            <span class="p-value">{{orgData.falsePositiveCount}}</span>
-        </div>
-        <div>
-            <span class="p-key">False Positive Last Reported: </span>
-            <span class="p-value"> {{moment-format orgData.falsePositiveLastReported 'MM/DD/YYYY'}}</span>
-        </div>
-        <div>
-            <button class="btn btn-secondary btn-sm report-false-positive-btn" {{action "reportFalsePositive" orgData orgDataIndex}}>Report False Positive</button>
-        </div>
-        <div class="{{if showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}">
-            <span class="p-footnote">False positive already reported today</span>
-        </div>
-        <div>
-            <span class="p-title">{{fa-icon "tags" fixedWidth=true}} Tags</span>
-        </div>
-        {{#if (eq orgData.tags.length 0)}}
             <div>
-                <span class="p-footnote">No Tags</span>
+                <span class="p-title">{{fa-icon "eye" fixedWidth=true}} Observations/False Positives</span>
             </div>
-        {{else}}
-            <div class="tag-container">
-                {{#each orgData.tag as |tag tagIndex|}}
-                    {{#if tag}}
+            <div>
+                <span class="p-key">Observation Count: </span>
+                <span class="p-value">{{orgData.observationCount}}</span>
+            </div>
+            <div>
+                <span class="p-key">False Positive Count: </span>
+                <span class="p-value">{{orgData.falsePositiveCount}}</span>
+            </div>
+            <div>
+                <span class="p-key">False Positive Last Reported: </span>
+                <span class="p-value"> {{moment-format orgData.falsePositiveLastReported 'MM/DD/YYYY'}}</span>
+            </div>
+            <div>
+                <button class="btn btn-secondary btn-sm report-false-positive-btn" {{action "reportFalsePositive" orgData orgDataIndex}}>Report False Positive</button>
+            </div>
+            <div class="{{if orgData.__showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}">
+                <span class="p-footnote">False positive already reported today</span>
+            </div>
+            <div>
+              <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}{{fa-icon "tags" fixedWidth=true}}{{/if}} Tags</span>
+            </div>
+            {{#if (eq orgData.tag.length 0)}}
+              <div class="p-footnote mb-2 mt-2">
+                <span>No Tags</span>
+              </div>
+            {{else}}
+              <div class="tag-container">
+                  {{#each orgData.tag as |tag tagIndex|}}
+                      {{#if tag}}
                         <a href="{{tag.webLink}}" class="tc-link-tag">
-                            <span class="threatconnect-summary-tag">
-                                {{tag.name}}
-                                <span {{action "deleteTag" tag.name orgData orgDataIndex tagIndex}}>
-                                    {{fa-icon "times" class="tag-close-icon" fixedWidth=true}}
+                                <span class="threatconnect-summary-tag">
+                                    {{tag.name}}
+                                  <span {{action "deleteTag" tag.name orgData orgDataIndex tagIndex}}>
+                                      {{fa-icon "times" class="tag-close-icon" fixedWidth=true}}
+                                  </span>
                                 </span>
-                            </span>
                         </a>
-                    {{/if}}
-                {{/each}}
-            </div>
-            <div style="clear:both"></div>
-        {{/if}}
+                      {{/if}}
+                  {{/each}}
+              </div>
+              <div style="clear:both"></div>
+            {{/if}}
 
-        <div class="input-group input-group-sm">
-            {{input type="text" placeholder="Add Tag" enter=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
-            <div class="input-group-append">
-                <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (eq newTagValue.length 0) true false}} {{action "addTag" orgData orgDataIndex}}>Add Tag</button>
+            <div class="input-group input-group-sm">
+                {{input type="text" placeholder="Add Tag" enter=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
+              <div class="input-group-append">
+                <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (or orgData.__addingTag (eq newTagValue.length 0)) true false}} {{action "addTag" orgData orgDataIndex}}>{{#if orgData.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
+              </div>
             </div>
-        </div>
+        {{/if}}
+        {{#if (eq orgData.__activeTab "associations")}}
+            {{#if (eq orgData.numAssociations 0)}}
+                <h2>No Associations</h2>
+            {{/if}}
+            {{#if (gt orgData.groups.length 0)}}
+              <h1 class="p-title">{{fa-icon "user-secret" fixedWidth=true}} Associated Groups</h1>
+              {{#each orgData.groups as | group |}}
+                <div class="data-block-container">
+                  <div>
+                    <span class="p-key">Group Name: </span>
+                    <span class="p-value"><a class="p-link" href="{{group.webLink}}">{{group.name}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
+                  </div>
+                  <div>
+                    <span class="p-key">Type: </span>
+                    <span class="p-value">{{group.type}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Owner: </span>
+                    <span class="p-value">{{group.ownerName}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Date Added: </span>
+                    <span class="p-value">{{moment-time group.dateAdded}}</span>
+                  </div>
+                </div>
+              {{/each}}
+            {{/if}}
+            {{#if (gt orgData.indicators.length 0)}}
+              <h1 class="p-title">{{fa-icon "project-diagram" fixedWidth=true}} Associated Indicators</h1>
+              {{#each orgData.indicators as | indicator |}}
+                <div class="data-block-container">
+                  <div>
+                    <span class="p-key">Value: </span>
+                    <span class="p-value"><a class="p-link" href="{{indicator.webLink}}">{{indicator.summary}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
+                  </div>
+                  <div>
+                    <span class="p-key">Owner: </span>
+                    <span class="p-value">{{indicator.ownerName}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Type: </span>
+                    <span class="p-value">{{indicator.type}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Threat Assess Rating: </span>
+                    <span class="p-value">{{indicator.threatAssessRating}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Threat Assess Confidence: </span>
+                    <span class="p-value">{{indicator.threatAssessConfidence}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Date Added: </span>
+                    <span class="p-value">{{moment-time indicator.dateAdded}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Last Modified: </span>
+                    <span class="p-value">{{moment-time indicator.lastModified}}</span>
+                  </div>
+                </div>
+              {{/each}}
+            {{/if}}
+        {{/if}}
     {{/each}}
 {{/if}}
 
