@@ -256,7 +256,12 @@ function onDetails(lookupObject, options, cb) {
 
   owners.forEach((owner) => {
     tasks.push(function(done) {
-      tc.getIndicator(indicatorType, indicatorValue, owner.name, done);
+      async.parallel({
+        getIndicator: (subTaskDone) => tc.getIndicator(indicatorType, indicatorValue, owner.name, subTaskDone),
+        getGroups: (subTaskDone) => tc.getGroups(indicatorType, indicatorValue, owner.name, subTaskDone)
+      }, (err, results) => {
+        done(err, results);
+      });
     });
   });
 
@@ -266,13 +271,17 @@ function onDetails(lookupObject, options, cb) {
       cb(err);
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
+      let orgData = results.map(result => {
+        result.getIndicator.groups = result.getGroups.groups;
+        return result.getIndicator;
+      });
 
-      results.forEach((result) => {
-        _modifyWebLinksWithPort(result); //this method mutates result
-        if (result.threatAssessScore) {
-          result.threatAssessScorePercentage = (result.threatAssessScore / 1000) * 100;
+      orgData.forEach((org) => {
+        _modifyWebLinksWithPort(org); //this method mutates result
+        if (org.threatAssessScore) {
+          org.threatAssessScorePercentage = (org.threatAssessScore / 1000) * 100;
         } else {
-          result.threatAssessScorePercentage = 0;
+          org.threatAssessScorePercentage = 0;
         }
       });
 
@@ -281,7 +290,7 @@ function onDetails(lookupObject, options, cb) {
         details: {
           meta: lookupObject.data.details.meta,
           owners: lookupObject.data.details.owners,
-          results: results
+          results: orgData
         }
       });
     }
@@ -407,6 +416,14 @@ function _modifyWebLinksWithPort(result) {
       result.tag.forEach((tag) => {
         if (typeof tag.webLink === 'string') {
           tag.webLink = _addPortToLink(tag.webLink, port);
+        }
+      });
+    }
+
+    if (Array.isArray(result.groups)) {
+      result.groups.forEach((group) => {
+        if (typeof group.webLink === 'string') {
+          group.webLink = _addPortToLink(group.webLink, port);
         }
       });
     }

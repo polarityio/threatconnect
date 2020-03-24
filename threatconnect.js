@@ -419,6 +419,38 @@ class ThreatConnect {
     });
   }
 
+  getGroups(indicatorTypePlural, indicatorValue, owner, cb){
+    let self = this;
+    self._getGroups(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
+      self._formatResponse(err, response, body, function(err, groupData) {
+        if (err) {
+          return cb(err);
+        }
+
+        if (!groupData) {
+          return cb(null, {
+            meta: {
+              indicatorType: indicatorTypePlural,
+              indicatorValue: indicatorValue
+            },
+            groups: []
+          });
+        }
+
+        cb(null, {
+          meta: {
+            indicatorType: indicatorTypePlural,
+            indicatorValue: indicatorValue
+          },
+          owner: {
+            name: owner
+          },
+          groups: groupData.group
+        });
+      });
+    });
+  }
+
   getIndicator(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
 
@@ -508,6 +540,37 @@ class ThreatConnect {
       default:
         return 'Unknown';
     }
+  }
+
+  _getGroups(indicatorType, indicatorValue, owner, cb){
+    let qs = '';
+    if (typeof owner === 'string' && owner.length > 0) {
+      qs = '?' + querystring.stringify({ owner: owner });
+    } else if (typeof owner === 'function') {
+      cb = owner;
+    }
+
+    let uri = this._getResourcePath(
+      'indicators/' + encodeURIComponent(indicatorType) + '/' + encodeURIComponent(indicatorValue) + '/groups' + qs
+    );
+
+    let urlPath =
+      this.url.path +
+      'v2/indicators/' +
+      encodeURIComponent(indicatorType) +
+      '/' +
+      encodeURIComponent(indicatorValue) +
+      '/groups' +
+      qs;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, cb);
   }
 
   _getOwners(indicatorType, indicatorValue, cb) {

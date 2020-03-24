@@ -99,6 +99,27 @@
         <div class="{{if orgData.__showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}">
             <span class="p-footnote">False positive already reported today</span>
         </div>
+        {{#if (gt orgData.groups.length 0)}}
+        <h1 class="p-title">{{fa-icon "user-secret" fixedWidth=true}} Associated Groups</h1>
+          {{#each orgData.groups as | group |}}
+            <div>
+              <span class="p-key">Group Name: </span>
+              <span class="p-value">{{group.name}}</span>
+            </div>
+            <div>
+              <span class="p-key">Type: </span>
+              <span class="p-value">{{group.type}}</span>
+            </div>
+            <div>
+              <span class="p-key">Owner: </span>
+              <span class="p-value">{{group.ownerName}}</span>
+            </div>
+            <div>
+              <span class="p-key">Date Added: </span>
+              <span class="p-value">{{moment-time group.dateAdded}}</span>
+            </div>
+          {{/each}}
+        {{/if}}
         <div>
           <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}{{fa-icon "tags" fixedWidth=true}}{{/if}} Tags</span>
         </div>
