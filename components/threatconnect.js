@@ -15,6 +15,9 @@ polarity.export = PolarityComponent.extend({
     });
   },
   actions: {
+    changeTab: function(tabName, orgDataIndex) {
+      this.set(`results.${orgDataIndex}.__activeTab`, tabName);
+    },
     saveConfidence(orgData, orgDataIndex) {
       console.info('Saving Confidence');
       let self = this;

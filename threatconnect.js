@@ -419,9 +419,9 @@ class ThreatConnect {
     });
   }
 
-  getGroups(indicatorTypePlural, indicatorValue, owner, cb){
+  getGroupAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getGroups(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
+    self._getGroupAssociations(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
       self._formatResponse(err, response, body, function(err, groupData) {
         if (err) {
           return cb(err);
@@ -446,6 +446,38 @@ class ThreatConnect {
             name: owner
           },
           groups: groupData.group
+        });
+      });
+    });
+  }
+
+  getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
+    let self = this;
+    self._getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
+      self._formatResponse(err, response, body, function(err, indicatorData) {
+        if (err) {
+          return cb(err);
+        }
+
+        if (!indicatorData) {
+          return cb(null, {
+            meta: {
+              indicatorType: indicatorTypePlural,
+              indicatorValue: indicatorValue
+            },
+            indicators: []
+          });
+        }
+
+        cb(null, {
+          meta: {
+            indicatorType: indicatorTypePlural,
+            indicatorValue: indicatorValue
+          },
+          owner: {
+            name: owner
+          },
+          indicators: indicatorData.indicator
         });
       });
     });
@@ -542,7 +574,7 @@ class ThreatConnect {
     }
   }
 
-  _getGroups(indicatorType, indicatorValue, owner, cb){
+  _getGroupAssociations(indicatorType, indicatorValue, owner, cb) {
     let qs = '';
     if (typeof owner === 'string' && owner.length > 0) {
       qs = '?' + querystring.stringify({ owner: owner });
@@ -561,6 +593,37 @@ class ThreatConnect {
       '/' +
       encodeURIComponent(indicatorValue) +
       '/groups' +
+      qs;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, cb);
+  }
+
+  _getIndicatorAssociations(indicatorType, indicatorValue, owner, cb) {
+    let qs = '';
+    if (typeof owner === 'string' && owner.length > 0) {
+      qs = '?' + querystring.stringify({ owner: owner });
+    } else if (typeof owner === 'function') {
+      cb = owner;
+    }
+
+    let uri = this._getResourcePath(
+      'indicators/' + encodeURIComponent(indicatorType) + '/' + encodeURIComponent(indicatorValue) + '/indicators' + qs
+    );
+
+    let urlPath =
+      this.url.path +
+      'v2/indicators/' +
+      encodeURIComponent(indicatorType) +
+      '/' +
+      encodeURIComponent(indicatorValue) +
+      '/indicators' +
       qs;
 
     let requestOptions = {
@@ -690,13 +753,13 @@ class ThreatConnect {
       return;
     }
 
-    if(body && typeof body.status === 'undefined'){
+    if (body && typeof body.status === 'undefined') {
       // this is an unexpected response that does not match the normal payload response
       return cb({
         detail: 'Received an unexpected response.  Please check your URL.',
         body: body,
         statusCode: response && response.statusCode ? response.statusCode : 500
-      })
+      });
     }
 
     if (this._isMiss(response)) {

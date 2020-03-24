@@ -256,12 +256,18 @@ function onDetails(lookupObject, options, cb) {
 
   owners.forEach((owner) => {
     tasks.push(function(done) {
-      async.parallel({
-        getIndicator: (subTaskDone) => tc.getIndicator(indicatorType, indicatorValue, owner.name, subTaskDone),
-        getGroups: (subTaskDone) => tc.getGroups(indicatorType, indicatorValue, owner.name, subTaskDone)
-      }, (err, results) => {
-        done(err, results);
-      });
+      async.parallel(
+        {
+          getIndicator: (subTaskDone) => tc.getIndicator(indicatorType, indicatorValue, owner.name, subTaskDone),
+          getGroupAssociations: (subTaskDone) =>
+            tc.getGroupAssociations(indicatorType, indicatorValue, owner.name, subTaskDone),
+          getIndicatorAssociations: (subTaskDone) =>
+            tc.getIndicatorAssociations(indicatorType, indicatorValue, owner.name, subTaskDone)
+        },
+        (err, results) => {
+          done(err, results);
+        }
+      );
     });
   });
 
@@ -271,8 +277,11 @@ function onDetails(lookupObject, options, cb) {
       cb(err);
     } else {
       Logger.debug({ results: results }, 'onDetails Results');
-      let orgData = results.map(result => {
-        result.getIndicator.groups = result.getGroups.groups;
+      let orgData = results.map((result) => {
+        result.getIndicator.groups = result.getGroupAssociations.groups;
+        result.getIndicator.indicators = result.getIndicatorAssociations.indicators;
+        result.getIndicator.numAssociations =
+          result.getGroupAssociations.groups.length + result.getIndicatorAssociations.indicators.length;
         return result.getIndicator;
       });
 
@@ -284,6 +293,8 @@ function onDetails(lookupObject, options, cb) {
           org.threatAssessScorePercentage = 0;
         }
       });
+
+      Logger.debug({ orgData }, 'Final Result');
 
       cb(null, {
         summary: lookupObject.data.summary,
@@ -424,6 +435,14 @@ function _modifyWebLinksWithPort(result) {
       result.groups.forEach((group) => {
         if (typeof group.webLink === 'string') {
           group.webLink = _addPortToLink(group.webLink, port);
+        }
+      });
+    }
+
+    if (Array.isArray(result.indicators)) {
+      result.indicators.forEach((indicator) => {
+        if (typeof indicator.webLink === 'string') {
+          indicator.webLink = _addPortToLink(indicator.webLink, port);
         }
       });
     }
