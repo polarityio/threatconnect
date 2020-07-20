@@ -56,52 +56,52 @@ function doLookup(entities, options, cb) {
   });
 }
 
-function createSearchOrgWhitelist(options) {
-  let whitelistedOrgs = new Set();
+function createSearchOrgAllowlist(options) {
+  let allowlistedOrgs = new Set();
 
-  if (typeof options.searchWhitelist === 'string' && options.searchWhitelist.trim().length > 0) {
-    let tokens = options.searchWhitelist.split(',');
+  if (typeof options.searchAllowlist === 'string' && options.searchAllowlist.trim().length > 0) {
+    let tokens = options.searchAllowlist.split(',');
     tokens.forEach((token) => {
       token = token.trim().toLowerCase();
       if (token.length > 0) {
-        whitelistedOrgs.add(token);
+        allowlistedOrgs.add(token);
       }
     });
   }
 
-  Logger.debug({ whitelist: [...whitelistedOrgs] }, 'Organization Search Whitelist');
+  Logger.debug({ allowlist: [...allowlistedOrgs] }, 'Organization Search Allowlist');
 
-  return whitelistedOrgs;
+  return allowlistedOrgs;
 }
 
-function createSearchOrgBlacklist(options) {
-  let blacklistedOrgs = new Set();
+function createSearchOrgBlocklist(options) {
+  let blocklistedOrgs = new Set();
 
-  if (typeof options.searchBlacklist === 'string' && options.searchBlacklist.trim().length > 0) {
-    let tokens = options.searchBlacklist.split(',');
+  if (typeof options.searchBlocklist === 'string' && options.searchBlocklist.trim().length > 0) {
+    let tokens = options.searchBlocklist.split(',');
     tokens.forEach((token) => {
       token = token.trim().toLowerCase();
       if (token.length > 0) {
-        blacklistedOrgs.add(token);
+        blocklistedOrgs.add(token);
       }
     });
   }
 
-  Logger.debug({ blacklist: [...blacklistedOrgs] }, 'Organization Search Blacklist');
+  Logger.debug({ blocklist: [...blocklistedOrgs] }, 'Organization Search Blocklist');
 
-  return blacklistedOrgs;
+  return blocklistedOrgs;
 }
 
 function getFilteredOwners(owners, options) {
-  if (options.searchBlacklist.trim().length > 0) {
-    let blacklistedOrgs = createSearchOrgBlacklist(options);
+  if (options.searchBlocklist.trim().length > 0) {
+    let blocklistedOrgs = createSearchOrgBlocklist(options);
     return owners.filter((owner) => {
-      return !blacklistedOrgs.has(owner.name.toLowerCase());
+      return !blocklistedOrgs.has(owner.name.toLowerCase());
     });
-  } else if (options.searchWhitelist.trim().length > 0) {
-    let whitelistedOrgs = createSearchOrgWhitelist(options);
+  } else if (options.searchAllowlist.trim().length > 0) {
+    let allowlistedOrgs = createSearchOrgAllowlist(options);
     return owners.filter((owner) => {
-      return whitelistedOrgs.has(owner.name.toLowerCase());
+      return allowlistedOrgs.has(owner.name.toLowerCase());
     });
   } else {
     return owners;
@@ -496,18 +496,18 @@ function validateOptions(userOptions, cb) {
   }
 
   if (
-    typeof userOptions.searchWhitelist.value === 'string' &&
-    userOptions.searchWhitelist.value.trim().length > 0 &&
-    typeof userOptions.searchBlacklist.value === 'string' &&
-    userOptions.searchBlacklist.value.trim().length > 0
+    typeof userOptions.searchAllowlist.value === 'string' &&
+    userOptions.searchAllowlist.value.trim().length > 0 &&
+    typeof userOptions.searchBlocklist.value === 'string' &&
+    userOptions.searchBlocklist.value.trim().length > 0
   ) {
     errors.push({
-      key: 'searchWhitelist',
-      message: 'You cannot provide both an "Organization Search Whitelist", and an "Organization Search Blacklist".'
+      key: 'searchAllowlist',
+      message: 'You cannot provide both an "Organization Search Allowlist", and an "Organization Search Blocklist".'
     });
     errors.push({
-      key: 'searchBlacklist',
-      message: 'You cannot provide both an "Organization Search Blacklist", and an "Organization Search Whitelist".'
+      key: 'searchBlocklist',
+      message: 'You cannot provide both an "Organization Search Blocklist", and an "Organization Search Allowlist".'
     });
   }
 

@@ -120,20 +120,20 @@ module.exports = {
       adminOnly: true
     },
     {
-      key: 'searchBlacklist',
-      name: 'Organization Search Blacklist',
+      key: 'searchBlocklist',
+      name: 'Organization Search Blocklist',
       description:
-        'By default all organizations visible to the provided API User will be searched.  This blacklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Whitelist" option.',
+        'By default all organizations visible to the provided API User will be searched.  This blocklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Allowlist" option.',
       default: '',
       type: 'text',
       userCanEdit: false,
       adminOnly: true
     },
     {
-      key: 'searchWhitelist',
-      name: 'Organization Search Whitelist',
+      key: 'searchAllowlist',
+      name: 'Organization Search Allowlist',
       description:
-        'By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blacklist" option',
+        'By default all organizations visible to the provided API User will be searched. This allowlist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blocklist" option',
       default: '',
       type: 'text',
       userCanEdit: false,
