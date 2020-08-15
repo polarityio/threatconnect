@@ -24,15 +24,15 @@ Account Identifier that is associated with the API Key
 
 The API (secret) Key associated with the provided Access ID
 
-### Organization Search Blacklist
+### Organization Search Blocklist
 
-By default all organizations visible to the provided API User will be searched. This blacklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Whitelist" option.
+By default all organizations visible to the provided API User will be searched. This blocklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Allowlist" option.
 
-### Organization Search Whitelist
+### Organization Search Allowlist 
 
-By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blacklist" option
+By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blocklist" option
 
-> Note that you cannot use both the Organization Search Whitelist and the Organization Search Blacklist.  
+> Note that you cannot use both the Organization Search Allowlist and the Organization Search Blocklist.  
 
 ## Custom Ports
 
