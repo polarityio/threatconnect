@@ -1,6 +1,18 @@
 const querystring = require('querystring');
 const crypto = require('crypto');
 const url = require('url');
+const async = require('async');
+const fp = require('lodash/fp');
+const NodeCache = require('node-cache');
+
+const playbookCache = new NodeCache({
+  stdTTL: 10 * 60
+});
+const playbookResultsCache = new NodeCache({
+  stdTTL: 12 * 60 * 60
+});
+
+const { GET_PLAYBOOKS, PLAYBOOK_TRIGGERS } = require('./mockedData');
 const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
@@ -100,8 +112,8 @@ class ThreatConnect {
 
     self.log.debug({ requestOptions }, 'setRating request options');
 
-    this.request(requestOptions, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, data) {
+    this.request(requestOptions, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, data) {
         if (err) {
           cb(err);
         } else {
@@ -247,7 +259,7 @@ class ThreatConnect {
    * @private
    */
   _fixedEncodeURIComponent(str) {
-    return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
   }
@@ -399,8 +411,8 @@ class ThreatConnect {
 
   getTags(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getTags(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, tagData) {
+    self._getTags(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, tagData) {
         if (err || !tagData) {
           return cb(err);
         }
@@ -421,8 +433,8 @@ class ThreatConnect {
 
   getGroupAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getGroupAssociations(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, groupData) {
+    self._getGroupAssociations(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, groupData) {
         if (err) {
           return cb(err);
         }
@@ -453,8 +465,8 @@ class ThreatConnect {
 
   getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, indicatorData) {
+    self._getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, indicatorData) {
         if (err) {
           return cb(err);
         }
@@ -485,7 +497,6 @@ class ThreatConnect {
 
   getIndicator(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-
     const indicatorTypeSingular = INDICATOR_TYPES[indicatorTypePlural];
     if (typeof indicatorTypeSingular === 'undefined') {
       return cb({
@@ -493,16 +504,17 @@ class ThreatConnect {
       });
     }
 
-    this._getIndicator(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, data) {
-        if (err || !data) {
-          return cb(err, data);
-        }
+    this._getIndicator(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, data) {
+        if (err || !data) return cb(err, data);
 
         let result = data[indicatorTypeSingular];
-        self.log.trace({ result }, 'getIndicator result');
         result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
-        cb(null, result);
+        self.getPlaybooksForIndicator(result, (err, playbooks) => {
+          if (err) return cb(err);
+
+          cb(null, { ...result, playbooks });
+        });
       });
     });
   }
@@ -793,16 +805,158 @@ class ThreatConnect {
 
     this.log.debug({ signature: signature }, 'Auth Signature');
 
-    let hmacSignatureInBase64 = crypto
-      .createHmac('sha256', this.secretKey)
-      .update(signature)
-      .digest('base64');
+    let hmacSignatureInBase64 = crypto.createHmac('sha256', this.secretKey).update(signature).digest('base64');
 
     return 'TC ' + this.accessId + ':' + hmacSignatureInBase64;
   }
 
   _getResourcePath(resourcePath) {
     return this.url.href + 'v2/' + resourcePath;
+  }
+  _getResourcePathInternal(resourcePath) {
+    return this.url.href + 'internal/' + resourcePath;
+  }
+  getPlaybooksForIndicator(indicator, callback) {
+    const indicatorType = fp.toLower(INDICATOR_TYPES[fp.get('meta.indicatorType', indicator)]);
+    if (!indicatorType) return cb({ err: indicator, detail: 'Getting Playbooks Failed - No Indicator Type Found' });
+
+    this.getPlaybooks((err, playbooks) => {
+      if (err) return callback(err);
+
+      const playbooksForThisIndicator = fp.filter(
+        fp.flow(fp.getOr([], 'playbookTriggerTypes'), fp.includes(indicatorType)),
+        playbooks
+      );
+
+      return callback(null, playbooksForThisIndicator);
+    });
+  }
+  getPlaybooks(callback) {
+    const cachedPlaybooks = playbookCache.get('playbooks');
+    if (cachedPlaybooks) return callback(null, cachedPlaybooks);
+
+    const self = this;
+    const qs = querystring.stringify({
+      page: 0,
+      limit: 1000,
+      type: 'Playbook',
+      triggerType: 'UserAction',
+      sortOn: 'name',
+      sortAscending: true
+    });
+    const path = `playbooks/search?${qs}`;
+    const uri = this._getResourcePath(path);
+
+    let requestOptions = {
+      uri,
+      method: 'GET',
+      headers: this._getHeaders(uri, 'GET'),
+      json: true
+    };
+
+    // this.request(requestOptions, (err, response, body) => {
+    //   if(err) return callback(err);
+    // TODO: get auth in Request to work
+
+    const foundPlaybooks = GET_PLAYBOOKS.results; //fp.getOr([], 'results')(body)
+
+    async.parallel(
+      fp.map(
+        (playbook) => (done) =>
+          self.getPlaybookTriggerTypes(playbook.id, (err, playbookTriggerTypes) => {
+            if (err) return done(err);
+            done(null, { ...playbook, playbookTriggerTypes });
+          }),
+        foundPlaybooks
+      ),
+      (err, playbooksWithTriggerTypes) => {
+        if (err) return done(err);
+        playbookCache.set('playbooks', playbooksWithTriggerTypes);
+
+        callback(null, playbooksWithTriggerTypes);
+      }
+    );
+    // });
+  }
+
+  getPlaybookTriggerTypes(playbookId, callback) {
+    if (!playbookId)
+      return callback({
+        err: `PlaybookId: ${playbookId}`,
+        detail: 'Getting Getting Playbook Trigger Failed - No Playbook Id'
+      });
+    const path = `playbooks/${playbookId}/trigger/summary`;
+    const uri = this._getResourcePath(path);
+
+    let requestOptions = {
+      uri,
+      method: 'GET',
+      headers: this._getHeaders(uri, 'GET'),
+      json: true
+    };
+
+    // this.request(requestOptions, (err, response, body) => {
+    // if (err || fp.get('status', body) !== 'Success') {
+    //   return callback(err || { err: body, detail: 'Getting Playbook Trigger Failed' });
+    // }
+    // TODO: get auth in Request to work
+    const playbookTriggerTypes = fp.flow(
+      fp.getOr('', 'data.userActionTypes'),
+      fp.split(','),
+      fp.map(fp.toLower),
+      fp.compact
+    )(PLAYBOOK_TRIGGERS[playbookId] /*body*/);
+
+    callback(null, playbookTriggerTypes);
+    // });
+  }
+
+  runPlaybook(entity, indicatorId, playbookId, callback) {
+    const cachedResults = playbookResultsCache.get(`${indicatorId}${playbookId}`);
+    if (cachedResults) return callback(null, cachedResults);
+
+    const path = `/v2/playbooks/${playbookId}/activate`;
+    const uri = this._getResourcePath(path);
+
+    let requestOptions = {
+      uri,
+      method: 'POST',
+      headers: this._getHeaders(uri, 'POST'),
+      body: { indicatorId, value: entity.value },
+      json: true
+    };
+
+    // TODO: get auth in Request to work
+    // this.request(requestOptions, (err, response, body) => {
+    // if (err || fp.get('status', body) !== 'Success') {
+    //   return callback(err || { err: body, detail: 'Running Playbook Failed' });
+    const bodyResult = {
+      status: 'Completed',
+      message:
+        'This indicator was archived on 20200919083959 . You can view it here: http://web.archive.org/web/20200919083959/https://polarity.io/.'
+    };
+    playbookResultsCache.set(`${indicatorId}${playbookId}`, bodyResult);
+    callback(null, bodyResult);
+    // }
+  }
+  createIndicator(entity, callback) {
+    const path = `/v2/indicator/${entity.value}/create`;
+    const uri = this._getResourcePath(path);
+
+    let requestOptions = {
+      uri,
+      method: 'POST',
+      headers: this._getHeaders(uri, 'POST'),
+      body: { value: entity.value },
+      json: true
+    };
+    
+    // TODO: get auth in Request to work
+    // this.request(requestOptions, (err, response, body) => {
+    // if (err || fp.get('status', body) !== 'Success') {
+    //   return callback(err || { err: body, detail: 'Running Playbook Failed' });
+    callback(null, 124234053);
+    // }
   }
 }
 

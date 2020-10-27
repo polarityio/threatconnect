@@ -5,6 +5,7 @@ const async = require('async');
 const url = require('url');
 const ThreatConnect = require('./threatconnect');
 const request = require('request');
+const fp = require('lodash/fp');
 const fs = require('fs');
 const config = require('./config/config');
 const MAX_SUMMARY_TAGS = 3;
@@ -50,7 +51,6 @@ function doLookup(entities, options, cb) {
   tc.setAccessId(options.accessId);
 
   Logger.trace({ entities: entities, options }, 'doLookup');
-
   searchAllOwners(entities, options, (err, lookupResults) => {
     cb(err, lookupResults);
   });
@@ -124,7 +124,8 @@ function searchAllOwners(entities, options, cb) {
           if (result.owners.length === 0) {
             lookupResults.push({
               entity: entityObj,
-              data: null
+              isVolatile: true,
+              data: { summary: ['New Entity'] }
             });
           } else {
             const filteredOwners = getFilteredOwners(result.owners, options);
@@ -229,10 +230,25 @@ function onDetails(lookupObject, options, cb) {
 
   const details = lookupObject.data.details;
   const tasks = [];
-
+  
   tc.setSecretKey(options.apiKey);
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
+
+  if (!details) {
+    return tc.getPlaybooks((err, playbooks) => {
+      if (err) return cb(err);
+
+      cb(null, {
+        ...lookupObject,
+        isVolatile: true,
+        summary: ['New Entity'],
+        details: {
+          playbooks
+        }
+      });
+    });
+  }
 
   if (!details.meta || !Array.isArray(details.owners)) {
     // invalid data probably due to cached entry
@@ -275,36 +291,44 @@ function onDetails(lookupObject, options, cb) {
     if (err) {
       Logger.error({ err: err }, 'Error in onDetails lookup');
       cb(err);
-    } else {
-      Logger.debug({ results: results }, 'onDetails Results');
-      let orgData = results.map((result) => {
-        result.getIndicator.groups = result.getGroupAssociations.groups;
-        result.getIndicator.indicators = result.getIndicatorAssociations.indicators;
-        result.getIndicator.numAssociations =
-          result.getGroupAssociations.groups.length + result.getIndicatorAssociations.indicators.length;
-        return result.getIndicator;
-      });
+    } 
+    
+    Logger.debug({ results }, 'onDetails Results');
 
-      orgData.forEach((org) => {
-        _modifyWebLinksWithPort(org); //this method mutates result
-        if (org.threatAssessScore) {
-          org.threatAssessScorePercentage = (org.threatAssessScore / 1000) * 100;
-        } else {
-          org.threatAssessScorePercentage = 0;
-        }
-      });
+    let orgData = fp.map(
+      (result) => {
+        const groups = fp.getOr([], 'getGroupAssociations.groups', result);
+        const indicators = fp.getOr([], 'getIndicatorAssociations.indicators', result);
+        const numAssociations = groups.length + indicators.length;
+        const getIndicator = { ...result.getIndicator, groups, indicators, numAssociations };
 
-      Logger.debug({ orgData }, 'Final Result');
+        result.getIndicator = getIndicator;
 
-      cb(null, {
-        summary: lookupObject.data.summary,
-        details: {
-          meta: lookupObject.data.details.meta,
-          owners: lookupObject.data.details.owners,
-          results: orgData
-        }
-      });
-    }
+        return getIndicator;
+      },
+      results
+    );
+    
+    orgData.forEach((org) => {
+      _modifyWebLinksWithPort(org); //this method mutates result
+      if (org.threatAssessScore) {
+        org.threatAssessScorePercentage = (org.threatAssessScore / 1000) * 100;
+      } else {
+        org.threatAssessScorePercentage = 0;
+      }
+    });
+
+    Logger.debug({ orgData }, 'Final Result');
+
+    cb(null, {
+      summary: lookupObject.data.summary,
+      isVolatile: true,
+      details: {
+        ...fp.getOr({}, 'data.details', lookupObject),
+        results: orgData,
+      }
+    });
+    
   });
 }
 
@@ -321,7 +345,7 @@ function onMessage(payload, options, cb) {
         payload.data.indicatorType,
         payload.data.owner,
         payload.data.rating,
-        function(err, result) {
+        function (err, result) {
           if (err) {
             Logger.error({ err, payload }, 'Error Setting Rating');
             cb(null, { error: err });
@@ -338,7 +362,7 @@ function onMessage(payload, options, cb) {
         payload.data.indicatorType,
         payload.data.owner,
         payload.data.confidence,
-        function(err, result) {
+        function (err, result) {
           if (err) {
             Logger.error({ err, payload }, 'Error Setting Rating');
             cb(null, { error: err });
@@ -400,6 +424,50 @@ function onMessage(payload, options, cb) {
           }
         }
       );
+      break;
+    case 'RUN_PLAYBOOK':
+      payload.data.indicatorId
+        ? tc.runPlaybook(
+            payload.data.entity,
+            payload.data.indicatorId,
+            payload.data.playbookId,
+            (err, result) => {
+              if (err) {
+                Logger.error({ err, payload }, 'Error Running Playbook');
+                cb({
+                  errors: [
+                    {
+                      detail: 'Error Running Playbook',
+                      err
+                    }
+                  ]
+                });
+              }
+
+              cb(null, result);
+            }
+          )
+        : createIndicatorAndRunPlaybook(
+            payload.data.entity,
+            payload.data.playbookId,
+            options,
+            (err, result) => {
+              if (err) {
+                Logger.error({ err, payload }, 'Error Running Playbook');
+                cb({
+                  errors: [
+                    {
+                      detail: 'Error Creating Entity and Running Playbook',
+                      err
+                    }
+                  ]
+                });
+              }
+              Logger.trace({test:'lksjdffksdf', result})
+              cb(null, result);
+            }
+          );
+      
       break;
     default:
       cb({
@@ -469,6 +537,43 @@ function isOptionMissing(userOptions, key) {
     return true;
   }
   return false;
+}
+
+function createIndicatorAndRunPlaybook(entity, playbookId, options, callback) {
+  tc.createIndicator(entity, (err, indicatorId) => {
+    if (err) return callback(err);
+    tc.runPlaybook(entity, indicatorId, playbookId, (err, playbookResult) => {
+      if (err) return callback(err);
+      doLookup(
+        [
+          {
+            type: 'domain',
+            types: ['domain'],
+            value: 'polarity.io'
+          } /*entity*/
+        ],
+        options,
+        (err, [lookupResult]) => {
+          if (err) return callback(err);
+          onDetails(lookupResult, options, (err, lookupObject) => {
+            if (err) return callback(err);
+            Logger.trace({
+              test: '123____________',
+              entity,
+              playbookId,
+              options,
+              indicatorId,
+              playbookResult,
+              lookupResult,
+              lookupObject
+            });
+
+            callback(null, { ...playbookResult, ...lookupObject });
+          });
+        }
+      );
+    });
+  });
 }
 
 function validateOptions(userOptions, cb) {
