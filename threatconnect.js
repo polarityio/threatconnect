@@ -19,6 +19,23 @@ const INDICATOR_TYPES = {
   hosts: 'host',
   addresses: 'address'
 };
+const POLARITY_TYPE_TO_THREATCONNECT = {
+  IPv4: 'addresses',
+  IPv6: 'addresses',
+  hash: 'files',
+  email: 'emailAddresses',
+  domain: 'hosts'
+};
+
+const SUBMISSION_LABELS = {
+  IPv4: 'ip',
+  IPv6: 'ip',
+  MD5: 'md5',
+  SHA1: 'sha1',
+  SHA256: 'sha256',
+  email: 'address',
+  domain: 'hostName'
+};
 
 class ThreatConnect {
   constructor(request, logger) {
@@ -803,7 +820,7 @@ class ThreatConnect {
   _getAuthHeader(urlPath, httpMethod, timestamp) {
     let signature = urlPath + ':' + httpMethod + ':' + timestamp;
 
-    this.log.debug({ signature: signature }, 'Auth Signature');
+    this.log.trace({ signature: signature }, 'Auth Signature');
 
     let hmacSignatureInBase64 = crypto.createHmac('sha256', this.secretKey).update(signature).digest('base64');
 
@@ -850,33 +867,32 @@ class ThreatConnect {
     let requestOptions = {
       uri,
       method: 'GET',
-      headers: this._getHeaders(uri, 'GET'),
+      headers: this._getHeaders(`/api/v2/${path}`, 'GET'),
       json: true
     };
 
-    // this.request(requestOptions, (err, response, body) => {
-    //   if(err) return callback(err);
-    // TODO: get auth in Request to work
+    this.request(requestOptions, (err, response, body) => {
+      if(err) return callback(err);
 
-    const foundPlaybooks = GET_PLAYBOOKS.results; //fp.getOr([], 'results')(body)
+      const foundPlaybooks = fp.getOr([], 'data.playbook')(body);
 
-    async.parallel(
-      fp.map(
-        (playbook) => (done) =>
-          self.getPlaybookTriggerTypes(playbook.id, (err, playbookTriggerTypes) => {
-            if (err) return done(err);
-            done(null, { ...playbook, playbookTriggerTypes });
-          }),
-        foundPlaybooks
-      ),
-      (err, playbooksWithTriggerTypes) => {
-        if (err) return done(err);
-        playbookCache.set('playbooks', playbooksWithTriggerTypes);
+      async.parallel(
+        fp.map(
+          (playbook) => (done) =>
+            self.getPlaybookTriggerTypes(playbook.id, (err, playbookTriggerTypes) => {
+              if (err) return done(err);
+              done(null, { ...playbook, playbookTriggerTypes });
+            }),
+          foundPlaybooks
+        ),
+        (err, playbooksWithTriggerTypes) => {
+          if (err) return callback(err);
+          playbookCache.set('playbooks', playbooksWithTriggerTypes);
 
-        callback(null, playbooksWithTriggerTypes);
-      }
-    );
-    // });
+          callback(null, playbooksWithTriggerTypes);
+        }
+      );
+    });
   }
 
   getPlaybookTriggerTypes(playbookId, callback) {
@@ -885,79 +901,96 @@ class ThreatConnect {
         err: `PlaybookId: ${playbookId}`,
         detail: 'Getting Getting Playbook Trigger Failed - No Playbook Id'
       });
-    const path = `playbooks/${playbookId}/trigger/summary`;
+
+    const self = this;
+    const path = `playbooks/${playbookId}`;
     const uri = this._getResourcePath(path);
 
     let requestOptions = {
       uri,
       method: 'GET',
-      headers: this._getHeaders(uri, 'GET'),
+      headers: this._getHeaders(`/api/v2/${path}`, 'GET'),
       json: true
     };
 
-    // this.request(requestOptions, (err, response, body) => {
-    // if (err || fp.get('status', body) !== 'Success') {
-    //   return callback(err || { err: body, detail: 'Getting Playbook Trigger Failed' });
-    // }
-    // TODO: get auth in Request to work
-    const playbookTriggerTypes = fp.flow(
-      fp.getOr('', 'data.userActionTypes'),
-      fp.split(','),
-      fp.map(fp.toLower),
-      fp.compact
-    )(PLAYBOOK_TRIGGERS[playbookId] /*body*/);
+    this.request(requestOptions, (err, response, body) => {
+        self.log.trace({ test: 44444444444, requestOptions, err, response, body });
 
-    callback(null, playbookTriggerTypes);
-    // });
+      if (err) return callback(err || { err: body, detail: 'Getting Playbook Trigger Failed' });
+
+      const playbookTriggerTypes = fp.flow(
+        fp.getOr([], 'playbookTriggerList'),
+        fp.filter((playbookTrigger) => playbookTrigger.type === 'UserAction'),
+        fp.map(fp.get('userActionTypes')),
+        fp.join(','),
+        fp.split(','),
+        fp.map(fp.toLower),
+        fp.compact,
+        fp.uniq
+      )(body);
+
+      callback(null, playbookTriggerTypes);
+    });
   }
 
   runPlaybook(entity, indicatorId, playbookId, callback) {
     const cachedResults = playbookResultsCache.get(`${indicatorId}${playbookId}`);
     if (cachedResults) return callback(null, cachedResults);
 
-    const path = `/v2/playbooks/${playbookId}/activate`;
+    const self = this;
+    const path = `playbooks/${playbookId}/runPlaybook`;
     const uri = this._getResourcePath(path);
 
     let requestOptions = {
       uri,
       method: 'POST',
-      headers: this._getHeaders(uri, 'POST'),
+      headers: this._getHeaders(`/api/v2/${path}`, 'POST'),
       body: { indicatorId, value: entity.value },
       json: true
     };
 
-    // TODO: get auth in Request to work
     // this.request(requestOptions, (err, response, body) => {
-    // if (err || fp.get('status', body) !== 'Success') {
-    //   return callback(err || { err: body, detail: 'Running Playbook Failed' });
-    const bodyResult = {
-      status: 'Completed',
-      message:
-        'This indicator was archived on 20200919083959 . You can view it here: http://web.archive.org/web/20200919083959/https://polarity.io/.'
-    };
-    playbookResultsCache.set(`${indicatorId}${playbookId}`, bodyResult);
-    callback(null, bodyResult);
-    // }
+    //   self.log.trace({ test: 44444444444, requestOptions, err, response, body });
+    //   if (err || fp.get('status', body) !== 'Success')
+    //     return callback(err || { err: body, detail: 'Running Playbook Failed' });
+      const bodyResult = {
+        status: 'Completed',
+        message:
+          'This indicator was archived on 20200919083959 . You can view it here: http://web.archive.org/web/20200919083959/https://polarity.io/.'
+      };
+      playbookResultsCache.set(`${indicatorId}${playbookId}`, bodyResult);
+      callback(null, bodyResult);
+    // });
   }
   createIndicator(entity, callback) {
-    const path = `/v2/indicator/${entity.value}/create`;
+    const tcType = POLARITY_TYPE_TO_THREATCONNECT[entity.type];
+    const submissionLabel = SUBMISSION_LABELS[entity.type === 'hash' ? entity.subtype : entity.type];
+
+    const path = `indicators/${tcType}`;
     const uri = this._getResourcePath(path);
 
     let requestOptions = {
       uri,
       method: 'POST',
-      headers: this._getHeaders(uri, 'POST'),
-      body: { value: entity.value },
+      headers: this._getHeaders(`/api/v2/${path}`, 'POST'),
+      body: { [submissionLabel]: entity.value },
       json: true
     };
-    
-    // TODO: get auth in Request to work
-    // this.request(requestOptions, (err, response, body) => {
-    // if (err || fp.get('status', body) !== 'Success') {
-    //   return callback(err || { err: body, detail: 'Running Playbook Failed' });
-    callback(null, 124234053);
-    // }
+
+    this.request(requestOptions, (err, response, body) => {
+      
+      if (err || body.status !== 'Success') 
+        return callback(err || { err: body, detail: 'Running Playbook Failed' });
+      
+      const indicatorId = fp.flow(
+        fp.getOr({}, 'data'),
+        fp.thru((data) => fp.get(`${fp.keys(data)[0]}.id`, data))
+      )(body);
+      
+      callback(null, indicatorId);
+    })
   }
+  
 }
 
 module.exports = ThreatConnect;

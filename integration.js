@@ -544,34 +544,24 @@ function createIndicatorAndRunPlaybook(entity, playbookId, options, callback) {
     if (err) return callback(err);
     tc.runPlaybook(entity, indicatorId, playbookId, (err, playbookResult) => {
       if (err) return callback(err);
-      doLookup(
-        [
-          {
-            type: 'domain',
-            types: ['domain'],
-            value: 'polarity.io'
-          } /*entity*/
-        ],
-        options,
-        (err, [lookupResult]) => {
+      doLookup([entity], options, (err, [lookupResult]) => {
+        if (err) return callback(err);
+        onDetails(lookupResult, options, (err, lookupObject) => {
           if (err) return callback(err);
-          onDetails(lookupResult, options, (err, lookupObject) => {
-            if (err) return callback(err);
-            Logger.trace({
-              test: '123____________',
-              entity,
-              playbookId,
-              options,
-              indicatorId,
-              playbookResult,
-              lookupResult,
-              lookupObject
-            });
-
-            callback(null, { ...playbookResult, ...lookupObject });
+          Logger.trace({
+            test: '123____________',
+            entity,
+            playbookId,
+            options,
+            indicatorId,
+            playbookResult,
+            lookupResult,
+            lookupObject
           });
-        }
-      );
+
+          callback(null, { ...playbookResult, ...lookupObject });
+        });
+      });
     });
   });
 }
