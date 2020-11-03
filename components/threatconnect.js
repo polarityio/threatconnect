@@ -10,7 +10,7 @@ polarity.export = PolarityComponent.extend({
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }),
   playbooks: Ember.computed.alias('details.playbooks'),
-  baseUrl: Ember.computed.alias('details.baseUrl'),
+  indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
@@ -205,78 +205,45 @@ polarity.export = PolarityComponent.extend({
           self.set('block.isLoadingDetails', false);
         });
     },
-    runPlaybook: function (playbookId, orgDataIndex, indicatorId) {
+    createIndicator: function () {
       const outerThis = this;
-      if (!playbookId) {
-        this.setMessage(orgDataIndex, 'Select a playbook to run.');
-        outerThis.get('block').notifyPropertyChange('data');
-
-        return setTimeout(() => {
-          this.setMessage(orgDataIndex, '');
-          outerThis.get('block').notifyPropertyChange('data');
-        }, 4000);
-      }
-
-      this.setMessage(orgDataIndex, '');
-      this.setRunning(orgDataIndex, true);
+      this.set('indicatorMessage', '');
+      this.set('isRunning', true);
       this.get('block').notifyPropertyChange('data');
 
       this.sendIntegrationMessage({
-        action: 'RUN_PLAYBOOK',
+        action: 'CREATE_INDICATOR',
         data: {
           entity: this.block.entity,
-          indicatorId,
-          playbookId
         }
       })
-        .then(({ status, message, details, summary }) => {
+        .then(({ error, details, summary }) => {
+          // if (error) {
+          //   return outerThis.set(
+          //     'indicatorErrorMessage',
+          //     `Failed: ${err.detail || err.message || err.title || err.description || 'Unknown Reason'}`
+          //   );
+          // }
           if (details) outerThis.set('details', details);
           if (summary) outerThis.set('summary', summary);
-          if (details || summary) {
-            this.get('block').notifyPropertyChange('data');
-            orgDataIndex = 0;
-          }
 
-          outerThis.setMessage(orgDataIndex, `Run Status: ${status}${message ? `, Response Message: ${message}` : ''}`);
+          outerThis.set('indicatorMessage', 'Indicator Added Successfully!');
         })
         .catch((err) => {
-          outerThis.setErrorMessage(
-            orgDataIndex,
-            `Failed: ${err.message || err.title || err.description || 'Unknown Reason'}`
+          outerThis.set(
+            'indicatorErrorMessage',
+            `Failed: ${err.detail || err.message || err.title || err.description || 'Unknown Reason'}`
           );
         })
         .finally(() => {
-          outerThis.setRunning(orgDataIndex, false);
+          outerThis.set('isRunning', false);
           outerThis.get('block').notifyPropertyChange('data');
           setTimeout(() => {
-            self.setErrorMessage(orgDataIndex, '');
+            outerThis.set('indicatorErrorMessage','');
+            outerThis.set('indicatorMessage', '');
             outerThis.get('block').notifyPropertyChange('data');
           }, 5000);
         });
-    }
-  },
-
-  setMessage(orgDataIndex, msg) {
-    if (Number.isInteger(orgDataIndex)) {
-      this.set(`results.${orgDataIndex}.__message`, msg);
-    } else {
-      this.set('indicatorMessage', msg);
-    }
-  },
-
-  setErrorMessage(IndicatorIndex, msg) {
-    if (Number.isInteger(IndicatorIndex)) {
-      this.set(`results.${IndicatorIndex}.__errorMessage`, msg);
-    } else {
-      this.set('indicatorErrorMessage', msg);
-    }
-  },
-
-  setRunning(IndicatorIndex, isRunning) {
-    if (Number.isInteger(IndicatorIndex)) {
-      this.set(`results.${IndicatorIndex}.__running`, isRunning);
-    } else {
-      this.set('isRunning', isRunning);
     }
   }
 });

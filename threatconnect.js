@@ -8,11 +8,7 @@ const NodeCache = require('node-cache');
 const playbookCache = new NodeCache({
   stdTTL: 10 * 60
 });
-const playbookResultsCache = new NodeCache({
-  stdTTL: 12 * 60 * 60
-});
 
-const { GET_PLAYBOOKS, PLAYBOOK_TRIGGERS } = require('./mockedData');
 const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
@@ -902,7 +898,6 @@ class ThreatConnect {
         detail: 'Getting Getting Playbook Trigger Failed - No Playbook Id'
       });
 
-    const self = this;
     const path = `playbooks/${playbookId}`;
     const uri = this._getResourcePath(path);
 
@@ -914,8 +909,6 @@ class ThreatConnect {
     };
 
     this.request(requestOptions, (err, response, body) => {
-        self.log.trace({ test: 44444444444, requestOptions, err, response, body });
-
       if (err) return callback(err || { err: body, detail: 'Getting Playbook Trigger Failed' });
 
       const playbookTriggerTypes = fp.flow(
@@ -931,36 +924,6 @@ class ThreatConnect {
 
       callback(null, playbookTriggerTypes);
     });
-  }
-
-  runPlaybook(entity, indicatorId, playbookId, callback) {
-    const cachedResults = playbookResultsCache.get(`${indicatorId}${playbookId}`);
-    if (cachedResults) return callback(null, cachedResults);
-
-    const self = this;
-    const path = `playbooks/${playbookId}/runPlaybook`;
-    const uri = this._getResourcePath(path);
-
-    let requestOptions = {
-      uri,
-      method: 'POST',
-      headers: this._getHeaders(`/api/v2/${path}`, 'POST'),
-      body: { indicatorId, value: entity.value },
-      json: true
-    };
-
-    // this.request(requestOptions, (err, response, body) => {
-    //   self.log.trace({ test: 44444444444, requestOptions, err, response, body });
-    //   if (err || fp.get('status', body) !== 'Success')
-    //     return callback(err || { err: body, detail: 'Running Playbook Failed' });
-      const bodyResult = {
-        status: 'Completed',
-        message:
-          'This indicator was archived on 20200919083959 . You can view it here: http://web.archive.org/web/20200919083959/https://polarity.io/.'
-      };
-      playbookResultsCache.set(`${indicatorId}${playbookId}`, bodyResult);
-      callback(null, bodyResult);
-    // });
   }
   createIndicator(entity, callback) {
     const tcType = POLARITY_TYPE_TO_THREATCONNECT[entity.type];
@@ -978,9 +941,8 @@ class ThreatConnect {
     };
 
     this.request(requestOptions, (err, response, body) => {
-      
       if (err || body.status !== 'Success') 
-        return callback(err || { err: body, detail: 'Running Playbook Failed' });
+        return callback(err || { err: body, detail: 'Creating Indicator Failed' });
       
       const indicatorId = fp.flow(
         fp.getOr({}, 'data'),

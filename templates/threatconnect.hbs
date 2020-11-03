@@ -2,46 +2,40 @@
   {{#if (and onDemand (not results))}}
     <h1 class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Details</h1>
     <div>
-      <span class="p-key">Value: </span>
+      <span class="p-key">Indicator Value: </span>
       <span class="p-value">{{entityValue}}</span>
     </div>
-    <p>
-      Status: <b>Polarity did not find this entity in ThreatConnect</b>
-    </p>
-    <div class="view-in-ts create-in-phantom">
-      <a class="p-link" href="{{baseUrl}}/incidents">Create Indicator in ThreatConnect's Dashboard
-        {{fa-icon "external-link-square" class="external-link-icon"}}</a>
+    <div>
+      <span class="p-key">Indicator Type: </span>
+      <span class="p-value">{{capitalize indicatorType}}</span>
+    </div>
+    <div>
+      <span class="p-key">Status: </span>
+      <span class="p-value">Polarity did not find this entity in ThreatConnect</span>
     </div>
 
-    <h1 class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Create Indicator and Run Playbook</h1>
-
-    <select class="w-100" size=5 onchange={{action (mut newIndicatorPlaybookId) value="target.value"}}>
-      {{#each playbooks as |playbook|}}
-        <option value="{{playbook.id}}">{{playbook.name}}</option>
-      {{/each}}
-    </select>
     <div class="d-flex flex-row justify-content-between align-items-center">
+      <button
+        {{action "createIndicator"}}
+        class="p-btn btn btn-light mt-1"class="p-btn btn btn-light mt-1"
+        disabled={{isRunning}}
+      >
+        Add Indicator to ThreatConnect
+      </button>
       <div>
         {{#if isRunning}}
           {{fa-icon "spinner-third" fixedWidth=true spin=true}} Running
         {{/if}}
       </div>
-      <button
-        {{action "runPlaybook" newIndicatorPlaybookId}}
-        class="p-btn btn btn-light mt-1"class="p-btn btn btn-light mt-1"
-        disabled={{isRunning}}
-      >
-        Create & Run
-      </button>
     </div>
     {{#if indicatorMessage}}
       <div class="alert alert-info mt-1">
         {{indicatorMessage}}
       </div>
     {{/if}}
-    {{#if IndicatorErrorMessage}}
+    {{#if indicatorErrorMessage}}
       <div class="alert alert-danger mt-1">
-        {{IndicatorErrorMessage}}
+        {{indicatorErrorMessage}}
       </div>
     {{/if}}
   {{else}}
@@ -266,36 +260,17 @@
       {{/if}}
 
       {{#if orgData.playbooks.length}}
-        <h1 class="p-title">{{fa-icon "book" fixedWidth=true}} Playbooks</h1>
-        <select class="w-100" size=4 onchange={{action (mut orgData.__selectedPlaybookId) value="target.value"}}>
-          {{#each orgData.playbooks as |playbook|}}
-            <option value="{{playbook.id}}">{{playbook.name}}</option>
-          {{/each}}
-        </select>
-        <div class="d-flex flex-row justify-content-between align-items-center">
+        <div class="d-flex flex-row justify-content-between align-items-center playbook-title">
+          <h1 class="p-title">{{fa-icon "book" fixedWidth=true}} Available Playbooks</h1>
           <div>
-            {{#if orgData.__running}}
-              {{fa-icon "spinner-third" fixedWidth=true spin=true}} Running
-            {{/if}}
+            <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard {{fa-icon "external-link" class="p-link external-icon"}}</a>
           </div>
-          <button
-            {{action "runPlaybook" orgData.__selectedPlaybookId orgDataIndex orgData.id}}
-            class="p-btn btn btn-light mt-1"
-            disabled={{orgData.__running}}
-          >
-            Run Playbook
-          </button>
         </div>
-        {{#if orgData.__message}}
-          <div class="alert alert-info mt-1">
-            {{orgData.__message}}
-          </div>
-        {{/if}}
-        {{#if orgData.__errorMessage}}
-          <div class="alert alert-danger mt-1">
-            {{orgData.__errorMessage}}
-          </div>
-        {{/if}}
+        <ul>
+          {{#each orgData.playbooks as |playbook|}}
+            <span class="p-value"><li>{{playbook.name}}</li></span>
+          {{/each}}
+        </ul>
       {{/if}}
     {{/each}}
   {{/if}}
