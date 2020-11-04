@@ -122,11 +122,18 @@ function searchAllOwners(entities, options, cb) {
           }
 
           if (result.owners.length === 0) {
-            lookupResults.push({
-              entity: entityObj,
-              isVolatile: true,
-              data: { summary: ['New Entity'] }
-            });
+            if (options.createNewIndicators) {
+              lookupResults.push({
+                entity: entityObj,
+                isVolatile: true,
+                data: { summary: ['New Entity'] }
+              });
+            } else {
+              lookupResults.push({
+                entity: entityObj,
+                data: null
+              });
+            }
           } else {
             const filteredOwners = getFilteredOwners(result.owners, options);
             if (filteredOwners.length > 0) {
@@ -194,6 +201,13 @@ function convertPolarityTypeToThreatConnect(type) {
   }
 }
 
+const INDICATOR_TYPES = {
+  files: 'file',
+  emailAddresses: 'emailAddress',
+  hosts: 'host',
+  addresses: 'address'
+};
+
 /**
  * ThreatConnect has limited support for IPv6 formats.  This method converts the value of the provided entityObj
  * into a valid value for ThreatConnect.  If a conversion cannot be done, the method returns null.
@@ -228,7 +242,7 @@ function _getSanitizedEntity(entityObj) {
 function onDetails(lookupObject, options, cb) {
   Logger.debug({ lookupObject, options }, 'onDetails Input');
 
-  const details = lookupObject.data.details;
+  const details = fp.get('data.details', lookupObject);
   const tasks = [];
   
   tc.setSecretKey(options.apiKey);
@@ -244,6 +258,7 @@ function onDetails(lookupObject, options, cb) {
         isVolatile: true,
         summary: ['New Entity'],
         details: {
+          indicatorType: INDICATOR_TYPES[convertPolarityTypeToThreatConnect(fp.get('entity.type', lookupObject))],
           playbooks
         }
       });
@@ -425,48 +440,22 @@ function onMessage(payload, options, cb) {
         }
       );
       break;
-    case 'RUN_PLAYBOOK':
-      payload.data.indicatorId
-        ? tc.runPlaybook(
-            payload.data.entity,
-            payload.data.indicatorId,
-            payload.data.playbookId,
-            (err, result) => {
-              if (err) {
-                Logger.error({ err, payload }, 'Error Running Playbook');
-                cb({
-                  errors: [
-                    {
-                      detail: 'Error Running Playbook',
-                      err
-                    }
-                  ]
-                });
+    case 'CREATE_INDICATOR':
+      createIndicator(payload.data.entity, options, (err, result) => {
+        if (err) {
+          Logger.error({ err, payload }, 'Error Running Playbook');
+          cb({
+            errors: [
+              {
+                detail: 'Error Creating Entity and Running Playbook',
+                err
               }
-
-              cb(null, result);
-            }
-          )
-        : createIndicatorAndRunPlaybook(
-            payload.data.entity,
-            payload.data.playbookId,
-            options,
-            (err, result) => {
-              if (err) {
-                Logger.error({ err, payload }, 'Error Running Playbook');
-                cb({
-                  errors: [
-                    {
-                      detail: 'Error Creating Entity and Running Playbook',
-                      err
-                    }
-                  ]
-                });
-              }
-              Logger.trace({test:'lksjdffksdf', result})
-              cb(null, result);
-            }
-          );
+            ]
+          });
+        }
+        Logger.trace({ test: 'Create Indicator Result', result });
+        cb(null, result);
+      });
       
       break;
     default:
@@ -539,28 +528,15 @@ function isOptionMissing(userOptions, key) {
   return false;
 }
 
-function createIndicatorAndRunPlaybook(entity, playbookId, options, callback) {
+function createIndicator(entity, options, callback) {
   tc.createIndicator(entity, (err, indicatorId) => {
     if (err) return callback(err);
-    tc.runPlaybook(entity, indicatorId, playbookId, (err, playbookResult) => {
+    doLookup([entity], options, (err, [lookupResult]) => {
       if (err) return callback(err);
-      doLookup([entity], options, (err, [lookupResult]) => {
+      onDetails(lookupResult, options, (err, lookupObject) => {
         if (err) return callback(err);
-        onDetails(lookupResult, options, (err, lookupObject) => {
-          if (err) return callback(err);
-          Logger.trace({
-            test: '123____________',
-            entity,
-            playbookId,
-            options,
-            indicatorId,
-            playbookResult,
-            lookupResult,
-            lookupObject
-          });
 
-          callback(null, { ...playbookResult, ...lookupObject });
-        });
+        callback(null, lookupObject);
       });
     });
   });
