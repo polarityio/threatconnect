@@ -194,6 +194,19 @@
             <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (or orgData.__addingTag (eq newTagValue.length 0)) true false}} {{action "addTag" orgData orgDataIndex}}>{{#if orgData.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
           </div>
         </div>
+        {{#if orgData.playbooks.length}}
+          <div class="d-flex flex-row justify-content-between align-items-center playbook-title">
+            <h1 class="p-title">{{fa-icon "book" fixedWidth=true}} Available Playbooks</h1>
+            <div>
+              <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard {{fa-icon "external-link" class="p-link external-icon"}}</a>
+            </div>
+          </div>
+          <ul>
+            {{#each orgData.playbooks as |playbook|}}
+              <span class="p-value"><li>{{playbook.name}}</li></span>
+            {{/each}}
+          </ul>
+        {{/if}}
       {{/if}}
       {{#if (eq orgData.__activeTab "associations")}}
         {{#if (eq orgData.numAssociations 0)}}
@@ -257,20 +270,6 @@
             </div>
           {{/each}}
         {{/if}}
-      {{/if}}
-
-      {{#if orgData.playbooks.length}}
-        <div class="d-flex flex-row justify-content-between align-items-center playbook-title">
-          <h1 class="p-title">{{fa-icon "book" fixedWidth=true}} Available Playbooks</h1>
-          <div>
-            <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard {{fa-icon "external-link" class="p-link external-icon"}}</a>
-          </div>
-        </div>
-        <ul>
-          {{#each orgData.playbooks as |playbook|}}
-            <span class="p-value"><li>{{playbook.name}}</li></span>
-          {{/each}}
-        </ul>
       {{/if}}
     {{/each}}
   {{/if}}
