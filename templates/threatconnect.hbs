@@ -1,6 +1,6 @@
 {{#if block.detailsLoaded}}
   {{#if (and onDemand (not results))}}
-    <h1 class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Details</h1>
+    <h1 class="p-title">{{fa-icon icon="info-circle" fixedWidth=true}} Details</h1>
     <div>
       <span class="p-key">Indicator Value: </span>
       <span class="p-value">{{entityValue}}</span>
@@ -24,7 +24,7 @@
       </button>
       <div>
         {{#if isRunning}}
-          {{fa-icon "spinner-third" fixedWidth=true spin=true}} Running
+          {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Running
         {{/if}}
       </div>
     </div>
@@ -56,11 +56,11 @@
       {{#if (or (eq orgData.__activeTab "info") (not orgData.__activeTab))}}
         <div>
           <span class="p-key">{{orgData.owner.type}}: </span>
-          <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
+          <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}} {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
         </div>
 
         <div>
-          <span class="p-title">{{fa-icon "shield" fixedWidth=true}} Indicator Analytics</span>
+          <span class="p-title">{{fa-icon icon="shield" fixedWidth=true}} Indicator Analytics</span>
         </div>
 
         <div>
@@ -68,7 +68,7 @@
           {{#if orgData.threatAssessScore}}
             <span class="p-value">{{orgData.threatAssessScore}}</span>/1000
             <div class="progress threat-assess-bar">
-              <div 
+              <div
                 class="progress-bar" role="progressbar" style="width: {{orgData.threatAssessScorePercentage}}%"
                 aria-valuenow="{{orgData.threatAssessScorePercentage}}" aria-valuemin="0" aria-valuemax="100"
               >
@@ -96,11 +96,11 @@
           {{/if}}
         </div>
         {{#if orgData.description}}
-          <h1 class="p-title">{{fa-icon "sticky-note" fixedWidth=true}} Description</h1>
+          <h1 class="p-title">{{fa-icon icon="sticky-note" fixedWidth=true}} Description</h1>
           <pre>{{orgData.description}}</pre>
         {{/if}}
         <div>
-          <span class="p-title">{{fa-icon "info-circle" fixedWidth=true}} Details</span>
+          <span class="p-title">{{fa-icon icon="info-circle" fixedWidth=true}} Details</span>
         </div>
         <div>
           <span class="p-key">Date Added:</span>
@@ -114,10 +114,10 @@
         <div>
           <span class="p-key">Rating: </span>
           <span>
-            {{fa-icon "ban" click=(action "setRating" orgData orgDataIndex 0) class="rating-icon"}}
+            {{fa-icon icon="ban" click=(action "setRating" orgData orgDataIndex 0) class="rating-icon"}}
             {{#each (repeat 5) as |empty ratingIndex|}}
-              {{fa-icon 
-                "skull" 
+              {{fa-icon
+                icon="skull"
                 class=(if (lt ratingIndex orgData.rating) "rating-icon rating-icon-filled" "rating-icon rating-icon-empty")
                 click=(action "setRating" orgData orgDataIndex (inc ratingIndex))
               }}
@@ -129,7 +129,7 @@
           <span class="p-key">Confidence: </span>
           <span class="p-value">{{orgData.confidence}} - {{orgData.confidenceHuman}}</span>
           <div>
-            <input 
+            <input
               type="range"
               onchange={{action "saveConfidence" orgData orgDataIndex}}
               oninput={{action (mut orgData.__shadowConfidence) value="target.value"}}
@@ -141,7 +141,7 @@
           </div>
         </div>
         <div>
-          <span class="p-title">{{fa-icon "eye" fixedWidth=true}} Observations/False Positives</span>
+          <span class="p-title">{{fa-icon icon="eye" fixedWidth=true}} Observations/False Positives</span>
         </div>
         <div>
           <span class="p-key">Observation Count: </span>
@@ -162,7 +162,7 @@
           <span class="p-footnote">False positive already reported today</span>
         </div>
         <div>
-          <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}{{fa-icon "tags" fixedWidth=true}}{{/if}} Tags</span>
+          <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon icon="spinner-third" spin=true}}{{else}}{{fa-icon icon="tags" fixedWidth=true}}{{/if}} Tags</span>
         </div>
 
         {{#if (eq orgData.tag.length 0)}}
@@ -177,7 +177,7 @@
                   <span class="threatconnect-summary-tag">
                     {{tag.name}}
                     <span {{action "deleteTag" tag.name orgData orgDataIndex tagIndex}}>
-                      {{fa-icon "times" class="tag-close-icon" fixedWidth=true}}
+                      {{fa-icon icon="times" class="tag-close-icon" fixedWidth=true}}
                     </span>
                   </span>
                 </a>
@@ -189,21 +189,21 @@
 
         <div class="input-group input-group-sm">
           {{input type="text" placeholder="Add Tag" enter=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
-          
+
           <div class="input-group-append">
             <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (or orgData.__addingTag (eq newTagValue.length 0)) true false}} {{action "addTag" orgData orgDataIndex}}>{{#if orgData.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
           </div>
         </div>
         {{#if orgData.playbooks.length}}
-          <div class="d-flex flex-row justify-content-between align-items-center playbook-title">
-            <h1 class="p-title">{{fa-icon "book" fixedWidth=true}} Available Playbooks</h1>
+          <div class="d-flex flex-row justify-content-between align-items-center playbook-title mb-1">
+            <h1 class="p-title m-0">{{fa-icon icon="book" fixedWidth=true}} Available Playbooks</h1>
             <div>
-              <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard {{fa-icon "external-link" class="p-link external-icon"}}</a>
+              <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
             </div>
           </div>
-          <ul>
+          <ul class="pl-3">
             {{#each orgData.playbooks as |playbook|}}
-              <span class="p-value"><li>{{playbook.name}}</li></span>
+              <li><span class="p-value">{{playbook.name}}</span></li>
             {{/each}}
           </ul>
         {{/if}}
@@ -213,12 +213,12 @@
           <h2>No Associations</h2>
         {{/if}}
         {{#if (gt orgData.groups.length 0)}}
-          <h1 class="p-title">{{fa-icon "user-secret" fixedWidth=true}} Associated Groups</h1>
+          <h1 class="p-title">{{fa-icon icon="user-secret" fixedWidth=true}} Associated Groups</h1>
           {{#each orgData.groups as | group |}}
             <div class="data-block-container">
               <div>
                 <span class="p-key">Group Name: </span>
-                <span class="p-value"><a class="p-link" href="{{group.webLink}}">{{group.name}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
+                <span class="p-value"><a class="p-link" href="{{group.webLink}}">{{group.name}} {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
               </div>
               <div>
                 <span class="p-key">Type: </span>
@@ -236,12 +236,12 @@
           {{/each}}
         {{/if}}
         {{#if (gt orgData.indicators.length 0)}}
-          <h1 class="p-title">{{fa-icon "project-diagram" fixedWidth=true}} Associated Indicators</h1>
+          <h1 class="p-title">{{fa-icon icon="project-diagram" fixedWidth=true}} Associated Indicators</h1>
           {{#each orgData.indicators as | indicator |}}
             <div class="data-block-container">
               <div>
                 <span class="p-key">Value: </span>
-                <span class="p-value"><a class="p-link" href="{{indicator.webLink}}">{{indicator.summary}} {{fa-icon "external-link" class="p-link external-icon"}}</a></span>
+                <span class="p-value"><a class="p-link" href="{{indicator.webLink}}">{{indicator.summary}} {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
               </div>
               <div>
                 <span class="p-key">Owner: </span>
