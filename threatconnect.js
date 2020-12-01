@@ -1,11 +1,36 @@
 const querystring = require('querystring');
 const crypto = require('crypto');
 const url = require('url');
+const async = require('async');
+const fp = require('lodash/fp');
+const NodeCache = require('node-cache');
+
+const playbookCache = new NodeCache({
+  stdTTL: 10 * 60
+});
+
 const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
   hosts: 'host',
   addresses: 'address'
+};
+const POLARITY_TYPE_TO_THREATCONNECT = {
+  IPv4: 'addresses',
+  IPv6: 'addresses',
+  hash: 'files',
+  email: 'emailAddresses',
+  domain: 'hosts'
+};
+
+const SUBMISSION_LABELS = {
+  IPv4: 'ip',
+  IPv6: 'ip',
+  MD5: 'md5',
+  SHA1: 'sha1',
+  SHA256: 'sha256',
+  email: 'address',
+  domain: 'hostName'
 };
 
 class ThreatConnect {
@@ -100,8 +125,8 @@ class ThreatConnect {
 
     self.log.debug({ requestOptions }, 'setRating request options');
 
-    this.request(requestOptions, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, data) {
+    this.request(requestOptions, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, data) {
         if (err) {
           cb(err);
         } else {
@@ -247,7 +272,7 @@ class ThreatConnect {
    * @private
    */
   _fixedEncodeURIComponent(str) {
-    return encodeURIComponent(str).replace(/[!'()*]/g, function(c) {
+    return encodeURIComponent(str).replace(/[!'()*]/g, function (c) {
       return '%' + c.charCodeAt(0).toString(16);
     });
   }
@@ -399,8 +424,8 @@ class ThreatConnect {
 
   getTags(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getTags(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, tagData) {
+    self._getTags(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, tagData) {
         if (err || !tagData) {
           return cb(err);
         }
@@ -421,8 +446,8 @@ class ThreatConnect {
 
   getGroupAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getGroupAssociations(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, groupData) {
+    self._getGroupAssociations(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, groupData) {
         if (err) {
           return cb(err);
         }
@@ -453,8 +478,8 @@ class ThreatConnect {
 
   getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-    self._getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, indicatorData) {
+    self._getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, indicatorData) {
         if (err) {
           return cb(err);
         }
@@ -485,7 +510,6 @@ class ThreatConnect {
 
   getIndicator(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
-
     const indicatorTypeSingular = INDICATOR_TYPES[indicatorTypePlural];
     if (typeof indicatorTypeSingular === 'undefined') {
       return cb({
@@ -493,16 +517,17 @@ class ThreatConnect {
       });
     }
 
-    this._getIndicator(indicatorTypePlural, indicatorValue, owner, function(err, response, body) {
-      self._formatResponse(err, response, body, function(err, data) {
-        if (err || !data) {
-          return cb(err, data);
-        }
+    this._getIndicator(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, data) {
+        if (err || !data) return cb(err, data);
 
         let result = data[indicatorTypeSingular];
-        self.log.trace({ result }, 'getIndicator result');
         result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
-        cb(null, result);
+        self.getPlaybooksForIndicator(result, (err, playbooks) => {
+          if (err) return cb(err);
+
+          cb(null, { ...result, playbooks });
+        });
       });
     });
   }
@@ -791,12 +816,9 @@ class ThreatConnect {
   _getAuthHeader(urlPath, httpMethod, timestamp) {
     let signature = urlPath + ':' + httpMethod + ':' + timestamp;
 
-    this.log.debug({ signature: signature }, 'Auth Signature');
+    this.log.trace({ signature: signature }, 'Auth Signature');
 
-    let hmacSignatureInBase64 = crypto
-      .createHmac('sha256', this.secretKey)
-      .update(signature)
-      .digest('base64');
+    let hmacSignatureInBase64 = crypto.createHmac('sha256', this.secretKey).update(signature).digest('base64');
 
     return 'TC ' + this.accessId + ':' + hmacSignatureInBase64;
   }
@@ -804,6 +826,106 @@ class ThreatConnect {
   _getResourcePath(resourcePath) {
     return this.url.href + 'v2/' + resourcePath;
   }
+  _getResourcePathInternal(resourcePath) {
+    return this.url.href + 'internal/' + resourcePath;
+  }
+  getPlaybooksForIndicator(indicator, callback) {
+    const indicatorType = fp.toLower(INDICATOR_TYPES[fp.get('meta.indicatorType', indicator)]);
+    if (!indicatorType) return cb({ err: indicator, detail: 'Getting Playbooks Failed - No Indicator Type Found' });
+
+    this.getPlaybooks((err, playbooks) => {
+      if (err) return callback(err);
+
+      const playbooksForThisIndicator = fp.filter(
+        fp.flow(fp.getOr([], 'playbookTriggerTypes'), fp.includes(indicatorType)),
+        playbooks
+      );
+
+      return callback(null, playbooksForThisIndicator);
+    });
+  }
+  getPlaybooks(callback) {
+    const cachedPlaybooks = playbookCache.get('playbooks');
+    if (cachedPlaybooks) return callback(null, cachedPlaybooks);
+
+    const self = this;
+    const qs = querystring.stringify({
+      page: 0,
+      limit: 1000,
+      type: 'Playbook',
+      triggerType: 'UserAction',
+      sortOn: 'name',
+      sortAscending: true
+    });
+    const path = `playbooks/search?${qs}`;
+    const uri = this._getResourcePath(path);
+
+    let requestOptions = {
+      uri,
+      method: 'GET',
+      headers: this._getHeaders(`/api/v2/${path}`, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, (err, response, body) => {
+      if(err) return callback(err);
+
+      const foundPlaybooks = fp.getOr([], 'data.playbook')(body);
+
+      async.parallel(
+        fp.map(
+          (playbook) => (done) =>
+            self.getPlaybookTriggerTypes(playbook.id, (err, playbookTriggerTypes) => {
+              if (err) return done(err);
+              done(null, { ...playbook, playbookTriggerTypes });
+            }),
+          foundPlaybooks
+        ),
+        (err, playbooksWithTriggerTypes) => {
+          if (err) return callback(err);
+          playbookCache.set('playbooks', playbooksWithTriggerTypes);
+
+          callback(null, playbooksWithTriggerTypes);
+        }
+      );
+    });
+  }
+
+  getPlaybookTriggerTypes(playbookId, callback) {
+    if (!playbookId)
+      return callback({
+        err: `PlaybookId: ${playbookId}`,
+        detail: 'Getting Getting Playbook Trigger Failed - No Playbook Id'
+      });
+
+    const path = `playbooks/${playbookId}`;
+    const uri = this._getResourcePath(path);
+
+    let requestOptions = {
+      uri,
+      method: 'GET',
+      headers: this._getHeaders(`/api/v2/${path}`, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, (err, response, body) => {
+      if (err) return callback(err || { err: body, detail: 'Getting Playbook Trigger Failed' });
+
+      const playbookTriggerTypes = fp.flow(
+        fp.getOr([], 'playbookTriggerList'),
+        fp.filter((playbookTrigger) => playbookTrigger.type === 'UserAction'),
+        fp.map(fp.get('userActionTypes')),
+        fp.join(','),
+        fp.split(','),
+        fp.map(fp.toLower),
+        fp.compact,
+        fp.uniq
+      )(body);
+
+      callback(null, playbookTriggerTypes);
+    });
+  }
+  
 }
 
 module.exports = ThreatConnect;
