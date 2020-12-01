@@ -122,18 +122,10 @@ function searchAllOwners(entities, options, cb) {
           }
 
           if (result.owners.length === 0) {
-            if (options.createNewIndicators) {
-              lookupResults.push({
-                entity: entityObj,
-                isVolatile: true,
-                data: { summary: ['New Entity'] }
-              });
-            } else {
-              lookupResults.push({
-                entity: entityObj,
-                data: null
-              });
-            }
+            lookupResults.push({
+              entity: entityObj,
+              data: null
+            });
           } else {
             const filteredOwners = getFilteredOwners(result.owners, options);
             if (filteredOwners.length > 0) {
@@ -440,24 +432,6 @@ function onMessage(payload, options, cb) {
         }
       );
       break;
-    case 'CREATE_INDICATOR':
-      createIndicator(payload.data.entity, options, (err, result) => {
-        if (err) {
-          Logger.error({ err, payload }, 'Error Running Playbook');
-          cb({
-            errors: [
-              {
-                detail: 'Error Creating Entity and Running Playbook',
-                err
-              }
-            ]
-          });
-        }
-        Logger.trace({ test: 'Create Indicator Result', result });
-        cb(null, result);
-      });
-      
-      break;
     default:
       cb({
         detail: "Invalid 'action' provided to onMessage function"
@@ -526,20 +500,6 @@ function isOptionMissing(userOptions, key) {
     return true;
   }
   return false;
-}
-
-function createIndicator(entity, options, callback) {
-  tc.createIndicator(entity, (err, indicatorId) => {
-    if (err) return callback(err);
-    doLookup([entity], options, (err, [lookupResult]) => {
-      if (err) return callback(err);
-      onDetails(lookupResult, options, (err, lookupObject) => {
-        if (err) return callback(err);
-
-        callback(null, lookupObject);
-      });
-    });
-  });
 }
 
 function validateOptions(userOptions, cb) {

@@ -120,15 +120,6 @@ module.exports = {
       adminOnly: true
     },
     {
-      key: 'createNewIndicators',
-      name: 'Create New Indicators',
-      description: "Allows you to create new Indicators in ThreatConnect if there aren't any found in searching",
-      default: true,
-      type: 'boolean',
-      userCanEdit: false,
-      adminOnly: true
-    },
-    {
       key: 'searchBlocklist',
       name: 'Organization Search Blocklist',
       description:

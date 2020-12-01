@@ -925,33 +925,6 @@ class ThreatConnect {
       callback(null, playbookTriggerTypes);
     });
   }
-  createIndicator(entity, callback) {
-    const tcType = POLARITY_TYPE_TO_THREATCONNECT[entity.type];
-    const submissionLabel = SUBMISSION_LABELS[entity.type === 'hash' ? entity.subtype : entity.type];
-
-    const path = `indicators/${tcType}`;
-    const uri = this._getResourcePath(path);
-
-    let requestOptions = {
-      uri,
-      method: 'POST',
-      headers: this._getHeaders(`/api/v2/${path}`, 'POST'),
-      body: { [submissionLabel]: entity.value },
-      json: true
-    };
-
-    this.request(requestOptions, (err, response, body) => {
-      if (err || body.status !== 'Success') 
-        return callback(err || { err: body, detail: 'Creating Indicator Failed' });
-      
-      const indicatorId = fp.flow(
-        fp.getOr({}, 'data'),
-        fp.thru((data) => fp.get(`${fp.keys(data)[0]}.id`, data))
-      )(body);
-      
-      callback(null, indicatorId);
-    })
-  }
   
 }
 

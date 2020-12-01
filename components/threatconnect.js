@@ -204,46 +204,6 @@ polarity.export = PolarityComponent.extend({
         .finally(() => {
           self.set('block.isLoadingDetails', false);
         });
-    },
-    createIndicator: function () {
-      const outerThis = this;
-      this.set('indicatorMessage', '');
-      this.set('isRunning', true);
-      this.get('block').notifyPropertyChange('data');
-
-      this.sendIntegrationMessage({
-        action: 'CREATE_INDICATOR',
-        data: {
-          entity: this.block.entity,
-        }
-      })
-        .then(({ error, details, summary }) => {
-          // if (error) {
-          //   return outerThis.set(
-          //     'indicatorErrorMessage',
-          //     `Failed: ${err.detail || err.message || err.title || err.description || 'Unknown Reason'}`
-          //   );
-          // }
-          if (details) outerThis.set('details', details);
-          if (summary) outerThis.set('summary', summary);
-
-          outerThis.set('indicatorMessage', 'Indicator Added Successfully!');
-        })
-        .catch((err) => {
-          outerThis.set(
-            'indicatorErrorMessage',
-            `Failed: ${err.detail || err.message || err.title || err.description || 'Unknown Reason'}`
-          );
-        })
-        .finally(() => {
-          outerThis.set('isRunning', false);
-          outerThis.get('block').notifyPropertyChange('data');
-          setTimeout(() => {
-            outerThis.set('indicatorErrorMessage','');
-            outerThis.set('indicatorMessage', '');
-            outerThis.get('block').notifyPropertyChange('data');
-          }, 5000);
-        });
     }
   }
 });
