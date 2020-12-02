@@ -3,11 +3,23 @@
 polarity.export = PolarityComponent.extend({
   newTagValue: '',
   showFalsePositiveAlreadyReported: false,
-  results: Ember.computed.alias('block.data.details.results'),
-  timezone: Ember.computed('Intl', function() {
+  details: Ember.computed.alias('block.data.details'),
+  summary: Ember.computed.alias('block.data.summary'),
+  results: Ember.computed.alias('details.results'),
+  timezone: Ember.computed('Intl', function () {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }),
-  _flashError: function(msg) {
+  playbooks: Ember.computed.alias('details.playbooks'),
+  indicatorType: Ember.computed.alias('details.indicatorType'),
+  entityValue: Ember.computed.alias('block.entity.value'),
+  onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
+    return this.block.entity.requestContext.requestType === 'OnDemand';
+  }),
+  indicatorMessage: '',
+  indicatorErrorMessage: '',
+  indicatorPlaybookId: null,
+  isRunning: false,
+  _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
       type: 'unv-danger',
@@ -15,7 +27,7 @@ polarity.export = PolarityComponent.extend({
     });
   },
   actions: {
-    changeTab: function(tabName, orgDataIndex) {
+    changeTab: function (tabName, orgDataIndex) {
       this.set(`results.${orgDataIndex}.__activeTab`, tabName);
     },
     saveConfidence(orgData, orgDataIndex) {
@@ -34,7 +46,7 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function(result) {
+        .then(function (result) {
           if (result.error) {
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
@@ -75,7 +87,7 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function(result) {
+        .then(function (result) {
           if (result.error) {
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
@@ -110,7 +122,7 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function(result) {
+        .then(function (result) {
           if (result.error) {
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
@@ -118,7 +130,7 @@ polarity.export = PolarityComponent.extend({
             self.set('actionMessage', 'Deleted Tag');
             const newTags = [];
             let tags = self.get('results.' + orgDataIndex + '.tag');
-            tags.forEach(function(tag, index) {
+            tags.forEach(function (tag, index) {
               if (index !== tagIndex) {
                 newTags.push(tag);
               }
@@ -146,7 +158,7 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function(result) {
+        .then(function (result) {
           if (result.error) {
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
@@ -179,7 +191,7 @@ polarity.export = PolarityComponent.extend({
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function(result) {
+        .then(function (result) {
           if (result.error) {
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
