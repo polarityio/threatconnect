@@ -13,6 +13,7 @@ const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
   hosts: 'host',
+  urls: 'url',
   addresses: 'address'
 };
 const POLARITY_TYPE_TO_THREATCONNECT = {

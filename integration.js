@@ -190,6 +190,8 @@ function convertPolarityTypeToThreatConnect(type) {
       return 'emailAddresses';
     case 'domain':
       return 'hosts';
+    case 'url':
+      return 'urls';
   }
 }
 
@@ -197,6 +199,7 @@ const INDICATOR_TYPES = {
   files: 'file',
   emailAddresses: 'emailAddress',
   hosts: 'host',
+  urls: 'url',
   addresses: 'address'
 };
 
