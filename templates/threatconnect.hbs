@@ -1,22 +1,59 @@
 {{#if block.detailsLoaded}}
   {{#each results as |orgData orgDataIndex|}}
     {{#if (gt orgDataIndex 0)}}
-      <hr>
+      <hr />
     {{/if}}
 
     <ul class="nav nav-tabs mb-2">
       <li class="nav-item">
-        <a {{action "changeTab" "info" orgDataIndex}} class="nav-link {{if (or (eq orgData.__activeTab "info")(not orgData.__activeTab)) "active"}}" href="#">Info</a>
+        <a
+          {{action "changeTab" "info" orgDataIndex}}
+          class="nav-link {{if (or (eq orgData.__activeTab "info") (not orgData.__activeTab)) "active"}}"
+          href="#"
+        >Info</a>
       </li>
       <li class="nav-item">
-        <a {{action "changeTab" "associations" orgDataIndex}} class="nav-link {{if (eq orgData.__activeTab "associations") "active"}}" href="#">Associations ({{orgData.numAssociations}})</a>
+        <a
+          {{action "changeTab" "associations" orgDataIndex}}
+          class="nav-link {{if (eq orgData.__activeTab "associations") "active"}}"
+          href="#"
+        >Associations ({{orgData.numAssociations}})</a>
       </li>
+      {{#if orgData.dnsInformation.result}}
+        <li class="nav-item">
+          <a
+            {{action "changeTab" "dnsInformation" orgDataIndex}}
+            class="nav-link {{if (eq orgData.__activeTab "dnsInformation") "active"}}"
+            href="#"
+          >DNS Resolutions</a>
+        </li>
+      {{/if}}
     </ul>
+
+    {{#if (eq orgData.__activeTab "dnsInformation")}}
+      <div>
+        <span>{{fa-icon icon="network-wired"}}</span>
+        <span>DNS Resolutions</span>
+      </div>
+      {{#each orgData.dnsInformation.result as |info|}}
+        <div class="dns-information">
+          {{#each info.addresses as |addressField|}}
+            {{#each-in addressField as |key value|}}
+              <div>
+                <span class="p-key">{{key}}</span>
+                <span class="p-value">{{value}}</span>
+              </div>
+            {{/each-in}}
+          {{/each}}
+        </div>
+      {{/each}}
+    {{/if}}
 
     {{#if (or (eq orgData.__activeTab "info") (not orgData.__activeTab))}}
       <div>
         <span class="p-key">{{orgData.owner.type}}: </span>
-        <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}} {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
+        <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}}
+            {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
       </div>
 
       <div>
@@ -29,13 +66,17 @@
           <span class="p-value">{{orgData.threatAssessScore}}</span>/1000
           <div class="progress threat-assess-bar">
             <div
-              class="progress-bar" role="progressbar" style="width: {{orgData.threatAssessScorePercentage}}%"
-              aria-valuenow="{{orgData.threatAssessScorePercentage}}" aria-valuemin="0" aria-valuemax="100"
+              class="progress-bar"
+              role="progressbar"
+              style="width: {{orgData.threatAssessScorePercentage}}%"
+              aria-valuenow="{{orgData.threatAssessScorePercentage}}"
+              aria-valuemin="0"
+              aria-valuemax="100"
             >
             </div>
           </div>
         {{else}}
-            <span class="p-value">No Threat Assess Score</span>
+          <span class="p-value">No Threat Assess Score</span>
         {{/if}}
       </div>
 
@@ -78,7 +119,9 @@
           {{#each (repeat 5) as |empty ratingIndex|}}
             {{fa-icon
               icon="skull"
-              class=(if (lt ratingIndex orgData.rating) "rating-icon rating-icon-filled" "rating-icon rating-icon-empty")
+              class=(if
+                (lt ratingIndex orgData.rating) "rating-icon rating-icon-filled" "rating-icon rating-icon-empty"
+              )
               click=(action "setRating" orgData orgDataIndex (inc ratingIndex))
             }}
           {{/each}}
@@ -113,16 +156,23 @@
       </div>
       <div>
         <span class="p-key">False Positive Last Reported: </span>
-        <span class="p-value"> {{moment-format orgData.falsePositiveLastReported 'MM/DD/YYYY'}}</span>
+        <span class="p-value"> {{moment-format orgData.falsePositiveLastReported "MM/DD/YYYY"}}</span>
       </div>
       <div>
-        <button class="btn btn-secondary btn-sm report-false-positive-btn" {{action "reportFalsePositive" orgData orgDataIndex}}>Report False Positive</button>
+        <button
+          class="btn btn-secondary btn-sm report-false-positive-btn"
+          {{action "reportFalsePositive" orgData orgDataIndex}}
+        >Report False Positive</button>
       </div>
       <div class="{{if orgData.__showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}">
         <span class="p-footnote">False positive already reported today</span>
       </div>
       <div>
-        <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon icon="spinner-third" spin=true}}{{else}}{{fa-icon icon="tags" fixedWidth=true}}{{/if}} Tags</span>
+        <span class="p-title">{{#if orgData.__deletingTag}}{{fa-icon icon="spinner-third" spin=true}}{{else}}{{fa-icon
+              icon="tags"
+              fixedWidth=true
+            }}{{/if}}
+          Tags</span>
       </div>
 
       {{#if (eq orgData.tag.length 0)}}
@@ -148,17 +198,29 @@
       {{/if}}
 
       <div class="input-group input-group-sm">
-        {{input type="text" placeholder="Add Tag" enter=(action "addTag" orgData orgDataIndex) class="form-control add-tag-input" value=newTagValue}}
+        {{input
+          type="text"
+          placeholder="Add Tag"
+          enter=(action "addTag" orgData orgDataIndex)
+          class="form-control add-tag-input"
+          value=newTagValue
+        }}
 
         <div class="input-group-append">
-          <button class="btn btn-secondary btn-add-tag" type="button" disabled={{if (or orgData.__addingTag (eq newTagValue.length 0)) true false}} {{action "addTag" orgData orgDataIndex}}>{{#if orgData.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
+          <button
+            class="btn btn-secondary btn-add-tag"
+            type="button"
+            disabled={{if (or orgData.__addingTag (eq newTagValue.length 0)) true false}}
+            {{action "addTag" orgData orgDataIndex}}
+          >{{#if orgData.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
         </div>
       </div>
       {{#if orgData.playbooks.length}}
         <div class="d-flex flex-row justify-content-between align-items-center playbook-title mb-1">
           <h1 class="p-title m-0">{{fa-icon icon="book" fixedWidth=true}} Available Playbooks</h1>
           <div>
-            <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
+            <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard
+              {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
           </div>
         </div>
         <ul class="pl-3">
@@ -174,58 +236,60 @@
       {{/if}}
       {{#if (gt orgData.groups.length 0)}}
         <h1 class="p-title">{{fa-icon icon="user-secret" fixedWidth=true}} Associated Groups</h1>
-        {{#each orgData.groups as | group |}}
+        {{#each orgData.groups as |group|}}
           <div class="data-block-container">
             <div>
-              <span class="p-key">Group Name: </span>
-              <span class="p-value"><a class="p-link" href="{{group.webLink}}">{{group.name}} {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
+              <span class='p-key'>Group Name: </span>
+              <span class='p-value'><a class='p-link' href='{{group.webLink}}'>{{group.name}}
+                  {{fa-icon icon='external-link' class='p-link external-icon'}}</a></span>
             </div>
             <div>
-              <span class="p-key">Type: </span>
-              <span class="p-value">{{group.type}}</span>
+              <span class='p-key'>Type: </span>
+              <span class='p-value'>{{group.type}}</span>
             </div>
             <div>
-              <span class="p-key">Owner: </span>
-              <span class="p-value">{{group.ownerName}}</span>
+              <span class='p-key'>Owner: </span>
+              <span class='p-value'>{{group.ownerName}}</span>
             </div>
             <div>
-              <span class="p-key">Date Added: </span>
-              <span class="p-value">{{moment-time group.dateAdded}}</span>
+              <span class='p-key'>Date Added: </span>
+              <span class='p-value'>{{moment-time group.dateAdded}}</span>
             </div>
           </div>
         {{/each}}
       {{/if}}
       {{#if (gt orgData.indicators.length 0)}}
-        <h1 class="p-title">{{fa-icon icon="project-diagram" fixedWidth=true}} Associated Indicators</h1>
-        {{#each orgData.indicators as | indicator |}}
-          <div class="data-block-container">
+        <h1 class='p-title'>{{fa-icon icon='project-diagram' fixedWidth=true}} Associated Indicators</h1>
+        {{#each orgData.indicators as |indicator|}}
+          <div class='data-block-container'>
             <div>
-              <span class="p-key">Value: </span>
-              <span class="p-value"><a class="p-link" href="{{indicator.webLink}}">{{indicator.summary}} {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
+              <span class='p-key'>Value: </span>
+              <span class='p-value'><a class='p-link' href='{{indicator.webLink}}'>{{indicator.summary}}
+                  {{fa-icon icon='external-link' class='p-link external-icon'}}</a></span>
             </div>
             <div>
-              <span class="p-key">Owner: </span>
-              <span class="p-value">{{indicator.ownerName}}</span>
+              <span class='p-key'>Owner: </span>
+              <span class='p-value'>{{indicator.ownerName}}</span>
             </div>
             <div>
-              <span class="p-key">Type: </span>
-              <span class="p-value">{{indicator.type}}</span>
+              <span class='p-key'>Type: </span>
+              <span class='p-value'>{{indicator.type}}</span>
             </div>
             <div>
-              <span class="p-key">Threat Assess Rating: </span>
-              <span class="p-value">{{indicator.threatAssessRating}}</span>
+              <span class='p-key'>Threat Assess Rating: </span>
+              <span class='p-value'>{{indicator.threatAssessRating}}</span>
             </div>
             <div>
-              <span class="p-key">Threat Assess Confidence: </span>
-              <span class="p-value">{{indicator.threatAssessConfidence}}</span>
+              <span class='p-key'>Threat Assess Confidence: </span>
+              <span class='p-value'>{{indicator.threatAssessConfidence}}</span>
             </div>
             <div>
-              <span class="p-key">Date Added: </span>
-              <span class="p-value">{{moment-time indicator.dateAdded}}</span>
+              <span class='p-key'>Date Added: </span>
+              <span class='p-value'>{{moment-time indicator.dateAdded}}</span>
             </div>
             <div>
-              <span class="p-key">Last Modified: </span>
-              <span class="p-value">{{moment-time indicator.lastModified}}</span>
+              <span class='p-key'>Last Modified: </span>
+              <span class='p-value'>{{moment-time indicator.lastModified}}</span>
             </div>
           </div>
         {{/each}}
@@ -233,4 +297,3 @@
     {{/if}}
   {{/each}}
 {{/if}}
-
