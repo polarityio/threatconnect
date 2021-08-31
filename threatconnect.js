@@ -533,28 +533,72 @@ class ThreatConnect {
     });
   }
 
+  getDnsInformation(indicatorTypePlural, indicatorValue, owner, cb) {
+    let self = this;
+    let indicatorTypeSingular;
+
+    if (indicatorTypePlural === 'addresses' || indicatorTypePlural === 'hosts') {
+      indicatorTypeSingular = 'dnsResolution';
+    }
+
+    if (typeof indicatorTypeSingular === 'undefined') {
+      return cb({
+        detail: `The provided indicator type '${indicatorTypePlural}' is invalid`
+      });
+    }
+
+    this._getDnsInformation(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, data) {
+        if (err || !data) return cb(err, data);
+
+        let result = data['dnsResolution'];
+
+        if (Object.keys(data.dnsResolution).length > 0) {
+          result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
+          self.getPlaybooksForIndicator(result, (err, playbooks) => {
+            if (err) {
+              return cb(err);
+            }
+            cb(null, { result, playbooks });
+          });
+        } else if (response.statusCode === 404) {
+          cb({
+            error: null,
+            data: {
+              body: null
+            }
+          });
+        } else {
+          cb(null);
+        }
+      });
+    });
+  }
+
   _enrichResult(indicatorType, indicatorValue, result) {
-    result.meta = {
-      indicatorType: indicatorType,
-      indicatorValue: indicatorValue
-    };
+    if (result) {
+      result.meta = {
+        indicatorType: indicatorType,
+        indicatorValue: indicatorValue
+      };
 
-    if (typeof result.rating === 'undefined') {
-      result.rating = 0;
+      if (typeof result.rating === 'undefined') {
+        result.rating = 0;
+      }
+
+      result.ratingHuman = this._getRatingHuman(result.rating);
+
+      if (typeof result.confidence === 'undefined') {
+        result.confidence = 0;
+      }
+      result.confidenceHuman = this._getConfidenceHuman(result.confidence);
+
+      if (!Array.isArray(result.tag)) {
+        result.tag = [];
+      }
+
+      return result;
     }
-
-    result.ratingHuman = this._getRatingHuman(result.rating);
-
-    if (typeof result.confidence === 'undefined') {
-      result.confidence = 0;
-    }
-    result.confidenceHuman = this._getConfidenceHuman(result.confidence);
-
-    if (!Array.isArray(result.tag)) {
-      result.tag = [];
-    }
-
-    return result;
   }
 
   _getConfidenceHuman(confidence) {
@@ -749,6 +793,44 @@ class ThreatConnect {
     this.request(requestOptions, cb);
   }
 
+  _getDnsInformation(indicatorType, indicatorValue, owner, cb) {
+    let qs = '';
+    if (typeof owner === 'string' && owner.length > 0) {
+      qs = '?' + querystring.stringify({ owner: owner });
+    } else {
+      qs = '?includeAdditional=true&includeTags=true';
+    }
+
+    let uri = this._getResourcePath(
+      'indicators/' +
+        encodeURIComponent(indicatorType) +
+        '/' +
+        encodeURIComponent(indicatorValue) +
+        '/' +
+        'dnsResolutions' +
+        qs
+    );
+
+    let urlPath =
+      this.url.path +
+      'v2/indicators/' +
+      encodeURIComponent(indicatorType) +
+      '/' +
+      encodeURIComponent(indicatorValue) +
+      '/' +
+      'dnsResolutions' +
+      qs;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, cb);
+  }
+
   _isSuccess(response) {
     if (
       (response.statusCode === 200 || response.statusCode === 201) &&
@@ -841,7 +923,6 @@ class ThreatConnect {
         fp.flow(fp.getOr([], 'playbookTriggerTypes'), fp.includes(indicatorType)),
         playbooks
       );
-
       return callback(null, playbooksForThisIndicator);
     });
   }
@@ -869,7 +950,7 @@ class ThreatConnect {
     };
 
     this.request(requestOptions, (err, response, body) => {
-      if(err) return callback(err);
+      if (err) return callback(err);
 
       const foundPlaybooks = fp.getOr([], 'data.playbook')(body);
 
@@ -926,7 +1007,6 @@ class ThreatConnect {
       callback(null, playbookTriggerTypes);
     });
   }
-  
 }
 
 module.exports = ThreatConnect;
