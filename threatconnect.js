@@ -550,10 +550,10 @@ class ThreatConnect {
     this._getDnsInformation(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
       self._formatResponse(err, response, body, function (err, data) {
         if (err || !data) return cb(err, data);
+        let result;
 
-        let result = data['dnsResolution'];
-
-        if (Object.keys(data.dnsResolution).length > 0) {
+        if (data.dnsResolution && data.dnsResolution.length > 0) {
+          result = data['dnsResolution'];
           result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
           self.getPlaybooksForIndicator(result, (err, playbooks) => {
             if (err) {
@@ -794,12 +794,10 @@ class ThreatConnect {
   }
 
   _getDnsInformation(indicatorType, indicatorValue, owner, cb) {
-    let qs = '';
-    if (typeof owner === 'string' && owner.length > 0) {
-      qs = '?' + querystring.stringify({ owner: owner });
-    } else {
-      qs = '?includeAdditional=true&includeTags=true';
-    }
+    let qs =
+      typeof owner === 'string' && owner.length > 0
+        ? `?${querystring.stringify({ owner })}`
+        : '?includeAdditional=true&includeTags=true';
 
     let uri = this._getResourcePath(
       'indicators/' +
