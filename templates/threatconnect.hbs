@@ -33,16 +33,29 @@
     {{#if (eq orgData.__activeTab "dnsInformation")}}
       <div>
         <span>{{fa-icon icon="network-wired"}}</span>
-        <span>DNS Resolutions</span>
+        <span>Resolution Activity</span>
       </div>
       {{#each orgData.dnsInformation.result as |info|}}
         <div class="dns-information">
           {{#each info.addresses as |addressField|}}
             {{#each-in addressField as |key value|}}
-              <div>
-                <span class="p-key">{{key}}</span>
-                <span class="p-value">{{value}}</span>
-              </div>
+              {{#if (eq key "webLink")}}
+                <div>
+                  <span class="p-key">{{titleize (humanize (dasherize key))}}:</span>
+                  <a href="{{value}}">Open In ThreatConnect
+                    {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
+                </div>
+              {{else if (eq key "dateAdded")}}
+                <div>
+                  <span class="p-key">{{titleize (humanize (dasherize key))}}:</span>
+                  <span class="p-value">{{moment-format value "MM/DD/YYYY HH:mm:ss" timeZone=timezone}}</span>
+                </div>
+              {{else}}
+                <div>
+                  <span class="p-key">{{titleize (humanize (dasherize key))}}:</span>
+                  <span class="p-value">{{value}}</span>
+                </div>
+              {{/if}}
             {{/each-in}}
           {{/each}}
         </div>
@@ -239,57 +252,57 @@
         {{#each orgData.groups as |group|}}
           <div class="data-block-container">
             <div>
-              <span class='p-key'>Group Name: </span>
-              <span class='p-value'><a class='p-link' href='{{group.webLink}}'>{{group.name}}
-                  {{fa-icon icon='external-link' class='p-link external-icon'}}</a></span>
+              <span class="p-key">Group Name: </span>
+              <span class="p-value"><a class="p-link" href="{{group.webLink}}">{{group.name}}
+                  {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
             </div>
             <div>
-              <span class='p-key'>Type: </span>
-              <span class='p-value'>{{group.type}}</span>
+              <span class="p-key">Type: </span>
+              <span class="p-value">{{group.type}}</span>
             </div>
             <div>
-              <span class='p-key'>Owner: </span>
-              <span class='p-value'>{{group.ownerName}}</span>
+              <span class="p-key">Owner: </span>
+              <span class="p-value">{{group.ownerName}}</span>
             </div>
             <div>
-              <span class='p-key'>Date Added: </span>
-              <span class='p-value'>{{moment-time group.dateAdded}}</span>
+              <span class="p-key">Date Added: </span>
+              <span class="p-value">{{moment-time group.dateAdded}}</span>
             </div>
           </div>
         {{/each}}
       {{/if}}
       {{#if (gt orgData.indicators.length 0)}}
-        <h1 class='p-title'>{{fa-icon icon='project-diagram' fixedWidth=true}} Associated Indicators</h1>
+        <h1 class="p-title">{{fa-icon icon="project-diagram" fixedWidth=true}} Associated Indicators</h1>
         {{#each orgData.indicators as |indicator|}}
-          <div class='data-block-container'>
+          <div class="data-block-container">
             <div>
-              <span class='p-key'>Value: </span>
-              <span class='p-value'><a class='p-link' href='{{indicator.webLink}}'>{{indicator.summary}}
-                  {{fa-icon icon='external-link' class='p-link external-icon'}}</a></span>
+              <span class="p-key">Value: </span>
+              <span class="p-value"><a class="p-link" href="{{indicator.webLink}}">{{indicator.summary}}
+                  {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
             </div>
             <div>
-              <span class='p-key'>Owner: </span>
-              <span class='p-value'>{{indicator.ownerName}}</span>
+              <span class="p-key">Owner: </span>
+              <span class="p-value">{{indicator.ownerName}}</span>
             </div>
             <div>
-              <span class='p-key'>Type: </span>
-              <span class='p-value'>{{indicator.type}}</span>
+              <span class="p-key">Type: </span>
+              <span class="p-value">{{indicator.type}}</span>
             </div>
             <div>
-              <span class='p-key'>Threat Assess Rating: </span>
-              <span class='p-value'>{{indicator.threatAssessRating}}</span>
+              <span class="p-key">Threat Assess Rating: </span>
+              <span class="p-value">{{indicator.threatAssessRating}}</span>
             </div>
             <div>
-              <span class='p-key'>Threat Assess Confidence: </span>
-              <span class='p-value'>{{indicator.threatAssessConfidence}}</span>
+              <span class="p-key">Threat Assess Confidence: </span>
+              <span class="p-value">{{indicator.threatAssessConfidence}}</span>
             </div>
             <div>
-              <span class='p-key'>Date Added: </span>
-              <span class='p-value'>{{moment-time indicator.dateAdded}}</span>
+              <span class="p-key">Date Added: </span>
+              <span class="p-value">{{moment-time indicator.dateAdded}}</span>
             </div>
             <div>
-              <span class='p-key'>Last Modified: </span>
-              <span class='p-value'>{{moment-time indicator.lastModified}}</span>
+              <span class="p-key">Last Modified: </span>
+              <span class="p-value">{{moment-time indicator.lastModified}}</span>
             </div>
           </div>
         {{/each}}
