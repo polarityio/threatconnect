@@ -313,7 +313,7 @@ function onDetails(lookupObject, options, cb) {
       const numAssociations = groups.length + indicators.length;
       const dnsInformation = fp.getOr([], 'getDnsInformation', result);
       const getIndicator = { ...result.getIndicator, groups, indicators, numAssociations, dnsInformation };
-
+      
       result.getIndicator = getIndicator;
 
       return getIndicator;

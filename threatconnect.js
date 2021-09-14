@@ -4,6 +4,7 @@ const url = require('url');
 const async = require('async');
 const fp = require('lodash/fp');
 const NodeCache = require('node-cache');
+const { logging } = require('./config/config');
 
 const playbookCache = new NodeCache({
   stdTTL: 10 * 60
@@ -550,11 +551,10 @@ class ThreatConnect {
     this._getDnsInformation(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
       self._formatResponse(err, response, body, function (err, data) {
         if (err || !data) return cb(err, data);
-        let result;
 
-        if (data.dnsResolution && data.dnsResolution.length > 0) {
-          result = data['dnsResolution'];
-          result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
+        if ((data.dnsResolution && data.dnsResolution.length > 0) || (data.indicator && data.indicator.length > 0)) {
+          let dnsResults = data.dnsResolution && data.dnsResolution.length > 0 ? data.dnsResolution : data.indicator;
+          let result = self._enrichResult(indicatorTypePlural, indicatorValue, dnsResults);
           self.getPlaybooksForIndicator(result, (err, playbooks) => {
             if (err) {
               return cb(err);
@@ -562,12 +562,7 @@ class ThreatConnect {
             cb(null, { result, playbooks });
           });
         } else if (response.statusCode === 404) {
-          cb({
-            error: null,
-            data: {
-              body: null
-            }
-          });
+          cb({ data: { body: null } });
         } else {
           cb(null);
         }
