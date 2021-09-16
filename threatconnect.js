@@ -551,20 +551,21 @@ class ThreatConnect {
     this._getDnsInformation(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
       self._formatResponse(err, response, body, function (err, data) {
         if (err || !data) return cb(err, data);
+        
+        const hasDnsResolutionData =
+          (data.dnsResolution && data.dnsResolution.length > 0) || (data.indicator && data.indicator.length > 0);
 
-        if ((data.dnsResolution && data.dnsResolution.length > 0) || (data.indicator && data.indicator.length > 0)) {
-          let dnsResults = data.dnsResolution && data.dnsResolution.length > 0 ? data.dnsResolution : data.indicator;
-          let result = self._enrichResult(indicatorTypePlural, indicatorValue, dnsResults);
+        if (hasDnsResolutionData) {
+          let responseData = data.dnsResolution && data.dnsResolution.length > 0 ? data.dnsResolution : data.indicator;
+          let result = self._enrichResult(indicatorTypePlural, indicatorValue, responseData);
           self.getPlaybooksForIndicator(result, (err, playbooks) => {
             if (err) {
               return cb(err);
             }
             cb(null, { result, playbooks });
           });
-        } else if (response.statusCode === 404) {
-          cb({ data: { body: null } });
         } else {
-          cb(null);
+          cb(null, []);
         }
       });
     });
@@ -821,6 +822,8 @@ class ThreatConnect {
       json: true
     };
 
+    this.log.trace({ REQUEST_OPTS: requestOptions });
+
     this.request(requestOptions, cb);
   }
 
@@ -864,6 +867,7 @@ class ThreatConnect {
     }
 
     if (this._isMiss(response)) {
+      self.log.trace({ RESPONSE: response });
       cb(null);
       return;
     }
