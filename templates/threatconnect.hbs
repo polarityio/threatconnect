@@ -45,10 +45,40 @@
                     {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
                 </div>
               {{/if}}
+              {{#if addressField.ownerName}}
+                <div>
+                  <span class="p-key">Owner Name:</span>
+                  <span class="p-value">{{addressField.ownerName}}</span>
+                </div>
+              {{/if}}
               {{#if addressField.ip}}
                 <div>
                   <span class="p-key">IP:</span>
                   <span class="p-value">{{addressField.ip}}</span>
+                </div>
+              {{/if}}
+              {{#if addressField.summary}}
+                <div>
+                  <span class="p-key">Summary:</span>
+                  <span class="p-value">{{addressField.summary}}</span>
+                </div>
+              {{/if}}
+              {{#if addressField.type}}
+                <div>
+                  <span class="p-key">Type:</span>
+                  <span class="p-value">{{addressField.type}}</span>
+                </div>
+              {{/if}}
+              {{#if addressField.rating}}
+                <div>
+                  <span class="p-key">Rating:</span>
+                  <span class="p-value">{{addressField.rating}}</span>
+                </div>
+              {{/if}}
+              {{#if addressField.confidence}}
+                <div>
+                  <span class="p-key">Confidence:</span>
+                  <span class="p-value">{{addressField.confidence}}</span>
                 </div>
               {{/if}}
               {{#if addressField.threatAssessConfidence}}
@@ -93,18 +123,30 @@
                   {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
               </div>
             {{/if}}
-            {{#if info.threatAssessRating}}
+            {{#if info.ownerName}}
               <div>
-                <span class="p-key">Threat Assess Rating:</span>
-                <span class="p-value">{{info.threatAssessRating}}</span>
+                <span class="p-key">Owner Name:</span>
+                <span class="p-value">{{info.ownerName}}</span>
               </div>
             {{/if}}
-            {{#if info.threatAssessConfidence}}
+            {{#if info.ip}}
               <div>
-                <span class="p-key">Threat Assess Confidence:</span>
-                <span class="p-value">{{info.threatAssessConfidence}}</span>
+                <span class="p-key">IP:</span>
+                <span class="p-value">{{info.ip}}</span>
               </div>
             {{/if}}
+            {{#if info.summary}}
+              <div>
+                <span class="p-key">Summary:</span>
+                <span class="p-value">{{info.summary}}</span>
+              </div>
+            {{/if}}
+            {{#if info.type}}
+                <div>
+                  <span class="p-key">Type:</span>
+                  <span class="p-value">{{info.type}}</span>
+                </div>
+              {{/if}}
             {{#if info.rating}}
               <div>
                 <span class="p-key">Rating:</span>
@@ -115,6 +157,18 @@
               <div>
                 <span class="p-key">Confidence:</span>
                 <span class="p-value">{{info.confidence}}</span>
+              </div>
+            {{/if}}
+            {{#if info.threatAssessRating}}
+              <div>
+                <span class="p-key">Threat Assess Rating:</span>
+                <span class="p-value">{{info.threatAssessRating}}</span>
+              </div>
+            {{/if}}
+            {{#if info.threatAssessConfidence}}
+              <div>
+                <span class="p-key">Threat Assess Confidence:</span>
+                <span class="p-value">{{info.threatAssessConfidence}}</span>
               </div>
             {{/if}}
             {{#if info.dateAdded}}
@@ -137,12 +191,7 @@
                   }}</span>
               </div>
             {{/if}}
-            {{#if info.ownerName}}
-              <div>
-                <span class="p-key">Owner Name:</span>
-                <span class="p-value">{{info.ownerName}}</span>
-              </div>
-            {{/if}}
+            
           </div>
         {{/if}}
       {{/each}}
