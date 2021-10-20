@@ -284,8 +284,13 @@ function onDetails(lookupObject, options, cb) {
       async.parallel(
         {
           getIndicator: (subTaskDone) => tc.getIndicator(indicatorType, indicatorValue, owner.name, subTaskDone),
-          getDnsInformation: (subTaskDone) =>
-            tc.getDnsInformation(indicatorType, indicatorValue, owner.name, subTaskDone),
+          getDnsInformation: (subTaskDone) => {
+            if(indicatorType === 'addresses' || indicatorType === 'hosts'){
+              tc.getDnsInformation(indicatorType, indicatorValue, owner.name, subTaskDone);
+            } else {
+              subTaskDone();
+            }
+          },
           getGroupAssociations: (subTaskDone) =>
             tc.getGroupAssociations(indicatorType, indicatorValue, owner.name, subTaskDone),
           getIndicatorAssociations: (subTaskDone) =>
