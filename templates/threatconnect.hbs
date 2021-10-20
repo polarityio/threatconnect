@@ -19,22 +19,26 @@
           href="#"
         >Associations ({{orgData.numAssociations}})</a>
       </li>
-      {{#if orgData.dnsInformation.result}}
+      {{#if (or (eq details.meta.indicatorType "host") (eq details.meta.indicatorType "addresses"))}}
         <li class="nav-item">
           <a
             {{action "changeTab" "dnsInformation" orgDataIndex}}
             class="nav-link {{if (eq orgData.__activeTab "dnsInformation") "active"}}"
             href="#"
-          >DNS Resolutions</a>
+          >DNS Resolutions ({{if orgData.dnsInformation.result.length orgData.dnsInformation.result.length "0"}})</a>
         </li>
       {{/if}}
     </ul>
 
     {{#if (eq orgData.__activeTab "dnsInformation")}}
-      <div>
-        <span>{{fa-icon icon="network-wired"}}</span>
-        <span>Resolution Activity</span>
-      </div>
+      {{#unless (or orgData.dnsInformation.result (eq orgData.dnsInformation.result.length 0))}}
+          <h2>No DNS resolutions found</h2>
+      {{else}}
+          <div>
+              <span>{{fa-icon icon="network-wired"}}</span>
+              <span>Resolution Activity</span>
+          </div>
+      {{/unless}}
       {{#each orgData.dnsInformation.result as |info|}}
         {{#if info.addresses}}
           <div class="dns-information">
@@ -61,12 +65,6 @@
                 <div>
                   <span class="p-key">Summary:</span>
                   <span class="p-value">{{addressField.summary}}</span>
-                </div>
-              {{/if}}
-              {{#if addressField.type}}
-                <div>
-                  <span class="p-key">Type:</span>
-                  <span class="p-value">{{addressField.type}}</span>
                 </div>
               {{/if}}
               {{#if addressField.rating}}
