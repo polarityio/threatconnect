@@ -558,12 +558,7 @@ class ThreatConnect {
         if (hasDnsResolutionData) {
           let responseData = data.dnsResolution && data.dnsResolution.length > 0 ? data.dnsResolution : data.indicator;
           let result = self._enrichResult(indicatorTypePlural, indicatorValue, responseData);
-          self.getPlaybooksForIndicator(result, (err, playbooks) => {
-            if (err) {
-              return cb(err);
-            }
-            cb(null, { result, playbooks });
-          });
+          cb(null, { result });
         } else {
           cb(null, []);
         }
