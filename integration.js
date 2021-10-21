@@ -229,7 +229,6 @@ function _getSanitizedEntity(entityObj) {
       }
     }
   }
-  Logger.info(lookupValue);
 
   return lookupValue;
 }
@@ -239,7 +238,7 @@ function onDetails(lookupObject, options, cb) {
 
   const details = fp.get('data.details', lookupObject);
   const tasks = [];
-  
+
   tc.setSecretKey(options.apiKey);
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
@@ -269,8 +268,7 @@ function onDetails(lookupObject, options, cb) {
     return cb({
       debug: {
         lookupObject: lookupObject,
-        msg:
-          'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
+        msg: 'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
       },
       detail: 'Malformed lookupObject received in onDetails hook. Object is missing `meta` or `owner` properties.'
     });
@@ -281,10 +279,17 @@ function onDetails(lookupObject, options, cb) {
   const indicatorValue = details.meta.indicatorValue;
 
   owners.forEach((owner) => {
-    tasks.push(function(done) {
+    tasks.push(function (done) {
       async.parallel(
         {
           getIndicator: (subTaskDone) => tc.getIndicator(indicatorType, indicatorValue, owner.name, subTaskDone),
+          getDnsInformation: (subTaskDone) => {
+            if(indicatorType === 'addresses' || indicatorType === 'hosts'){
+              tc.getDnsInformation(indicatorType, indicatorValue, owner.name, subTaskDone);
+            } else {
+              subTaskDone();
+            }
+          },
           getGroupAssociations: (subTaskDone) =>
             tc.getGroupAssociations(indicatorType, indicatorValue, owner.name, subTaskDone),
           getIndicatorAssociations: (subTaskDone) =>
@@ -301,24 +306,24 @@ function onDetails(lookupObject, options, cb) {
     if (err) {
       Logger.error({ err: err }, 'Error in onDetails lookup');
       cb(err);
-    } 
-    
+    }
+
     Logger.debug({ results }, 'onDetails Results');
 
-    let orgData = fp.map(
-      (result) => {
-        const groups = fp.getOr([], 'getGroupAssociations.groups', result);
-        const indicators = fp.getOr([], 'getIndicatorAssociations.indicators', result);
-        const numAssociations = groups.length + indicators.length;
-        const getIndicator = { ...result.getIndicator, groups, indicators, numAssociations };
+    let orgData = fp.map((result) => {
+      const groups = fp.getOr([], 'getGroupAssociations.groups', result);
+      const indicators = fp.getOr([], 'getIndicatorAssociations.indicators', result);
+      const numAssociations = groups.length + indicators.length;
+      // The DNS information endpoint returns duplicate records based on `id` so we filter those out here
+      const dnsInformation = {
+        result: fp.flow(fp.getOr([], 'getDnsInformation.result'), fp.uniqBy('id'))(result)
+      };
+      const getIndicator = { ...result.getIndicator, groups, indicators, numAssociations, dnsInformation };
+      result.getIndicator = getIndicator;
 
-        result.getIndicator = getIndicator;
+      return getIndicator;
+    }, results);
 
-        return getIndicator;
-      },
-      results
-    );
-    
     orgData.forEach((org) => {
       _modifyWebLinksWithPort(org); //this method mutates result
       if (org.threatAssessScore) {
@@ -327,7 +332,6 @@ function onDetails(lookupObject, options, cb) {
         org.threatAssessScorePercentage = 0;
       }
     });
-
     Logger.debug({ orgData }, 'Final Result');
 
     cb(null, {
@@ -335,10 +339,9 @@ function onDetails(lookupObject, options, cb) {
       isVolatile: true,
       details: {
         ...fp.getOr({}, 'data.details', lookupObject),
-        results: orgData,
+        results: orgData
       }
     });
-    
   });
 }
 
