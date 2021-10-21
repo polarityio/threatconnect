@@ -19,7 +19,7 @@
           href="#"
         >Associations ({{orgData.numAssociations}})</a>
       </li>
-      {{#if (or (eq details.meta.indicatorType "host") (eq details.meta.indicatorType "addresses"))}}
+      {{#if (or (eq details.meta.indicatorType "hosts") (eq details.meta.indicatorType "addresses"))}}
         <li class="nav-item">
           <a
             {{action "changeTab" "dnsInformation" orgDataIndex}}
@@ -31,30 +31,20 @@
     </ul>
 
     {{#if (eq orgData.__activeTab "dnsInformation")}}
-      {{#unless (or orgData.dnsInformation.result (eq orgData.dnsInformation.result.length 0))}}
+        <div>
+            <span class="p-key">{{orgData.owner.type}}: </span>
+            <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}}
+                {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
+        </div>
+      {{#if (eq orgData.dnsInformation.result.length 0)}}
           <h2>No DNS resolutions found</h2>
       {{else}}
-          <div>
-              <span>{{fa-icon icon="network-wired"}}</span>
-              <span>Resolution Activity</span>
-          </div>
-      {{/unless}}
+          <h1 class="p-title">{{fa-icon icon="network-wired"}} Resolution Activity</h1>
+      {{/if}}
       {{#each orgData.dnsInformation.result as |info|}}
         {{#if info.addresses}}
-          <div class="dns-information">
+          <div class="data-block-container">
             {{#each info.addresses as |addressField|}}
-              {{#if addressField.webLink}}
-                <div>
-                  <a href="{{addressField.webLink}}">View In ThreatConnect
-                    {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
-                </div>
-              {{/if}}
-              {{#if addressField.ownerName}}
-                <div>
-                  <span class="p-key">Owner Name:</span>
-                  <span class="p-value">{{addressField.ownerName}}</span>
-                </div>
-              {{/if}}
               {{#if addressField.ip}}
                 <div>
                   <span class="p-key">IP:</span>
@@ -64,7 +54,11 @@
               {{#if addressField.summary}}
                 <div>
                   <span class="p-key">Summary:</span>
-                  <span class="p-value">{{addressField.summary}}</span>
+                    {{#if addressField.webLink}}
+                        <a class="p-link" href="{{addressField.webLink}}">{{addressField.summary}} {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
+                    {{else}}
+                        <span class="p-value">{{addressField.summary}}</span>
+                    {{/if}}
                 </div>
               {{/if}}
               {{#if addressField.rating}}
@@ -114,36 +108,22 @@
             {{/each}}
           </div>
         {{else}}
-          <div class="dns-information">
-            {{#if info.webLink}}
-              <div>
-                <a href="{{info.webLink}}">View In ThreatConnect
-                  {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
-              </div>
-            {{/if}}
-            {{#if info.ownerName}}
-              <div>
-                <span class="p-key">Owner Name:</span>
-                <span class="p-value">{{info.ownerName}}</span>
-              </div>
-            {{/if}}
+          <div class="data-block-container">
             {{#if info.ip}}
               <div>
                 <span class="p-key">IP:</span>
                 <span class="p-value">{{info.ip}}</span>
               </div>
             {{/if}}
-            {{#if info.summary}}
-              <div>
-                <span class="p-key">Summary:</span>
-                <span class="p-value">{{info.summary}}</span>
-              </div>
-            {{/if}}
-            {{#if info.type}}
-                <div>
-                  <span class="p-key">Type:</span>
-                  <span class="p-value">{{info.type}}</span>
-                </div>
+              {{#if info.summary}}
+                  <div>
+                      <span class="p-key">Summary:</span>
+                      {{#if info.webLink}}
+                          <a class="p-link" href="{{info.webLink}}">{{info.summary}} {{fa-icon "external-link" fixedWidth=true class="external-icon"}}</a>
+                      {{else}}
+                          <span class="p-value">{{info.summary}}</span>
+                      {{/if}}
+                  </div>
               {{/if}}
             {{#if info.rating}}
               <div>
@@ -189,11 +169,11 @@
                   }}</span>
               </div>
             {{/if}}
-            
           </div>
         {{/if}}
       {{/each}}
     {{/if}}
+
     {{#if (or (eq orgData.__activeTab "info") (not orgData.__activeTab))}}
       <div>
         <span class="p-key">{{orgData.owner.type}}: </span>
@@ -375,7 +355,13 @@
         </ul>
       {{/if}}
     {{/if}}
+
     {{#if (eq orgData.__activeTab "associations")}}
+        <div>
+            <span class="p-key">{{orgData.owner.type}}: </span>
+            <span class="p-value"><a class="p-link" href="{{orgData.webLink}}">{{orgData.owner.name}}
+                {{fa-icon icon="external-link" class="p-link external-icon"}}</a></span>
+        </div>
       {{#if (eq orgData.numAssociations 0)}}
         <h2>No Associations</h2>
       {{/if}}
