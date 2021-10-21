@@ -229,7 +229,6 @@ function _getSanitizedEntity(entityObj) {
       }
     }
   }
-  Logger.info(lookupValue);
 
   return lookupValue;
 }
@@ -315,9 +314,11 @@ function onDetails(lookupObject, options, cb) {
       const groups = fp.getOr([], 'getGroupAssociations.groups', result);
       const indicators = fp.getOr([], 'getIndicatorAssociations.indicators', result);
       const numAssociations = groups.length + indicators.length;
-      const dnsInformation = fp.getOr([], 'getDnsInformation', result);
+      // The DNS information endpoint returns duplicate records based on `id` so we filter those out here
+      const dnsInformation = {
+        result: fp.flow(fp.getOr([], 'getDnsInformation.result'), fp.uniqBy('id'))(result)
+      };
       const getIndicator = { ...result.getIndicator, groups, indicators, numAssociations, dnsInformation };
-
       result.getIndicator = getIndicator;
 
       return getIndicator;
