@@ -1,8 +1,8 @@
 {
-  "main": "./integration.js",
   "name": "ThreatConnect",
+  "version": "3.3.2-beta",
+  "main": "./integration.js",
   "description": "Polarity ThreatConnect Integration",
-  "version": "3.3.1-beta",
   "private": true,
   "dependencies": {
     "async": "^3.2.0",
