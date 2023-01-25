@@ -1,14 +1,14 @@
 {
-  "main": "./integration.js",
   "name": "ThreatConnect",
+  "version": "3.3.2-beta",
+  "main": "./integration.js",
   "description": "Polarity ThreatConnect Integration",
-  "version": "3.3.1-beta",
   "private": true,
   "dependencies": {
     "async": "^3.2.0",
     "ipaddr.js": "^1.9.1",
     "lodash": "^4.17.21",
     "node-cache": "^5.1.2",
-    "request": "^2.88.2"
+    "postman-request": "^2.88.1-postman.32"
   }
 }

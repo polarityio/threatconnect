@@ -1,0 +1,86 @@
+{
+  "name": "ThreatConnect",
+  "acronym": "TC",
+  "logging": {
+    "level": "info"
+  },
+  "entityTypes": [
+    "IPv4",
+    "IPv6",
+    "hash",
+    "email",
+    "domain",
+    "url"
+  ],
+  "description": "Polarity integration that connects to the ThreatConnect threat intelligence platform",
+  "styles": [
+    "./styles/threatconnect.less"
+  ],
+  "defaultColor": "light-pink",
+  "block": {
+    "component": {
+      "file": "./components/threatconnect.js"
+    },
+    "template": {
+      "file": "./templates/threatconnect.hbs"
+    }
+  },
+  "settings": {
+    "threatConnectPort": null
+  },
+  "request": {
+    "cert": "",
+    "key": "",
+    "passphrase": "",
+    "ca": "",
+    "proxy": "",
+    "rejectUnauthorized": true
+  },
+  "options": [
+    {
+      "key": "url",
+      "name": "ThreatConnect Instance URL",
+      "description": "The URL of the ThreatConnect instance you would like to connect to (including http:// or https://)",
+      "default": "",
+      "type": "text",
+      "userCanEdit": false,
+      "adminOnly": true
+    },
+    {
+      "key": "accessId",
+      "name": "Access ID",
+      "description": "Account Identifier that is associated with the API Key",
+      "default": "",
+      "type": "text",
+      "userCanEdit": false,
+      "adminOnly": true
+    },
+    {
+      "key": "apiKey",
+      "name": "API Key",
+      "description": "The API (secret) Key associated with the provided Access ID",
+      "default": "",
+      "type": "password",
+      "userCanEdit": false,
+      "adminOnly": true
+    },
+    {
+      "key": "searchBlocklist",
+      "name": "Organization Search Blocklist",
+      "description": "By default all organizations visible to the provided API User will be searched.  This blocklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the \"Organization Search Allowlist\" option.",
+      "default": "",
+      "type": "text",
+      "userCanEdit": false,
+      "adminOnly": true
+    },
+    {
+      "key": "searchAllowlist",
+      "name": "Organization Search Allowlist",
+      "description": "By default all organizations visible to the provided API User will be searched. This allowlist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the \"Organization Search Blocklist\" option",
+      "default": "",
+      "type": "text",
+      "userCanEdit": false,
+      "adminOnly": true
+    }
+  ]
+}
