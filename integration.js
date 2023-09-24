@@ -8,13 +8,23 @@ const request = require('postman-request');
 const fp = require('lodash/fp');
 const fs = require('fs');
 const config = require('./config/config');
+const { setLogger } = require('./logger');
+const { startFileServer } = require('./file-server');
+const crypto = require('crypto');
+const NodeCache = require('node-cache');
+
+const downloadTokenCache = new NodeCache({
+  stdTTL: 5 * 60 // 5 minutes
+});
+
 const MAX_SUMMARY_TAGS = 3;
 
 let tc;
 let Logger;
 
-function startup (logger) {
+function startup(logger) {
   Logger = logger;
+  setLogger(Logger);
 
   let defaults = {};
 
@@ -43,9 +53,10 @@ function startup (logger) {
   }
 
   tc = new ThreatConnect(request.defaults(defaults), Logger);
+  startFileServer(downloadTokenCache, tc);
 }
 
-function doLookup (entities, options, cb) {
+function doLookup(entities, options, cb) {
   tc.setSecretKey(options.apiKey);
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
@@ -56,7 +67,7 @@ function doLookup (entities, options, cb) {
   });
 }
 
-function createSearchOrgAllowlist (options) {
+function createSearchOrgAllowlist(options) {
   let allowlistedOrgs = new Set();
 
   if (typeof options.searchAllowlist === 'string' && options.searchAllowlist.trim().length > 0) {
@@ -74,7 +85,7 @@ function createSearchOrgAllowlist (options) {
   return allowlistedOrgs;
 }
 
-function createSearchOrgBlocklist (options) {
+function createSearchOrgBlocklist(options) {
   let blocklistedOrgs = new Set();
 
   if (typeof options.searchBlocklist === 'string' && options.searchBlocklist.trim().length > 0) {
@@ -92,7 +103,7 @@ function createSearchOrgBlocklist (options) {
   return blocklistedOrgs;
 }
 
-function getFilteredOwners (owners, options) {
+function getFilteredOwners(owners, options) {
   if (options.searchBlocklist.trim().length > 0) {
     let blocklistedOrgs = createSearchOrgBlocklist(options);
     return owners.filter((owner) => {
@@ -108,7 +119,7 @@ function getFilteredOwners (owners, options) {
   }
 }
 
-function searchAllOwners (entities, options, cb) {
+function searchAllOwners(entities, options, cb) {
   let lookupResults = [];
 
   async.each(
@@ -159,7 +170,7 @@ function searchAllOwners (entities, options, cb) {
   );
 }
 
-function _getOwnerSummaryTags (owners) {
+function _getOwnerSummaryTags(owners) {
   let tags = [];
 
   for (let i = 0; i < owners.length && i < MAX_SUMMARY_TAGS; i++) {
@@ -178,7 +189,7 @@ function _getOwnerSummaryTags (owners) {
  * @param type
  * @returns {string}
  */
-function convertPolarityTypeToThreatConnect (type) {
+function convertPolarityTypeToThreatConnect(type) {
   switch (type) {
     case 'IPv4':
       return 'addresses';
@@ -210,7 +221,7 @@ const INDICATOR_TYPES = {
  * @returns {*}
  * @private
  */
-function _getSanitizedEntity (entityObj) {
+function _getSanitizedEntity(entityObj) {
   let lookupValue = entityObj.value;
 
   if (entityObj.isIPv4 || entityObj.isIPv6) {
@@ -233,7 +244,7 @@ function _getSanitizedEntity (entityObj) {
   return lookupValue;
 }
 
-function onDetails (lookupObject, options, cb) {
+function onDetails(lookupObject, options, cb) {
   Logger.debug({ lookupObject, options }, 'onDetails Input');
 
   const details = fp.get('data.details', lookupObject);
@@ -345,13 +356,34 @@ function onDetails (lookupObject, options, cb) {
   });
 }
 
-function onMessage (payload, options, cb) {
+function onMessage(payload, options, cb) {
   Logger.debug({ payload }, 'Received onMessage');
   tc.setSecretKey(options.apiKey);
   tc.setHost(options.url);
   tc.setAccessId(options.accessId);
 
   switch (payload.action) {
+    case 'GET_DOWNLOAD_TOKEN':
+      const { groupId, reportName } = payload;
+      const token = generateDownloadToken();
+      Logger.trace(
+        {
+          downloadToken: token,
+          reportInfo: {
+            groupId,
+            reportName
+          }
+        },
+        'Set token'
+      );
+      downloadTokenCache.set(token, {
+        groupId,
+        reportName
+      });
+      cb(null, {
+        token
+      });
+      break;
     case 'SET_RATING':
       tc.setRating(
         payload.data.indicatorValue,
@@ -453,7 +485,7 @@ function onMessage (payload, options, cb) {
  * @param result
  * @private
  */
-function _modifyWebLinksWithPort (result) {
+function _modifyWebLinksWithPort(result) {
   if (config.settings.threatConnectPort !== null) {
     const port = config.settings.threatConnectPort;
 
@@ -486,7 +518,12 @@ function _modifyWebLinksWithPort (result) {
     }
   }
 }
-function _addPortToLink (weblinkToTransform, port) {
+
+function generateDownloadToken(entity, options) {
+  return require('crypto').randomBytes(64).toString('hex');
+}
+
+function _addPortToLink(weblinkToTransform, port) {
   let weblinkAsUrl = url.parse(weblinkToTransform);
   weblinkAsUrl.port = port;
   delete weblinkAsUrl.host;
@@ -494,11 +531,11 @@ function _addPortToLink (weblinkToTransform, port) {
   return url.format(weblinkAsUrl);
 }
 
-function _getOwnerIcon () {
+function _getOwnerIcon() {
   return `<svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" data-icon="building" data-prefix="fas" id="ember1223" class="svg-inline--fa fa-building fa-w-14  ember-view"><path fill="currentColor" d="M436 480h-20V24c0-13.255-10.745-24-24-24H56C42.745 0 32 10.745 32 24v456H12c-6.627 0-12 5.373-12 12v20h448v-20c0-6.627-5.373-12-12-12zM128 76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76zm0 96c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40zm52 148h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12zm76 160h-64v-84c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v84zm64-172c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40z"></path></svg> `;
 }
 
-function isOptionMissing (userOptions, key) {
+function isOptionMissing(userOptions, key) {
   if (
     typeof userOptions[key].value !== 'string' ||
     (typeof userOptions[key].value === 'string' && userOptions[key].value.length === 0)
@@ -508,7 +545,7 @@ function isOptionMissing (userOptions, key) {
   return false;
 }
 
-function validateOptions (userOptions, cb) {
+function validateOptions(userOptions, cb) {
   let errors = [];
 
   if (isOptionMissing(userOptions, 'url')) {

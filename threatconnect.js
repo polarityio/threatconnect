@@ -5,6 +5,7 @@ const async = require('async');
 const fp = require('lodash/fp');
 const NodeCache = require('node-cache');
 const { logging } = require('./config/config');
+const fs = require('fs');
 
 const playbookCache = new NodeCache({
   stdTTL: 10 * 60
@@ -478,6 +479,27 @@ class ThreatConnect {
     });
   }
 
+  downloadGroupReport(groupId) {
+    // https://docs.threatconnect.com/en/latest/rest_api/v3/groups/groups.html#retrieve-a-document-or-report-group-s-file
+    let qs = '';
+
+    let uri = this._getResourcePathv3('groups/' + encodeURIComponent(groupId) + '/pdf');
+
+    let urlPath = this.url.path + 'v3/groups/' + encodeURIComponent(groupId) + '/pdf';
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET')
+    };
+
+    requestOptions.headers['Accept'] = 'application/octet-stream';
+
+    this.log.info({ requestOptions }, 'downloadGroupReport request options');
+
+    return this.request(requestOptions);
+  }
+
   getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
     self._getIndicatorAssociations(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
@@ -551,7 +573,7 @@ class ThreatConnect {
     this._getDnsInformation(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
       self._formatResponse(err, response, body, function (err, data) {
         if (err || !data) return cb(err, data);
-        
+
         const hasDnsResolutionData =
           (data.dnsResolution && data.dnsResolution.length > 0) || (data.indicator && data.indicator.length > 0);
 
@@ -901,9 +923,15 @@ class ThreatConnect {
   _getResourcePath(resourcePath) {
     return this.url.href + 'v2/' + resourcePath;
   }
+
+  _getResourcePathv3(resourcePath) {
+    return this.url.href + 'v3/' + resourcePath;
+  }
+
   _getResourcePathInternal(resourcePath) {
     return this.url.href + 'internal/' + resourcePath;
   }
+
   getPlaybooksForIndicator(indicator, callback) {
     const indicatorType = fp.toLower(INDICATOR_TYPES[fp.get('meta.indicatorType', indicator)]);
     if (!indicatorType) return cb({ err: indicator, detail: 'Getting Playbooks Failed - No Indicator Type Found' });
@@ -918,6 +946,7 @@ class ThreatConnect {
       return callback(null, playbooksForThisIndicator);
     });
   }
+
   getPlaybooks(callback) {
     const cachedPlaybooks = playbookCache.get('playbooks');
     if (cachedPlaybooks) return callback(null, cachedPlaybooks);

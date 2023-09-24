@@ -26,7 +26,32 @@ polarity.export = PolarityComponent.extend({
       timeout: 3000
     });
   },
+  init() {
+    let array = new Uint32Array(5);
+    this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
+
+    this._super(...arguments);
+  },
+  triggerDownload(groupId) {
+    document.getElementById(`tc-download-link-${this.get('uniqueIdPrefix')}-${groupId}`).click();
+  },
   actions: {
+    downloadFile: function (groupId, reportName) {
+      this.set('isDownloading', true);
+      this.sendIntegrationMessage({ action: 'GET_DOWNLOAD_TOKEN', groupId, reportName })
+        .then((result) => {
+          const token = result.token;
+          this.set('downloadToken', token);
+          this.set('downloadHost', window.location.origin);
+          Ember.run.scheduleOnce('afterRender', this, this.triggerDownload, groupId);
+        })
+        .catch((err) => {
+          console.error(err);
+        })
+        .finally(() => {
+          this.set('isDownloading', false);
+        });
+    },
     changeTab: function (tabName, orgDataIndex) {
       this.set(`results.${orgDataIndex}.__activeTab`, tabName);
     },
