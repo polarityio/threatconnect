@@ -3,19 +3,20 @@
 const ipaddr = require('ipaddr.js');
 const async = require('async');
 const url = require('url');
-const ThreatConnect = require('./threatconnect');
+const crypto = require('crypto');
+const NodeCache = require('node-cache');
 const request = require('postman-request');
 const fp = require('lodash/fp');
 const fs = require('fs');
-const config = require('./config/config');
-const { setLogger } = require('./logger');
-const { startFileServer } = require('./file-server');
-const crypto = require('crypto');
-const NodeCache = require('node-cache');
 
-const downloadTokenCache = new NodeCache({
-  stdTTL: 5 * 60 // 5 minutes
-});
+const ThreatConnect = require('./lib/threatconnect');
+const config = require('./config/config');
+const { setLogger } = require('./lib/logger');
+const { startReportProxyServer } = require('./lib/report-proxy-server');
+
+const reportProxyServerConfig = require('./config/report-proxy-server.json');
+
+const downloadTokenCache = new NodeCache();
 
 const MAX_SUMMARY_TAGS = 3;
 
@@ -53,7 +54,10 @@ function startup(logger) {
   }
 
   tc = new ThreatConnect(request.defaults(defaults), Logger);
-  startFileServer(downloadTokenCache, tc);
+
+  if (reportProxyServerConfig.enabled) {
+    startReportProxyServer(downloadTokenCache, tc);
+  }
 }
 
 function doLookup(entities, options, cb) {
@@ -376,10 +380,14 @@ function onMessage(payload, options, cb) {
         },
         'Set token'
       );
-      downloadTokenCache.set(token, {
-        groupId,
-        reportName
-      });
+      downloadTokenCache.set(
+        token,
+        {
+          groupId,
+          reportName
+        },
+        reportProxyServerConfig.downloadTokenDuration
+      );
       cb(null, {
         token
       });

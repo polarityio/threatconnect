@@ -387,10 +387,12 @@
               <span class="p-value">{{moment-time group.dateAdded}}</span>
             </div>
             <div>
-              <button {{on "click" (action "downloadFile" group.id group.name)}}>
-                Download!
+              <button class="btn btn-download" {{on "click" (action "downloadFile" group.id group.name)}}>
+                Download
                 {{#if isDownloading}}
-                  {{fa-icon icon="spinner-third" spin=true}}
+                  {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                {{else}}
+                  {{fa-icon icon="download" fixedWidth=true}}
                 {{/if}}
               </button>
               <a

@@ -1,0 +1,8 @@
+{
+  "enabled": true,
+  "port": 9876,
+  "downloadTokenDuration": 30,
+  "sslEnabled": false,
+  "sslPrivateKey": "/etc/pki/tls/private/server.key",
+  "sslCert": "/etc/pki/tls/certs/server.crt"
+}
