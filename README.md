@@ -84,7 +84,15 @@ chown polarityd:polarityd /app/nginx/threatconnect-report-proxy.conf
 
 Finally, enable the report proxy server by opening the `config/report-proxy-server.json` file and changing the `enabled` property to `true`.
 
-After making this change, save the file and restart the ThreatConnect integration from the integration settings page.
+After making this change, save the file and restart the ThreatConnect integration from the integration settings page.  A download button will now appear on the Associations tab for any reports associated with the indicator.
+
+### SSL
+
+As the report proxy service listens on localhost, by default the connection between nginx and the localhost proxy service is not over SSL.  If you do need to enable SSL on this connection you can toggle `sslEnabled` to `true` in the `report-proxy-server.json` configuration file.
+
+> The Report Proxy Server is not directly accessible on any external interfaces.  All connections to the server are routed through the Nginx web proxy over SSL. 
+
+If you set this `true`, you will also need to ensure that the `sslPrivateKey` and `sslCert` properties point to valid values.  The certificates these values point to should be in PEM format using the PKCS#8 container.  By default, nginx does not validate the SSL certificate when using it with the `proxy_pass` directive.  This means you can use a self-signed certificate.    
 
 ## Installation Instructions
 
