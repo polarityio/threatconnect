@@ -1,5 +1,5 @@
 {
-  "enabled": true,
+  "enabled": false,
   "port": 9876,
   "downloadTokenDuration": 30,
   "sslEnabled": false,

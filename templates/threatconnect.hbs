@@ -386,23 +386,25 @@
               <span class="p-key">Date Added: </span>
               <span class="p-value">{{moment-time group.dateAdded}}</span>
             </div>
-            <div>
-              <button class="btn btn-download" {{on "click" (action "downloadFile" group.id group.name)}}>
-                Download
-                {{#if isDownloading}}
-                  {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
-                {{else}}
-                  {{fa-icon icon="download" fixedWidth=true}}
-                {{/if}}
-              </button>
-              <a
-                id="{{concat "tc-download-link-" uniqueIdPrefix "-" group.id}}"
-                class="invisible"
-                href="{{downloadHost}}/threatconnect/download/{{downloadToken}}"
-              >
-                Download
-              </a>
-            </div>
+            {{#if details.enableReportProxy}}
+              <div>
+                <button class="btn btn-download" {{on "click" (action "downloadFile" group.id group.name)}}>
+                  Download
+                  {{#if isDownloading}}
+                    {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                  {{else}}
+                    {{fa-icon icon="download" fixedWidth=true}}
+                  {{/if}}
+                </button>
+                <a
+                  id="{{concat "tc-download-link-" uniqueIdPrefix "-" group.id}}"
+                  class="invisible"
+                  href="{{downloadHost}}/_int/threatconnect/download/{{downloadToken}}"
+                >
+                  Download
+                </a>
+              </div>
+            {{/if}}
           </div>
         {{/each}}
       {{/if}}

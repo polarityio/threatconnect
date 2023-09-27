@@ -54,6 +54,38 @@ Find the property `settings.threatConnectPort` and set it to the proper port:
 
 If you are using the default port (443) then you so not need to modify this setting.  This setting is required to rewrite all the links returns by the ThreatConnect REST API.  Without this setting, all external links within the integration will go to the default port of 443.
 
+## Report Download Proxy Service
+
+By default, users will be able to download Reports via the associations tab as long as they are logged into their ThreatConnect instance (the download will open in their default browser tab).
+
+In cases where this workflow will not work (e.g., users don't directly login to ThreatConnect), this integration supports acting as a download proxy for reports. 
+
+To enable this functionality, you will need to add a new nginx configuration file to the Polarity nginx configuration.
+
+This functionality is currently supported on v4 servers.  If you'd like to set this up on a v5 server please contact us at support@polarity.io.
+
+### v4 Server ### 
+
+Navigate to `/app/nginx` and add a new file called `threatconnect-report-proxy.conf` with the following contents: 
+
+```
+location ~ "^/_int/threatconnect/download/([a-zA-Z0-9]{128})$" {
+   proxy_set_header Host $host;
+   proxy_set_header X-Real-IP $remote_addr;
+   proxy_pass http://127.0.0.1:9876/download/$1;
+}
+```
+
+Ensure the file is owned by the `polarityd` user:
+
+```
+chown polarityd:polarityd /app/nginx/threatconnect-report-proxy.conf
+```
+
+Finally, enable the report proxy server by opening the `config/report-proxy-server.json` file and changing the `enabled` property to `true`.
+
+After making this change, save the file and restart the ThreatConnect integration from the integration settings page.
+
 ## Installation Instructions
 
 Installation instructions for integrations are provided on the [PolarityIO GitHub Page](https://polarityio.github.io/).

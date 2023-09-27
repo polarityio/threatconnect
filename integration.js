@@ -150,7 +150,8 @@ function searchAllOwners(entities, options, cb) {
                   summary: _getOwnerSummaryTags(filteredOwners),
                   details: {
                     meta: result.meta,
-                    owners: filteredOwners
+                    owners: filteredOwners,
+                    enableReportProxy: reportProxyServerConfig.enabled
                   }
                 }
               });
