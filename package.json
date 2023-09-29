@@ -1,11 +1,11 @@
 {
   "name": "ThreatConnect",
-  "version": "3.3.5",
+  "version": "3.4.0",
   "main": "./integration.js",
   "description": "Polarity ThreatConnect Integration",
   "private": true,
   "scripts": {
-    "updateNginx": "echo \"location /_threatconnect {\n  proxy_set_header Host \\$host;\n  proxy_set_header X-Real-IP \\$remote_addr;\n  proxy_pass http://127.0.0.1:$(node -e \"console.log(require('./config/file-server.json').port)\");\n}\" > /app/nginx/threatconnect-file-server.conf && systemctl restart nginx"
+    "updateNginx": "echo \"location ~ \\\"^/_int/threatconnect/download/([a-zA-Z0-9]{128})\\$\\\" {\n  proxy_set_header Host \\$host;\n  proxy_set_header X-Real-IP \\$remote_addr;\n  proxy_pass http://127.0.0.1:$(node -e \"console.log(require('./config/report-proxy-server.json').port)\")/download/\\$1;\n}\" > /app/nginx/threatconnect-report-proxy.conf && systemctl restart nginx"
   },
   "dependencies": {
     "async": "^3.2.4",
