@@ -8,12 +8,14 @@
   "entityTypes": [
     "IPv4",
     "IPv6",
-    "hash",
+    "MD5",
+    "SHA1",
+    "SHA256",
     "email",
     "domain",
     "url"
   ],
-  "description": "Polarity integration that connects to the ThreatConnect threat intelligence platform",
+  "description": "Polarity integration that searches indicators in the ThreatConnect threat intelligence platform",
   "styles": [
     "./styles/threatconnect.less"
   ],
@@ -39,8 +41,8 @@
   "options": [
     {
       "key": "url",
-      "name": "ThreatConnect Instance URL",
-      "description": "The URL of the ThreatConnect instance you would like to connect to (including http:// or https://)",
+      "name": "ThreatConnect Instance API URL",
+      "description": "The API URL of the ThreatConnect instance you would like to connect to (including http:// or https://)",
       "default": "",
       "type": "text",
       "userCanEdit": false,

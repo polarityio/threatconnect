@@ -17,14 +17,14 @@ module.exports = {
    */
   acronym: 'TC',
   logging: { level: 'info' },
-  entityTypes: ['IPv4', 'IPv6', 'hash', 'email', 'domain', 'url'],
+  entityTypes: ['IPv4', 'IPv6', 'MD5', 'SHA1', 'SHA256', 'email', 'domain', 'url'],
   /**
    * Description for this integration which is displayed in the Polarity integrations user interface
    *
    * @type String
    * @optional
    */
-  description: 'Polarity integration that connects to the ThreatConnect threat intelligence platform',
+  description: 'Polarity integration that searches indicators in the ThreatConnect threat intelligence platform',
   /**
    * An array of style files (css or less) that will be included for your integration. Any styles specified in
    * the below files can be used in your custom template.
@@ -89,8 +89,8 @@ module.exports = {
   options: [
     {
       key: 'url',
-      name: 'ThreatConnect Instance URL',
-      description: 'The URL of the ThreatConnect instance you would like to connect to (including http:// or https://)',
+      name: 'ThreatConnect Instance API URL',
+      description: 'The API URL of the ThreatConnect instance you would like to connect to (including http:// or https://)',
       default: '',
       type: 'text',
       userCanEdit: false,
