@@ -26,12 +26,40 @@ polarity.export = PolarityComponent.extend({
       timeout: 3000
     });
   },
+  init() {
+    let array = new Uint32Array(5);
+    this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
+
+    this._super(...arguments);
+  },
+  onDetailsLoaded() {
+    if (!this.isDestroyed) {
+      this.get('results').forEach((org) => {
+        if (org && org.associatedCases && org.associatedCases.data) {
+          org.associatedCases.data.forEach((caseObj) => {
+            switch (caseObj.severity) {
+              case 'Critical':
+                caseObj._severityColor = 'maroon-text';
+                break;
+              case 'High':
+                caseObj._severityColor = 'red-text';
+                break;
+              case 'Medium':
+                caseObj._severityColor = 'orange-text';
+                break;
+              default:
+                caseObj._severityColor = '';
+            }
+          });
+        }
+      });
+    }
+  },
   actions: {
     changeTab: function (tabName, orgDataIndex) {
       this.set(`results.${orgDataIndex}.__activeTab`, tabName);
     },
     saveConfidence(orgData, orgDataIndex) {
-      console.info('Saving Confidence');
       let self = this;
 
       self.set('block.isLoadingDetails', true);
@@ -40,7 +68,7 @@ polarity.export = PolarityComponent.extend({
         data: {
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
-          owner: orgData.owner.name,
+          owner: orgData.ownerName,
           confidence: orgData.__shadowConfidence
         }
       };
@@ -81,7 +109,7 @@ polarity.export = PolarityComponent.extend({
         data: {
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
-          owner: orgData.owner.name,
+          owner: orgData.ownerName,
           tag: newTag
         }
       };
@@ -93,7 +121,8 @@ polarity.export = PolarityComponent.extend({
             self._flashError(result.error.detail, 'error');
           } else {
             self.set('actionMessage', 'Added Tag');
-            self.get('results.' + orgDataIndex + '.tag').pushObject({
+            self.get('results.' + orgDataIndex + '.tags.data').pushObject({
+              id: result.id,
               name: newTag,
               webLink: result.data.link
             });
@@ -105,7 +134,7 @@ polarity.export = PolarityComponent.extend({
           self.set('results.' + orgDataIndex + '.__addingTag', false);
         });
     },
-    deleteTag(tag, orgData, orgDataIndex, tagIndex) {
+    deleteTag(tagToRemove, orgData, orgDataIndex, tagIndex) {
       let self = this;
 
       self.set('block.isLoadingDetails', true);
@@ -116,8 +145,8 @@ polarity.export = PolarityComponent.extend({
         data: {
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
-          owner: orgData.owner.name,
-          tag: tag
+          owner: orgData.ownerName,
+          tag: tagToRemove.name
         }
       };
 
@@ -127,16 +156,10 @@ polarity.export = PolarityComponent.extend({
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
           } else {
-            self.set('actionMessage', 'Deleted Tag');
-            const newTags = [];
-            let tags = self.get('results.' + orgDataIndex + '.tag');
-            tags.forEach(function (tag, index) {
-              if (index !== tagIndex) {
-                newTags.push(tag);
-              }
-            });
-
-            self.set('results.' + orgDataIndex + '.tag', newTags);
+            const updatedTags = self
+              .get('results.' + orgDataIndex + '.tags.data')
+              .filter((tag) => tag.name !== tagToRemove.name);
+            self.set('results.' + orgDataIndex + '.tags.data', updatedTags);
           }
         })
         .finally(() => {
@@ -153,7 +176,7 @@ polarity.export = PolarityComponent.extend({
         data: {
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
-          owner: orgData.owner.name
+          owner: orgData.ownerName
         }
       };
 
@@ -163,13 +186,13 @@ polarity.export = PolarityComponent.extend({
             console.error(result.error);
             self._flashError(result.error.detail, 'error');
           } else {
-            if (self.get('results.' + orgDataIndex + '.falsePositiveCount') === result.data.count) {
+            if (self.get('results.' + orgDataIndex + '.falsePositives') === result.data.count) {
               self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', true);
             } else {
               self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', false);
             }
-            self.set('results.' + orgDataIndex + '.falsePositiveLastReported', result.data.lastReported);
-            self.set('results.' + orgDataIndex + '.falsePositiveCount', result.data.count);
+            self.set('results.' + orgDataIndex + '.lastFalsePositive', result.data.lastReported);
+            self.set('results.' + orgDataIndex + '.falsePositives', result.data.count);
           }
         })
         .finally(() => {
@@ -185,7 +208,7 @@ polarity.export = PolarityComponent.extend({
         data: {
           indicatorValue: orgData.meta.indicatorValue,
           indicatorType: orgData.meta.indicatorType,
-          owner: orgData.owner.name,
+          owner: orgData.ownerName,
           rating: rating
         }
       };
