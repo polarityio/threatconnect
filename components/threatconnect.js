@@ -33,25 +33,27 @@ polarity.export = PolarityComponent.extend({
     this._super(...arguments);
   },
   onDetailsLoaded() {
-    this.get('results').forEach((org) => {
-      if (org && org.associatedCases && org.associatedCases.data) {
-        org.associatedCases.data.forEach((caseObj) => {
-          switch (caseObj.severity) {
-            case 'Critical':
-              caseObj._severityColor = 'maroon-text';
-              break;
-            case 'High':
-              caseObj._severityColor = 'red-text';
-              break;
-            case 'Medium':
-              caseObj._severityColor = 'orange-text';
-              break;
-            default:
-              caseObj._severityColor = '';
-          }
-        });
-      }
-    });
+    if (!this.isDestroyed) {
+      this.get('results').forEach((org) => {
+        if (org && org.associatedCases && org.associatedCases.data) {
+          org.associatedCases.data.forEach((caseObj) => {
+            switch (caseObj.severity) {
+              case 'Critical':
+                caseObj._severityColor = 'maroon-text';
+                break;
+              case 'High':
+                caseObj._severityColor = 'red-text';
+                break;
+              case 'Medium':
+                caseObj._severityColor = 'orange-text';
+                break;
+              default:
+                caseObj._severityColor = '';
+            }
+          });
+        }
+      });
+    }
   },
   actions: {
     changeTab: function (tabName, orgDataIndex) {
