@@ -384,6 +384,56 @@ class ThreatConnect {
 
     this.request(requestOptions, (err, response, body) => {
       self._formatResponse(err, response, body, (err) => {
+
+        if (err) {
+          cb(err);
+        } else {
+          cb(null, {
+            link: `${self.url.protocol}//${self.url.host}/auth/tags/tag.xhtml?owner=${owner}&tag=${tag}`
+          });
+        }
+      });
+    });
+  }
+
+  addTagV3(indicatorTypePlural, indicatorValue, tag, owner, cb) {
+    const self = this;
+
+    let qs = '';
+    if (typeof owner === 'string' && owner.length > 0) {
+      qs = '?' + querystring.stringify({ owner: owner });
+    } else if (typeof owner === 'function') {
+      cb = owner;
+    }
+
+    const urlPath = `${this.url.path}v3/indicators/${this._fixedEncodeURIComponent(
+        indicatorValue
+    )}${qs}`;
+
+    const uri = `${this.url.href}v3/indicators/${this._fixedEncodeURIComponent(
+        indicatorValue
+    )}${qs}`;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'PUT',
+      headers: this._getHeaders(urlPath, 'PUT'),
+      body: {
+        "tags": {
+          "data": [
+            {
+              "name": tag
+            }
+          ],
+          "mode": "append"
+        }
+      },
+      json: true
+    };
+
+    this.request(requestOptions, (err, response, body) => {
+
+      self._formatResponse(err, response, body, (err) => {
         if (err) {
           cb(err);
         } else {
@@ -534,6 +584,30 @@ class ThreatConnect {
     });
   }
 
+  getIndicatorV3(indicatorTypePlural, indicatorValue, owner, cb) {
+    let self = this;
+    const indicatorTypeSingular = INDICATOR_TYPES[indicatorTypePlural];
+    if (typeof indicatorTypeSingular === 'undefined') {
+      return cb({
+        detail: `The provided indicator type '${indicatorTypePlural}' is invalid`
+      });
+    }
+
+    this._getIndicatorV3(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
+      self._formatResponse(err, response, body, function (err, data) {
+        if (err || !data) return cb(err, data);
+
+        let result = data;
+        result = self._enrichResult(indicatorTypePlural, indicatorValue, result);
+        self.getPlaybooksForIndicator(result, (err, playbooks) => {
+          if (err) return cb(err);
+
+          cb(null, { ...result, playbooks });
+        });
+      });
+    });
+  }
+
   getDnsInformation(indicatorTypePlural, indicatorValue, owner, cb) {
     let self = this;
     let indicatorTypeSingular;
@@ -551,7 +625,7 @@ class ThreatConnect {
     this._getDnsInformation(indicatorTypePlural, indicatorValue, owner, function (err, response, body) {
       self._formatResponse(err, response, body, function (err, data) {
         if (err || !data) return cb(err, data);
-        
+
         const hasDnsResolutionData =
           (data.dnsResolution && data.dnsResolution.length > 0) || (data.indicator && data.indicator.length > 0);
 
@@ -716,6 +790,25 @@ class ThreatConnect {
     this.request(requestOptions, cb);
   }
 
+  _getOwnersV3(indicatorType, indicatorValue, cb) {
+    let uri = this._getResourcePathV3(
+        `indicators/${encodeURIComponent(indicatorType)}/${encodeURIComponent(indicatorValue)}/owners`
+    );
+
+    let urlPath = `${this.url.path}v3/indicators/${encodeURIComponent(indicatorType)}/${encodeURIComponent(
+        indicatorValue
+    )}/owners`;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, cb);
+  }
+
   /**
    *
    * @param indicatorType
@@ -773,6 +866,33 @@ class ThreatConnect {
       '/' +
       encodeURIComponent(indicatorValue) +
       qs;
+
+    let requestOptions = {
+      uri: uri,
+      method: 'GET',
+      headers: this._getHeaders(urlPath, 'GET'),
+      json: true
+    };
+
+    this.request(requestOptions, cb);
+  }
+
+  _getIndicatorV3(indicatorType, indicatorValue, owner, cb) {
+    let qs = '';
+    if (typeof owner === 'string' && owner.length > 0) {
+      qs =
+        '?' +
+        querystring.stringify({
+          owner: owner,
+          fields: ['threatAssess', 'tags', 'falsePositives', 'observations', 'associatedCases', 'securityLabels']
+        });
+    } else {
+      qs = '?' + querystring.stringify({ fields: ['threatAssess', 'tags', 'falsePositives', 'observations', 'associatedCases', 'securityLabels'] });
+    }
+
+    let uri = this._getResourcePathV3('indicators/' + encodeURIComponent(indicatorValue) + qs);
+
+    let urlPath = this.url.path + 'v3/indicators/' + encodeURIComponent(indicatorValue) + qs;
 
     let requestOptions = {
       uri: uri,
@@ -901,12 +1021,22 @@ class ThreatConnect {
   _getResourcePath(resourcePath) {
     return this.url.href + 'v2/' + resourcePath;
   }
+
+  _getResourcePathV3(resourcePath) {
+    return this.url.href + 'v3/' + resourcePath;
+  }
+
   _getResourcePathInternal(resourcePath) {
     return this.url.href + 'internal/' + resourcePath;
   }
+
   getPlaybooksForIndicator(indicator, callback) {
     const indicatorType = fp.toLower(INDICATOR_TYPES[fp.get('meta.indicatorType', indicator)]);
-    if (!indicatorType) return cb({ err: indicator, detail: 'Getting Playbooks Failed - No Indicator Type Found' });
+    if (!indicatorType)
+      return callback({
+        err: indicator,
+        detail: 'Getting Playbooks Failed - No Indicator Type Found'
+      });
 
     this.getPlaybooks((err, playbooks) => {
       if (err) return callback(err);
@@ -918,6 +1048,7 @@ class ThreatConnect {
       return callback(null, playbooksForThisIndicator);
     });
   }
+
   getPlaybooks(callback) {
     const cachedPlaybooks = playbookCache.get('playbooks');
     if (cachedPlaybooks) return callback(null, cachedPlaybooks);
