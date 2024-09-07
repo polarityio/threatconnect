@@ -5,6 +5,7 @@ polarity.export = PolarityComponent.extend({
   showFalsePositiveAlreadyReported: false,
   details: Ember.computed.alias('block.data.details'),
   summary: Ember.computed.alias('block.data.summary'),
+  indicators: Ember.computed.alias('block.data.details.indicators'),
   results: Ember.computed.alias('details.results'),
   timezone: Ember.computed('Intl', function () {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -34,199 +35,246 @@ polarity.export = PolarityComponent.extend({
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
-      this.get('results').forEach((org) => {
-        if (org && org.associatedCases && org.associatedCases.data) {
-          org.associatedCases.data.forEach((caseObj) => {
+      const indicators = this.get('details.indicators');
+      let isFirst = true;
+      for (const id in indicators) {
+        let indicator = indicators[id].indicator;
+        indicator.__ratingHuman = this.getRatingHuman(indicator.rating);
+        indicator.__confidenceHuman = this.getConfidenceHuman(indicator.confidence);
+        indicator.__threatAssessScorePercentage = (indicator.threatAssessScore / 1000) * 100;
+
+        let totalAssociations = 0;
+        if(indicator.associatedGroups && indicator.associatedGroups.data){
+          totalAssociations += indicator.associatedGroups.data.length;
+        }
+        if(indicator.associatedIndicators && indicator.associatedIndicators.data){
+          totalAssociations += indicator.associatedIndicators.data.length;
+        }
+
+        indicator.__totalAssociations = totalAssociations;
+
+        if (indicator.associatedCases && indicator.associatedCases.data) {
+          indicator.associatedCases.data.forEach((caseObj) => {
             switch (caseObj.severity) {
               case 'Critical':
-                caseObj._severityColor = 'maroon-text';
+                caseObj.__severityColor = 'maroon-text';
                 break;
               case 'High':
-                caseObj._severityColor = 'red-text';
+                caseObj.__severityColor = 'red-text';
                 break;
               case 'Medium':
-                caseObj._severityColor = 'orange-text';
+                caseObj.__severityColor = 'orange-text';
                 break;
               default:
-                caseObj._severityColor = '';
+                caseObj.__severityColor = '';
             }
           });
         }
-      });
+
+        if (isFirst) {
+          indicators[id].__show = true;
+          isFirst = false;
+        }
+      }
     }
   },
   actions: {
-    changeTab: function (tabName, orgDataIndex) {
-      this.set(`results.${orgDataIndex}.__activeTab`, tabName);
+    stopPropagation: function (e) {
+      e.stopPropagation();
+      return false;
     },
-    saveConfidence(orgData, orgDataIndex) {
-      let self = this;
+    changeTab: function (tabName, indicatorId) {
+      this.set(`indicators.${indicatorId}.__activeTab`, tabName);
+    },
+    saveConfidence(indicatorId) {
+      this.set('block.isLoadingDetails', true);
 
-      self.set('block.isLoadingDetails', true);
       const payload = {
-        action: 'SET_CONFIDENCE',
-        data: {
-          indicatorValue: orgData.meta.indicatorValue,
-          indicatorType: orgData.meta.indicatorType,
-          owner: orgData.ownerName,
-          confidence: orgData.__shadowConfidence
-        }
+        action: 'UPDATE_INDICATOR',
+        indicatorId,
+        field: 'confidence',
+        value: this.get(`indicators.${indicatorId}.indicator.__shadowConfidence`)
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function (result) {
+        .then((result) => {
           if (result.error) {
             console.error(result.error);
-            self._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, 'error');
 
-            let originalValue = self.get('results.' + orgDataIndex + '.confidence');
+            let originalValue = this.get(`indicators.${indicatorId}.indicator.confidence`);
             // Note: this is a trick to get the property observers to fire so we can reset the
             // slider value.  We have to change the value to trigger observers
-            self.set('results.' + orgDataIndex + '.confidence', originalValue + 1);
-            self.set('results.' + orgDataIndex + '.confidence', originalValue);
+            this.set(`indicators.${indicatorId}.indicator.confidence`, originalValue + 1);
+            this.set(`indicators.${indicatorId}.indicator.confidence`, originalValue);
           } else {
-            self.set('results.' + orgDataIndex + '.confidence', result.data.confidence);
-            self.set('results.' + orgDataIndex + '.confidenceHuman', result.data.confidenceHuman);
+            this.set(`indicators.${indicatorId}.indicator.confidence`, result.data.confidence);
+            this.set(
+              `indicators.${indicatorId}.indicator.__confidenceHuman`,
+              this.getConfidenceHuman(result.data.confidence)
+            );
           }
         })
         .finally(() => {
-          self.set('block.isLoadingDetails', false);
+          this.set('block.isLoadingDetails', false);
         });
     },
-    addTag(orgData, orgDataIndex) {
-      let self = this;
-
+    addTag(indicatorId) {
       const newTag = this.get('newTagValue').trim();
+
       if (newTag.length === 0) {
         this.set('actionMessage', 'You must enter a tag');
         return;
       }
 
-      self.set('block.isLoadingDetails', true);
-      self.set('results.' + orgDataIndex + '.__addingTag', true);
+      this.set('block.isLoadingDetails', true);
+      this.set(`indicators.${indicatorId}.__updatingTags`, true);
       const payload = {
-        action: 'ADD_TAG',
-        data: {
-          indicatorValue: orgData.meta.indicatorValue,
-          indicatorType: orgData.meta.indicatorType,
-          owner: orgData.ownerName,
-          tag: newTag
-        }
+        action: 'UPDATE_TAG',
+        indicatorId,
+        tag: newTag,
+        mode: 'append'
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function (result) {
+        .then((result) => {
           if (result.error) {
             console.error(result.error);
-            self._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, 'error');
           } else {
-            self.set('actionMessage', 'Added Tag');
-            self.get('results.' + orgDataIndex + '.tags.data').pushObject({
-              id: result.id,
-              name: newTag,
-              webLink: result.data.link
-            });
+            this.set('actionMessage', 'Added Tag');
+            this.get(`indicators.${indicatorId}.indicator.tags.data`).pushObject(result.data);
           }
         })
         .finally(() => {
-          self.set('newTagValue', '');
-          self.set('block.isLoadingDetails', false);
-          self.set('results.' + orgDataIndex + '.__addingTag', false);
+          this.set('newTagValue', '');
+          this.set('block.isLoadingDetails', false);
+          this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
-    deleteTag(tagToRemove, orgData, orgDataIndex, tagIndex) {
-      let self = this;
-
-      self.set('block.isLoadingDetails', true);
-      self.set('results.' + orgDataIndex + '.__deletingTag', true);
+    deleteTag(indicatorId, tagToRemove) {
+      this.set('block.isLoadingDetails', true);
+      this.set(`indicators.${indicatorId}.__updatingTags`, true);
 
       const payload = {
-        action: 'DELETE_TAG',
-        data: {
-          indicatorValue: orgData.meta.indicatorValue,
-          indicatorType: orgData.meta.indicatorType,
-          owner: orgData.ownerName,
-          tag: tagToRemove.name
-        }
+        action: 'UPDATE_TAG',
+        indicatorId,
+        tag: tagToRemove,
+        mode: 'delete'
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function (result) {
+        .then((result) => {
           if (result.error) {
             console.error(result.error);
-            self._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, 'error');
           } else {
-            const updatedTags = self
-              .get('results.' + orgDataIndex + '.tags.data')
-              .filter((tag) => tag.name !== tagToRemove.name);
-            self.set('results.' + orgDataIndex + '.tags.data', updatedTags);
+            const updatedTags = this.get(`indicators.${indicatorId}.indicator.tags.data`).filter(
+              (tag) => tag.name !== tagToRemove
+            );
+            this.set(`indicators.${indicatorId}.indicator.tags.data`, updatedTags);
           }
         })
         .finally(() => {
-          self.set('block.isLoadingDetails', false);
-          self.set('results.' + orgDataIndex + '.__deletingTag', false);
+          this.set('block.isLoadingDetails', false);
+          this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
-    reportFalsePositive(orgData, orgDataIndex) {
-      let self = this;
+    reportFalsePositive(indicatorId) {
+      this.set('block.isLoadingDetails', true);
 
-      self.set('block.isLoadingDetails', true);
       const payload = {
         action: 'REPORT_FALSE_POSITIVE',
-        data: {
-          indicatorValue: orgData.meta.indicatorValue,
-          indicatorType: orgData.meta.indicatorType,
-          owner: orgData.ownerName
-        }
+        entity: this.get('block.entity'),
+        owner: this.get(`indicators.${indicatorId}.owner.name`)
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function (result) {
+        .then((result) => {
           if (result.error) {
             console.error(result.error);
-            self._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, 'error');
           } else {
-            if (self.get('results.' + orgDataIndex + '.falsePositives') === result.data.count) {
-              self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', true);
+            if (this.get(`indicators.${indicatorId}.indicator.falsePositives`) === result.data.count) {
+              this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, true);
             } else {
-              self.set('results.' + orgDataIndex + '.__showFalsePositiveAlreadyReported', false);
+              this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, false);
             }
-            self.set('results.' + orgDataIndex + '.lastFalsePositive', result.data.lastReported);
-            self.set('results.' + orgDataIndex + '.falsePositives', result.data.count);
+            this.set(`indicators.${indicatorId}.indicator.lastFalsePositive`, result.data.lastReported);
+            this.set(`indicators.${indicatorId}.indicator.lastFalsePositive`, result.data.count);
           }
         })
         .finally(() => {
-          self.set('block.isLoadingDetails', false);
+          this.set('block.isLoadingDetails', false);
         });
     },
-    setRating(orgData, orgDataIndex, rating) {
-      let self = this;
-
-      self.set('block.isLoadingDetails', true);
+    setRating(indicatorId, rating) {
+      this.set('block.isLoadingDetails', true);
       const payload = {
-        action: 'SET_RATING',
-        data: {
-          indicatorValue: orgData.meta.indicatorValue,
-          indicatorType: orgData.meta.indicatorType,
-          owner: orgData.ownerName,
-          rating: rating
-        }
+        action: 'UPDATE_INDICATOR',
+        field: 'rating',
+        value: rating,
+        indicatorId
       };
 
       this.sendIntegrationMessage(payload)
-        .then(function (result) {
+        .then((result) => {
           if (result.error) {
             console.error(result.error);
-            self._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, 'error');
           } else {
-            self.set('actionMessage', 'Set rating to : ' + rating);
-            self.set('results.' + orgDataIndex + '.rating', rating);
-            self.set('results.' + orgDataIndex + '.ratingHuman', result.data.ratingHuman);
+            this.set('actionMessage', 'Set rating to : ' + result.data.rating);
+            this.set(`details.indicators.${indicatorId}.indicator.rating`, result.data.rating);
+            this.set(
+              `details.indicators.${indicatorId}.indicator.__ratingHuman`,
+              this.getRatingHuman(result.data.rating)
+            );
           }
         })
         .finally(() => {
-          self.set('block.isLoadingDetails', false);
+          this.set('block.isLoadingDetails', false);
         });
     }
+  },
+  getRatingHuman(rating) {
+    switch (rating) {
+      case 0:
+        return 'Unknown';
+      case 1:
+        return 'Suspicious';
+      case 2:
+        return 'Low';
+      case 3:
+        return 'Moderate';
+      case 4:
+        return 'High';
+      case 5:
+        return 'Critical';
+      default:
+        return 'Unknown';
+    }
+  },
+  getConfidenceHuman(confidence) {
+    if (!confidence || confidence === 0) {
+      return 'Unassessed';
+    }
+
+    if (confidence <= 25) {
+      return 'Improbable';
+    }
+
+    if (confidence <= 49) {
+      return 'Doubtful';
+    }
+
+    if (confidence <= 69) {
+      return 'Possible';
+    }
+
+    if (confidence <= 89) {
+      return 'Probable';
+    }
+
+    return 'Confirmed';
   }
 });

@@ -1,3 +1,50 @@
+@border-color: #e4e9f2;
+
+.org-container {
+  margin-top: 15px;
+  border: 1px solid @border-color;
+ // border-bottom: 1px solid @border-color;
+  border-radius: 4px;
+
+  &:first-child {
+    margin-top: 0px;
+  }
+
+  .header-container {
+    border-bottom: 1px solid @border-color;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &.expanded {
+      border-bottom: 0px;
+    }
+
+    &:hover{
+      box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px !important;
+    }
+
+    .toggle-btn {
+      font-size: 12px;
+      padding: 0px;
+      height: 20px;
+
+      :active {
+        color: darken(#388e3c, 5%);
+      }
+    }
+  }
+
+  .content-container {
+    padding: 4px;
+  }
+}
+
+.emphasize-text {
+  font-weight: 500;
+}
+
 a.tc-link-tag {
   .threatconnect-summary-tag {
     background-color: #fff;
