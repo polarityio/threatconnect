@@ -78,7 +78,7 @@ async function onMessage(payload, options, cb) {
       try {
         const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
         cb(null, {
-          data: response
+          data: response[payload.indicatorId]
         });
       } catch (error) {
         cb(null, {

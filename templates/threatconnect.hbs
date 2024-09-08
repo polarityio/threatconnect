@@ -29,17 +29,24 @@
           </li>
           <li class="nav-item">
             <a
-              {{action "changeTab" "associations" indicatorId}}
-                    class="nav-link {{if (eq orgData.__activeTab "associations") "active"}}"
+              {{action "changeTab" "groups" indicatorId}}
+                    class="nav-link {{if (eq orgData.__activeTab "groups") "active"}}"
                     href="#"
-            >Associations ({{orgData.indicator.__totalAssociations}})</a>
+            >Groups {{#unless (is-empty orgData.indicator.__associatedGroupsCount)}}({{orgData.indicator.__associatedGroupsCount}}){{/unless}}</a>
+          </li>
+          <li class="nav-item">
+            <a
+              {{action "changeTab" "indicators" indicatorId}}
+                    class="nav-link {{if (eq orgData.__activeTab "indicators") "active"}}"
+                    href="#"
+            >Indicators {{#unless (is-empty orgData.indicator.__associatedIndicatorsCount)}}({{orgData.indicator.__associatedIndicatorsCount}}){{/unless}}</a>
           </li>
           <li class="nav-item">
             <a
               {{action "changeTab" "cases" indicatorId}}
                     class="nav-link {{if (eq orgData.__activeTab "cases") "active"}}"
                     href="#"
-            >Cases {{#if orgData.indicator.associatedCases.data}}({{orgData.indicator.associatedCases.data.length}}){{else}}(0){{/if}}</a>
+            >Cases {{#unless (is-empty orgData.indicator.__associatedCasesCount)}}({{orgData.indicator.__associatedCasesCount}}){{/unless}}</a>
           </li>
           {{#if (or (eq details.indicator.type "Host") (eq details.indicator.type "Address"))}}
             <li class="nav-item">
@@ -394,14 +401,25 @@
           {{/each}}
         {{/if}}
 
-        {{!-- Associations Tab --}}
-        {{#if (eq orgData.__activeTab "associations")}}
-          {{#if (eq orgData.indicator.totalAssociations 0)}}
-            <h2>No Associations</h2>
+        {{!-- Groups Tab --}}
+        {{#if (eq orgData.__activeTab "groups")}}
+          {{#if (and (is-empty orgData.indicator.associatedGroups.data)(not orgData.__associatedGroupsLoading))}}
+            <h2>No Associated Groups</h2>
+          {{else if orgData.__associatedGroupsLoading}}
+            {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Groups
           {{/if}}
           {{#if (gt orgData.indicator.associatedGroups.data.length 0)}}
-            <h1 class="p-title">{{fa-icon icon="user-secret" fixedWidth=true}} Associated Groups</h1>
-            {{#each orgData.indicator.associatedGroups.data as |group|}}
+            <h1 class="p-title d-flex align-items-center justify-content-between">
+              <div>
+                {{fa-icon icon="user-secret" fixedWidth=true}} Associated Groups
+              </div>
+              {{#if (gt orgData.indicator.__associatedGroupsCount pageSize)}}
+                <div>
+                  {{orgData.indicator.__associatedGroupsStartItem}} - {{orgData.indicator.__associatedGroupsEndItem}} of {{orgData.indicator.__associatedGroupsCount}}
+                </div>
+              {{/if}}
+            </h1>
+            {{#each (get this (concat "associatedGroups" indicatorId "Filtered")) as | group |}}
               <div class="card">
                 <div class="card-title d-flex align-items-center justify-content-between">
                   <div>
@@ -429,10 +447,47 @@
                 </div>
               </div>
             {{/each}}
+            {{#if (gt orgData.indicator.__associatedGroupsCount pageSize)}}
+              <div class="paging-bar">
+                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "PrevButtonDisabled")}}>
+                  {{fa-icon icon="angle-double-left" fixedWidth=false}}
+                </button>
+                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "PrevButtonDisabled")}}>
+                  {{fa-icon icon="angle-left" fixedWidth=false}}
+                </button>
+                <div class="paging-info">
+                  {{orgData.indicator.__associatedGroupsStartItem}} - {{orgData.indicator.__associatedGroupsEndItem}} of {{orgData.indicator.__associatedGroupsCount}}
+                </div>
+                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "NextButtonDisabled")}}>
+                  {{fa-icon icon="angle-right" fixedWidth=false}}
+                </button>
+                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "NextButtonDisabled")}}>
+                  {{fa-icon icon="angle-double-right" fixedWidth=false}}
+                </button>
+              </div>
+            {{/if}}
+          {{/if}}
+        {{/if}}
+
+        {{!-- Indicators Tab --}}
+        {{#if (eq orgData.__activeTab "indicators")}}
+          {{#if (and (is-empty orgData.indicator.associatedIndicators.data)(not orgData.__associatedIndicatorsLoading))}}
+            <h2>No Associated Indicators</h2>
+          {{else if orgData.__associatedIndicatorsLoading}}
+            {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Indicators
           {{/if}}
           {{#if (gt orgData.indicator.associatedIndicators.data.length 0)}}
-            <h1 class="p-title">{{fa-icon icon="project-diagram" fixedWidth=true}} Associated Indicators</h1>
-            {{#each orgData.indicator.associatedIndicators.data as |indicator|}}
+            <h1 class="p-title d-flex align-items-center justify-content-between">
+              <div>
+                {{fa-icon icon="project-diagram" fixedWidth=true}} Associated Indicators
+              </div>
+              {{#if (gt orgData.indicator.__associatedIndicatorsCount pageSize)}}
+                <div>
+                  {{orgData.indicator.__associatedIndicatorsStartItem}} - {{orgData.indicator.__associatedIndicatorsEndItem}} of {{orgData.indicator.__associatedIndicatorsCount}}
+                </div>
+              {{/if}}
+            </h1>
+            {{#each (get this (concat "associatedIndicators" indicatorId "Filtered")) as |indicator|}}
               <div class="card">
                 <div class="card-title">
                   <div class="d-flex align-items-center justify-content-between">
@@ -447,30 +502,33 @@
                     </div>
                   </div>
                 </div>
+
                 <div class="card-item">
-                  <div class="p-value">Threat Assess</div>
-                  <div class="info-bar mb-1 no-border">
-                    <div class="info-bar-row">
-                      <div class="info-bar-pill">
-                        <span class="info-bar-key">Score</span>
-                        <span class="info-bar-value">
-                          {{indicator.threatAssessScore}}
-                        </span>
-                      </div>
-                      <div class="info-bar-pill">
-                        <span class="info-bar-key">Rating</span>
-                        <span class="info-bar-value">
-                          {{indicator.threatAssessRating}}
-                        </span>
-                      </div>
-                      <div class="info-bar-pill">
-                        <span class="info-bar-key">Confidence</span>
-                        <span class="info-bar-value">
-                          {{indicator.threatAssessConfidence}}
-                        </span>
+                  {{#if (or indicator.threatAssessScore indicator.threatAssessConfidence indicator.threatAssesRating)}}
+                    <div class="p-value">Threat Assess</div>
+                    <div class="info-bar mb-1 no-border">
+                      <div class="info-bar-row">
+                        <div class="info-bar-pill">
+                          <span class="info-bar-key">Score</span>
+                          <span class="info-bar-value">
+                            {{indicator.threatAssessScore}}
+                          </span>
+                        </div>
+                        <div class="info-bar-pill">
+                          <span class="info-bar-key">Rating</span>
+                          <span class="info-bar-value">
+                            {{indicator.threatAssessRating}}
+                          </span>
+                        </div>
+                        <div class="info-bar-pill">
+                          <span class="info-bar-key">Confidence</span>
+                          <span class="info-bar-value">
+                            {{indicator.threatAssessConfidence}}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  {{/if}}
                   <div>
                     <span class="p-key">Owner: </span>
                     <span class="p-value">{{indicator.ownerName}}</span>
@@ -486,84 +544,136 @@
                 </div>
               </div>
             {{/each}}
+            {{#if (gt orgData.indicator.__associatedIndicatorsCount pageSize)}}
+              <div class="paging-bar">
+                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "PrevButtonDisabled")}}>
+                  {{fa-icon icon="angle-double-left" fixedWidth=false}}
+                </button>
+                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "PrevButtonDisabled")}}>
+                  {{fa-icon icon="angle-left" fixedWidth=false}}
+                </button>
+                <div class="paging-info">
+                  {{orgData.indicator.__associatedIndicatorsStartItem}} - {{orgData.indicator.__associatedIndicatorsEndItem}} of {{orgData.indicator.__associatedIndicatorsCount}}
+                </div>
+                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "NextButtonDisabled")}}>
+                  {{fa-icon icon="angle-right" fixedWidth=false}}
+                </button>
+                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "NextButtonDisabled")}}>
+                  {{fa-icon icon="angle-double-right" fixedWidth=false}}
+                </button>
+              </div>
+            {{/if}}
           {{/if}}
         {{/if}}
 
         {{!-- Cases Tab --}}
         {{#if (eq orgData.__activeTab "cases")}}
-          {{#if (eq orgData.indicator.associatedCases.data.length 0)}}
-            <h2>No Cases</h2>
+          {{#if (and (is-empty orgData.indicator.associatedCases.data)(not orgData.__associatedCasesLoading))}}
+            <h2>No Associated Cases</h2>
+          {{else if orgData.__associatedCasesLoading}}
+            {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Cases
           {{/if}}
-          {{#each orgData.indicator.associatedCases.data as | case |}}
-            <div class="card">
-              <div class="card-title">
-                <div class="d-flex align-items-center justify-content-between">
-                  <div>
-                    <span class="p-footnote">
-                      #{{case.id}}
-                    </span>
-                    {{case.name}}
-                  </div>
-                  <div>
-                    <a href="{{orgData._baseWebLink}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view {{fa-icon
-                            icon="external-link" class="p-link external-icon"}}</a>
-                  </div>
+          {{#if (gt orgData.indicator.__associatedCasesCount 0)}}
+            <h1 class="p-title d-flex align-items-center justify-content-between">
+              <div>
+                {{fa-icon icon="briefcase" fixedWidth=true}} Associated Cases
+              </div>
+              {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
+                <div>
+                  {{orgData.indicator.__associatedCasesStartItem}} - {{orgData.indicator.__associatedCasesEndItem}} of {{orgData.indicator.__associatedCasesCount}}
                 </div>
+              {{/if}}
+            </h1>
+            {{#each (get this (concat "associatedCases" indicatorId "Filtered")) as | case |}}
+              <div class="card">
+                <div class="card-title">
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                      <span class="p-footnote">
+                        #{{case.id}}
+                      </span>
+                      {{case.name}}
+                    </div>
+                    <div>
+                      <a href="{{orgData._baseWebLink}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view {{fa-icon
+                              icon="external-link" class="p-link external-icon"}}</a>
+                    </div>
+                  </div>
 
-              </div>
-              <div class="card-item">
-                <div class="p-block mb-1">
-                  {{case.description}}
                 </div>
-                <div class="info-bar mb-1 no-border">
-                  <div class="info-bar-row">
-                    <div class="info-bar-pill">
-                      <span class="info-bar-key">Status</span>
-                      <span class="info-bar-value {{if (eq case.status "Closed") "red-text" "green-text"}}">
-                        {{case.status}}
-                      </span>
-                    </div>
-                    <div class="info-bar-pill">
-                      <span class="info-bar-key">Severity</span>
-                      <span class="info-bar-value {{case.__severityColor}}">
-                        {{case.severity}}
-                      </span>
-                    </div>
-                    <div class="info-bar-pill">
-                      <span class="info-bar-key">Resolution</span>
-                      <span class="info-bar-value">
-                        {{case.resolution}}
-                      </span>
+                <div class="card-item">
+                  <div class="p-block mb-1">
+                    {{case.description}}
+                  </div>
+                  <div class="info-bar mb-1 no-border">
+                    <div class="info-bar-row">
+                      <div class="info-bar-pill">
+                        <span class="info-bar-key">Status</span>
+                        <span class="info-bar-value {{if (eq case.status "Closed") "red-text" "green-text"}}">
+                          {{case.status}}
+                        </span>
+                      </div>
+                      <div class="info-bar-pill">
+                        <span class="info-bar-key">Severity</span>
+                        <span class="info-bar-value {{case.__severityColor}}">
+                          {{case.severity}}
+                        </span>
+                      </div>
+                      <div class="info-bar-pill">
+                        <span class="info-bar-key">Resolution</span>
+                        <span class="info-bar-value">
+                          {{case.resolution}}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div>
-                  <span class="p-key">Owner:</span>
-                  <span class="p-value">{{case.owner}}</span>
-                </div>
-                <div>
-                  <span class="p-key">Assignee:</span>
-                  <span class="p-value">{{case.assignee.data.firstName}} {{case.assignee.data.lastName}}</span>
-                </div>
-                <div>
-                  <span class="p-key">Cased Opened:</span>
-                  <span class="p-value">{{moment-format
-                          case.caseOpenTime
-                          "MM/DD/YYYY HH:mm:ss"
-                          timeZone=timezone
-                  }}</span>
-                </div>
-                <div>
-                  <span class="p-key">Last Updated:</span>
-                  <span class="p-value">{{moment-format
-                          case.lastUpdated
-                          "MM/DD/YYYY HH:mm:ss"
-                          timeZone=timezone
-                  }}</span>
+                  <div>
+                    <span class="p-key">Owner:</span>
+                    <span class="p-value">{{case.owner}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Assignee:</span>
+                    <span class="p-value">{{case.assignee.data.firstName}} {{case.assignee.data.lastName}}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Cased Opened:</span>
+                    <span class="p-value">{{moment-format
+                            case.caseOpenTime
+                            "MM/DD/YYYY HH:mm:ss"
+                            timeZone=timezone
+                    }}</span>
+                  </div>
+                  <div>
+                    <span class="p-key">Last Updated:</span>
+                    <span class="p-value">{{moment-format
+                            case.lastUpdated
+                            "MM/DD/YYYY HH:mm:ss"
+                            timeZone=timezone
+                    }}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          {{/each}}
+            {{/each}}
+            {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
+              <div class="paging-bar">
+                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "PrevButtonDisabled")}}>
+                  {{fa-icon icon="angle-double-left" fixedWidth=false}}
+                </button>
+                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "PrevButtonDisabled")}}>
+                  {{fa-icon icon="angle-left" fixedWidth=false}}
+                </button>
+                <div class="paging-info">
+                  {{orgData.indicator.__associatedCasesStartItem}} - {{orgData.indicator.__associatedCasesEndItem}} of {{orgData.indicator.__associatedCasesCount}}
+                </div>
+                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "NextButtonDisabled")}}>
+                  {{fa-icon icon="angle-right" fixedWidth=false}}
+                </button>
+                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "NextButtonDisabled")}}>
+                  {{fa-icon icon="angle-double-right" fixedWidth=false}}
+                </button>
+              </div>
+            {{/if}}
+          {{/if}}
         {{/if}}
       </div>
       {{/if}}

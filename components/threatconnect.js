@@ -16,6 +16,7 @@ polarity.export = PolarityComponent.extend({
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
+  pageSize: 10,
   indicatorMessage: '',
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
@@ -44,10 +45,10 @@ polarity.export = PolarityComponent.extend({
         indicator.__threatAssessScorePercentage = (indicator.threatAssessScore / 1000) * 100;
 
         let totalAssociations = 0;
-        if(indicator.associatedGroups && indicator.associatedGroups.data){
+        if (indicator.associatedGroups && indicator.associatedGroups.data) {
           totalAssociations += indicator.associatedGroups.data.length;
         }
-        if(indicator.associatedIndicators && indicator.associatedIndicators.data){
+        if (indicator.associatedIndicators && indicator.associatedIndicators.data) {
           totalAssociations += indicator.associatedIndicators.data.length;
         }
 
@@ -85,6 +86,23 @@ polarity.export = PolarityComponent.extend({
     },
     changeTab: function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
+
+      if (
+        tabName === 'cases' &&
+        typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
+      ) {
+        this.getField(indicatorId, 'associatedCases');
+      } else if (
+        tabName === 'groups' &&
+        typeof this.get(`indicators.${indicatorId}.indicator.associatedGroups`) === 'undefined'
+      ) {
+        this.getField(indicatorId, 'associatedGroups');
+      } else if (
+        tabName === 'indicators' &&
+        typeof this.get(`indicators.${indicatorId}.indicator.associatedIndicators`) === 'undefined'
+      ) {
+        this.getField(indicatorId, 'associatedIndicators');
+      }
     },
     saveConfidence(indicatorId) {
       this.set('block.isLoadingDetails', true);
@@ -234,6 +252,29 @@ polarity.export = PolarityComponent.extend({
         .finally(() => {
           this.set('block.isLoadingDetails', false);
         });
+    },
+    prevPage(indicatorId, field) {
+      let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+
+      if (currentPage > 1) {
+        this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, currentPage - 1);
+      }
+    },
+    nextPage(indicatorId, field) {
+      const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+      const totalPages = Math.ceil(totalFieldResults / this.pageSize);
+      let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+      if (currentPage < totalPages) {
+        this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, currentPage + 1);
+      }
+    },
+    firstPage(indicatorId, field) {
+      this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
+    },
+    lastPage(indicatorId, field) {
+      const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+      const totalPages = Math.ceil(totalFieldResults / this.pageSize);
+      this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, totalPages);
     }
   },
   getRatingHuman(rating) {
@@ -276,5 +317,98 @@ polarity.export = PolarityComponent.extend({
     }
 
     return 'Confirmed';
+  },
+  getField(indicatorId, field) {
+    this.set('block.isLoadingDetails', true);
+    this.set(`indicators.${indicatorId}.__${field}Loading`, true);
+    const payload = {
+      action: 'GET_INDICATOR_FIELD',
+      field,
+      indicatorId
+    };
+
+    this.sendIntegrationMessage(payload)
+      .then((result) => {
+        if (result.error) {
+          console.error(result.error);
+          this._flashError(result.error.detail, 'error');
+        } else if (result.data && typeof result.data[field] !== 'undefined') {
+          this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
+          if (result.data[field].data) {
+            this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
+
+            // setup a filtered data set, initialize the starting page to 1
+            this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
+
+            Ember.defineProperty(
+              this,
+              `${field}${indicatorId}PrevButtonDisabled`,
+              Ember.computed(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, () => {
+                return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
+              })
+            );
+
+            Ember.defineProperty(
+              this,
+              `${field}${indicatorId}NextButtonDisabled`,
+              Ember.computed(
+                `indicators.${indicatorId}.indicator.__${field}CurrentPage`,
+                'pageSize',
+                `indicators.${indicatorId}.indicator.${field}.data.length`,
+                () => {
+                  const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+                  const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+                  const totalPages = Math.ceil(totalItems / this.pageSize);
+                  return currentPage === totalPages;
+                }
+              )
+            );
+
+            Ember.defineProperty(
+              this,
+              `${field}${indicatorId}Filtered`,
+              Ember.computed(
+                `indicators.${indicatorId}.indicator.${field}.data.length`,
+                `indicators.${indicatorId}.indicator.__${field}CurrentPage`,
+                () => {
+                  let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+                  let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+                  const startIndex = (currentPage - 1) * this.pageSize;
+                  const endIndex = startIndex + this.pageSize > totalItems ? totalItems : startIndex + this.pageSize;
+
+                  // Can't use set in a computed unless we ensure it only happens once per render
+                  Ember.run.scheduleOnce(
+                    'afterRender',
+                    this,
+                    this.setStartEndIndexes,
+                    indicatorId,
+                    field,
+                    startIndex + 1,
+                    endIndex
+                  );
+
+                  return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
+                }
+              )
+            );
+
+            // This notify property change is required as the computed will not be flagged as dirty
+            // for the template until one of the dependent properties changes.
+            this.notifyPropertyChange(`${field}${indicatorId}Filtered`);
+            this.notifyPropertyChange(`${field}${indicatorId}PrevButtonDisabled`);
+            this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
+          } else {
+            this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
+          }
+        }
+      })
+      .finally(() => {
+        this.set('block.isLoadingDetails', false);
+        this.set(`indicators.${indicatorId}.__${field}Loading`, false);
+      });
+  },
+  setStartEndIndexes: function (indicatorId, field, startIndex, endIndex) {
+    this.set(`indicators.${indicatorId}.indicator.__${field}StartItem`, startIndex);
+    this.set(`indicators.${indicatorId}.indicator.__${field}EndItem`, endIndex);
   }
 });

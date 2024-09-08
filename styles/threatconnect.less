@@ -37,7 +37,28 @@
   }
 
   .content-container {
-    padding: 4px;
+    padding: 6px;
+  }
+}
+
+.paging-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  justify-content: flex-end;
+
+  .paging-info {
+    margin: 0px 5px;
+  }
+
+  .paging-btn {
+    border: 1px solid #e4e9f2;
+    height: 20px;
+    padding: 0px 8px 0px 8px;
+
+    &:hover:enabled {
+      background-color: darken(#e4e9f2, 5%);
+    }
   }
 }
 
