@@ -61,11 +61,8 @@ async function updateTag(indicatorId, tagValue, mode, options) {
     return {
       name: tagValue
     }
-  } else if (apiResponse.body.data && apiResponse.body.data.tags && Array.isArray(apiResponse.body.data.tags.data)) {
-    const newTag = apiResponse.body.data.tags.data.find((tag) => tag.name === tagValue);
-    if (newTag) {
-      return newTag;
-    }
+  } else if (apiResponse.body.data && apiResponse.body.data.tags && Array.isArray(apiResponse.body.data.tags)) {
+    return apiResponse.body.data.tags;
   }
 
   Logger.error(`Update Indicator response body does not include the updated tag field value for "${tagValue}"`);

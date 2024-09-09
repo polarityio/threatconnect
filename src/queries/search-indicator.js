@@ -1,7 +1,7 @@
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
-const { convertPolarityTypeToThreatConnect } = require('../tc-request-utils');
+const { convertPolarityTypeToThreatConnectSingular } = require('../tc-request-utils');
 const SUCCESS_CODES = [200];
 
 async function searchIndicator(entity, options, fields = []) {
@@ -44,7 +44,7 @@ async function searchIndicator(entity, options, fields = []) {
 }
 
 function createTqlQuery(entity, options) {
-  const indicatorType = convertPolarityTypeToThreatConnect(entity.type);
+  const indicatorType = convertPolarityTypeToThreatConnectSingular(entity.type);
   let query = `summary="${entity.value}" and typeName="${indicatorType}"`;
 
   if (options.searchInactiveIndicators) {

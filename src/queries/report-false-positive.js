@@ -5,13 +5,13 @@
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
-const { convertPolarityTypeToThreatConnect } = require('../tc-request-utils');
+const { convertPolarityTypeToThreatConnectPlural } = require('../tc-request-utils');
 const SUCCESS_CODES = [200];
 
 async function reportFalsePositive(entity, owner, options) {
   const Logger = getLogger();
 
-  const indicatorType = convertPolarityTypeToThreatConnect(entity.type);
+  const indicatorType = convertPolarityTypeToThreatConnectPlural(entity.type);
 
   const requestOptions = {
     uri: `${options.url}/v2/indicators/${indicatorType}/${encodeURIComponent(entity.value)}/falsePositive`,

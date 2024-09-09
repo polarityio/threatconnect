@@ -81,6 +81,8 @@ async function onMessage(payload, options, cb) {
 
       try {
         const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
+        // dnsResolution requires special handling because it includes "empty" records which we don't want to display
+        // in the template.  We remove them server side so that local paging on the client works.
         if(payload.field === 'dnsResolution'){
           let dns = _.get(response, `${payload.indicatorId}.dnsResolution.data`, []);
           if(dns.length > 0){

@@ -1,13 +1,13 @@
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
-const { convertPolarityTypeToThreatConnect } = require('../tc-request-utils');
+const { convertPolarityTypeToThreatConnectSingular } = require('../tc-request-utils');
 const SUCCESS_CODES = [200];
 
 async function getOwners(entity, options) {
   const Logger = getLogger();
 
-  const indicatorType = convertPolarityTypeToThreatConnect(entity.type);
+  const indicatorType = convertPolarityTypeToThreatConnectSingular(entity.type);
 
   const requestOptions = {
     uri: `${options.url}/v2/indicators/${indicatorType}/${encodeURIComponent(entity.value)}/owners`,

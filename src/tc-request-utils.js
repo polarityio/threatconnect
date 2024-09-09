@@ -6,7 +6,7 @@ const { getLogger } = require('./logger');
  * @param type
  * @returns {string}
  */
-function convertPolarityTypeToThreatConnect(type) {
+function convertPolarityTypeToThreatConnectSingular(type) {
   switch (type) {
     case 'IPv4':
       return 'address';
@@ -20,6 +20,23 @@ function convertPolarityTypeToThreatConnect(type) {
       return 'host';
     case 'url':
       return 'url';
+  }
+}
+
+function convertPolarityTypeToThreatConnectPlural(type) {
+  switch (type) {
+    case 'IPv4':
+      return 'addresses';
+    case 'IPv6':
+      return 'addresses';
+    case 'hash':
+      return 'files';
+    case 'email':
+      return 'emailAddresses';
+    case 'domain':
+      return 'hosts';
+    case 'url':
+      return 'urls';
   }
 }
 
@@ -54,6 +71,7 @@ function filterInvalidEntities(entities) {
 }
 
 module.exports = {
-  convertPolarityTypeToThreatConnect,
+  convertPolarityTypeToThreatConnectPlural,
+  convertPolarityTypeToThreatConnectSingular,
   filterInvalidEntities
 };

@@ -75,7 +75,7 @@
             {{orgData.indicator.ownerName}} {{fa-icon icon="external-link" class="p-link external-icon"}}
           </a>
         </div>
-      
+
         <div>
           <span class="p-title">{{fa-icon icon="shield" fixedWidth=true}} Indicator Analytics</span>
         </div>
@@ -157,12 +157,17 @@
               }}
             {{/each}}
             {{orgData.indicator.__ratingHuman}}
+            {{#if orgData.__savingRating}}
+              <span class="p-footnote ml-2">
+                {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} saving
+              </span>
+            {{/if}}
           </span>
         </div>
         <div>
           <span class="p-key">Confidence: </span>
           <span class="p-value">{{orgData.indicator.confidence}} - {{orgData.indicator.__confidenceHuman}}</span>
-          <div>
+          <div class="d-flex align-items-start">
             <input
                 type="range"
                 onchange={{action "saveConfidence" indicatorId}}
@@ -172,6 +177,11 @@
                 value={{orgData.indicator.confidence}}
                 steps="1"
             />
+            {{#if orgData.__savingConfidence}}
+              <div class="p-footnote ml-2">
+                {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} saving
+              </div>
+            {{/if}}
           </div>
         </div>
         <div>
@@ -189,12 +199,17 @@
           <span class="p-key">False Positive Last Reported: </span>
           <span class="p-value"> {{moment-format orgData.indicator.lastFalsePositive "MM/DD/YYYY"}}</span>
         </div>
-        <div>
+        <div class="d-flex align-items-center">
           <button
                   class="btn btn-secondary btn-sm report-false-positive-btn"
             {{action "reportFalsePositive" indicatorId}}
           >Report False Positive
           </button>
+          {{#if orgData.__savingFalsePositive}}
+            <div class="p-footnote ml-2">
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} saving
+            </div>
+          {{/if}}
         </div>
         <div class="{{if orgData.indicator.__showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}">
           <span class="p-footnote">False positive already reported today</span>

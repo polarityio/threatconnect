@@ -115,7 +115,7 @@ polarity.export = PolarityComponent.extend({
       }
     },
     saveConfidence(indicatorId) {
-      this.set('block.isLoadingDetails', true);
+      this.set(`indicators.${indicatorId}.__savingConfidence`, true);
 
       const payload = {
         action: 'UPDATE_INDICATOR',
@@ -144,7 +144,7 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set('block.isLoadingDetails', false);
+          this.set(`indicators.${indicatorId}.__savingConfidence`, false);
         });
     },
     addTag(indicatorId) {
@@ -155,7 +155,6 @@ polarity.export = PolarityComponent.extend({
         return;
       }
 
-      this.set('block.isLoadingDetails', true);
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
       const payload = {
         action: 'UPDATE_TAG',
@@ -171,17 +170,15 @@ polarity.export = PolarityComponent.extend({
             this._flashError(result.error.detail, 'error');
           } else {
             this.set('actionMessage', 'Added Tag');
-            this.get(`indicators.${indicatorId}.indicator.tags.data`).pushObject(result.data);
+            this.set(`indicators.${indicatorId}.indicator.tags`, result.data);
           }
         })
         .finally(() => {
           this.set('newTagValue', '');
-          this.set('block.isLoadingDetails', false);
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
     deleteTag(indicatorId, tagToRemove) {
-      this.set('block.isLoadingDetails', true);
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
 
       const payload = {
@@ -204,17 +201,16 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set('block.isLoadingDetails', false);
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
     reportFalsePositive(indicatorId) {
-      this.set('block.isLoadingDetails', true);
+      this.set(`indicators.${indicatorId}.__savingFalsePositive`, true);
 
       const payload = {
         action: 'REPORT_FALSE_POSITIVE',
         entity: this.get('block.entity'),
-        owner: this.get(`indicators.${indicatorId}.owner.name`)
+        owner: this.get(`indicators.${indicatorId}.indicator.ownerName`)
       };
 
       this.sendIntegrationMessage(payload)
@@ -233,11 +229,11 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set('block.isLoadingDetails', false);
+          this.set(`indicators.${indicatorId}.__savingFalsePositive`, false);
         });
     },
     setRating(indicatorId, rating) {
-      this.set('block.isLoadingDetails', true);
+      this.set(`indicators.${indicatorId}.__savingRating`, true);
       const payload = {
         action: 'UPDATE_INDICATOR',
         field: 'rating',
@@ -260,7 +256,7 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set('block.isLoadingDetails', false);
+          this.set(`indicators.${indicatorId}.__savingRating`, false);
         });
     },
     prevPage(indicatorId, field) {
