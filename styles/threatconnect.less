@@ -3,7 +3,7 @@
 .org-container {
   margin-top: 15px;
   border: 1px solid @border-color;
- // border-bottom: 1px solid @border-color;
+  // border-bottom: 1px solid @border-color;
   border-radius: 4px;
 
   &:first-child {
@@ -21,7 +21,7 @@
       border-bottom: 0px;
     }
 
-    &:hover{
+    &:hover {
       box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px !important;
     }
 
@@ -62,8 +62,50 @@
   }
 }
 
+.preserve-whitespace {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.scrollable {
+  overflow-y: scroll;
+  max-height: 100px;
+}
+
 .emphasize-text {
-  font-weight: 500;
+  font-weight: 500 !important;
+}
+
+.dns-table {
+  .dns-table-ip {
+    width: 100px;
+  }
+
+  .dns-table-asn {
+    width: 60px;
+  }
+
+  .dns-table-org {
+    word-break: break-word;
+    word-wrap: break-word;
+  }
+
+  td {
+    padding: 2px 5px 2px 0px !important;
+  }
+
+  tr:nth-child(even) {
+    td {
+      padding-bottom: 10px !important;
+    }
+  }
+
+  tr:last-child {
+    td {
+      padding-bottom: 0px !important;
+    }
+  }
 }
 
 a.tc-link-tag {

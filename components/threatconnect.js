@@ -31,11 +31,14 @@ polarity.export = PolarityComponent.extend({
   init() {
     let array = new Uint32Array(5);
     this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
-
+    if (!this.get('block.detailsLoaded')) {
+      this.set('isDetailsLoading', true);
+    }
     this._super(...arguments);
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
+      this.set('isDetailsLoading', false);
       const indicators = this.get('details.indicators');
       let isFirst = true;
       for (const id in indicators) {
@@ -102,6 +105,13 @@ polarity.export = PolarityComponent.extend({
         typeof this.get(`indicators.${indicatorId}.indicator.associatedIndicators`) === 'undefined'
       ) {
         this.getField(indicatorId, 'associatedIndicators');
+      } else if (tabName === 'whois' && typeof this.get(`indicators.${indicatorId}.indicator.whois`) === 'undefined') {
+        this.getField(indicatorId, 'whois');
+      } else if (
+        tabName === 'dnsResolution' &&
+        typeof this.get(`indicators.${indicatorId}.indicator.dnsResolution`) === 'undefined'
+      ) {
+        this.getField(indicatorId, 'dnsResolution');
       }
     },
     saveConfidence(indicatorId) {

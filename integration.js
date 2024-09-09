@@ -2,6 +2,7 @@
 
 const async = require('async');
 
+const _ = require('lodash');
 const { setLogger } = require('./src/logger');
 const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
 const { createResultObjects } = require('./src/create-result-object');
@@ -15,7 +16,7 @@ const { filterInvalidEntities } = require('./src/tc-request-utils');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
-const VALID_FETCH_FIELDS = ['associatedCases', 'associatedIndicators', 'associatedGroups'];
+const VALID_FETCH_FIELDS = ['associatedCases', 'associatedIndicators', 'associatedGroups', 'whois', 'dnsResolution'];
 
 let Logger = null;
 
@@ -80,6 +81,12 @@ async function onMessage(payload, options, cb) {
 
       try {
         const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
+        if(payload.field === 'dnsResolution'){
+          let dns = _.get(response, `${payload.indicatorId}.dnsResolution.data`, []);
+          if(dns.length > 0){
+            response[payload.indicatorId].dnsResolution.data = dns.filter(dns => typeof dns.addresses !== 'undefined')
+          }
+        }
         cb(null, {
           data: response[payload.indicatorId]
         });
