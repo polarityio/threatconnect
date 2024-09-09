@@ -43,10 +43,14 @@ async function searchIndicator(entity, options, fields = []) {
   return apiResponse.body;
 }
 
-
 function createTqlQuery(entity, options) {
   const indicatorType = convertPolarityTypeToThreatConnect(entity.type);
   let query = `summary="${entity.value}" and typeName="${indicatorType}"`;
+
+  if (options.searchInactiveIndicators) {
+    query += ` and (indicatorActive=true or indicatorActive=false)`;
+  }
+
   if (typeof options.searchAllowlist === 'string' && options.searchAllowlist.trim().length > 0) {
     query += ` and ownerName in (`;
     options.searchAllowlist.split(',').forEach((org, index) => {

@@ -15,7 +15,7 @@ async function getIndicatorsById(
   const requestOptions = {
     uri: `${options.url}/v3/indicators`,
     qs: {
-      tql: `id in (${indicatorIds.join(',')})`,
+      tql: `id in (${indicatorIds.join(',')}) and (indicatorActive=false or indicatorActive=true)`,
       fields
     },
     useQuerystring: true,

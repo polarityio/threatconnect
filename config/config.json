@@ -67,6 +67,15 @@
       "adminOnly": true
     },
     {
+      "key": "searchInactiveIndicators",
+      "name": "Search Inactive Indicators",
+      "description": "If enabled, the integration will return indicators that are \"inactive\" inaddition to \"active\" indicators.  Inactive indicators are not considered Indicators of Compromise and are kept for historical accuracy.",
+      "default": true,
+      "type": "boolean",
+      "userCanEdit": false,
+      "adminOnly": true
+    },
+    {
       "key": "searchBlocklist",
       "name": "Organization Search Blocklist",
       "description": "By default all organizations visible to the provided API User will be searched.  This blocklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the \"Organization Search Allowlist\" option.",
