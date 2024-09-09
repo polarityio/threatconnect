@@ -61,7 +61,7 @@ async function updateTag(indicatorId, tagValue, mode, options) {
     return {
       name: tagValue
     }
-  } else if (apiResponse.body.data && apiResponse.body.data.tags && Array.isArray(apiResponse.body.data.tags)) {
+  } else if (apiResponse.body.data && apiResponse.body.data.tags && Array.isArray(apiResponse.body.data.tags.data)) {
     return apiResponse.body.data.tags;
   }
 
