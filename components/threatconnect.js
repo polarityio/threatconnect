@@ -341,16 +341,16 @@ polarity.export = PolarityComponent.extend({
             this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
 
             Ember.defineProperty(
-              this,
-              `${field}${indicatorId}PrevButtonDisabled`,
+              this.get(`indicators.${indicatorId}.indicator`),
+              `__${field}PrevButtonDisabled`,
               Ember.computed(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, () => {
                 return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
               })
             );
 
             Ember.defineProperty(
-              this,
-              `${field}${indicatorId}NextButtonDisabled`,
+              this.get(`indicators.${indicatorId}.indicator`),
+              `__${field}NextButtonDisabled`,
               Ember.computed(
                 `indicators.${indicatorId}.indicator.__${field}CurrentPage`,
                 'pageSize',
@@ -365,8 +365,8 @@ polarity.export = PolarityComponent.extend({
             );
 
             Ember.defineProperty(
-              this,
-              `${field}${indicatorId}Filtered`,
+              this.get(`indicators.${indicatorId}.indicator`),
+              `__${field}Filtered`,
               Ember.computed(
                 `indicators.${indicatorId}.indicator.${field}.data.length`,
                 `indicators.${indicatorId}.indicator.__${field}CurrentPage`,

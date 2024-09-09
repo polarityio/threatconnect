@@ -419,7 +419,7 @@
                 </div>
               {{/if}}
             </h1>
-            {{#each (get this (concat "associatedGroups" indicatorId "Filtered")) as | group |}}
+            {{#each orgData.indicator.__associatedGroupFiltered as |group|}}
               <div class="card">
                 <div class="card-title d-flex align-items-center justify-content-between">
                   <div>
@@ -449,19 +449,19 @@
             {{/each}}
             {{#if (gt orgData.indicator.__associatedGroupsCount pageSize)}}
               <div class="paging-bar">
-                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "PrevButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedGroups"}} disabled={{orgData.indicator.__associatedGroupPrevButtonDisabled}}>
                   {{fa-icon icon="angle-double-left" fixedWidth=false}}
                 </button>
-                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "PrevButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedGroups"}} disabled={{orgData.indicator.__associatedGroupPrevButtonDisabled}}>
                   {{fa-icon icon="angle-left" fixedWidth=false}}
                 </button>
                 <div class="paging-info">
                   {{orgData.indicator.__associatedGroupsStartItem}} - {{orgData.indicator.__associatedGroupsEndItem}} of {{orgData.indicator.__associatedGroupsCount}}
                 </div>
-                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "NextButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedGroups"}} disabled={{orgData.indicator.__associatedGroupNextButtonDisabled}}>
                   {{fa-icon icon="angle-right" fixedWidth=false}}
                 </button>
-                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedGroups"}} disabled={{get this (concat "associatedGroups" indicatorId "NextButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedGroups"}} disabled={{orgData.indicator.__associatedGroupNextButtonDisabled}}>
                   {{fa-icon icon="angle-double-right" fixedWidth=false}}
                 </button>
               </div>
@@ -487,7 +487,7 @@
                 </div>
               {{/if}}
             </h1>
-            {{#each (get this (concat "associatedIndicators" indicatorId "Filtered")) as |indicator|}}
+            {{#each orgData.indicator.__associatedIndicatorsFiltered as |indicator|}}
               <div class="card">
                 <div class="card-title">
                   <div class="d-flex align-items-center justify-content-between">
@@ -546,19 +546,19 @@
             {{/each}}
             {{#if (gt orgData.indicator.__associatedIndicatorsCount pageSize)}}
               <div class="paging-bar">
-                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "PrevButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedIndicators"}} disabled={{orgData.indicator.__associatedIndicatorsPrevButtonDisabled}}>
                   {{fa-icon icon="angle-double-left" fixedWidth=false}}
                 </button>
-                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "PrevButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedIndicators"}} disabled={{orgData.indicator.__associatedIndicatorsPrevButtonDisabled}}>
                   {{fa-icon icon="angle-left" fixedWidth=false}}
                 </button>
                 <div class="paging-info">
                   {{orgData.indicator.__associatedIndicatorsStartItem}} - {{orgData.indicator.__associatedIndicatorsEndItem}} of {{orgData.indicator.__associatedIndicatorsCount}}
                 </div>
-                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "NextButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedIndicators"}} disabled={{orgData.indicator.__associatedIndicatorsNextButtonDisabled}}>
                   {{fa-icon icon="angle-right" fixedWidth=false}}
                 </button>
-                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedIndicators"}} disabled={{get this (concat "associatedIndicators" indicatorId "NextButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedIndicators"}} disabled={{orgData.indicator.__associatedIndicatorsNextButtonDisabled}}>
                   {{fa-icon icon="angle-double-right" fixedWidth=false}}
                 </button>
               </div>
@@ -584,7 +584,7 @@
                 </div>
               {{/if}}
             </h1>
-            {{#each (get this (concat "associatedCases" indicatorId "Filtered")) as | case |}}
+            {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
               <div class="card">
                 <div class="card-title">
                   <div class="d-flex align-items-center justify-content-between">
@@ -656,19 +656,19 @@
             {{/each}}
             {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
               <div class="paging-bar">
-                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "PrevButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "firstPage" indicatorId "associatedCases"}} disabled={{orgData.indicator.__associatedCasesPrevButtonDisabled}}>
                   {{fa-icon icon="angle-double-left" fixedWidth=false}}
                 </button>
-                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "PrevButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "prevPage" indicatorId "associatedCases"}} disabled={{orgData.indicator.__associatedCasesPrevButtonDisabled}}>
                   {{fa-icon icon="angle-left" fixedWidth=false}}
                 </button>
                 <div class="paging-info">
                   {{orgData.indicator.__associatedCasesStartItem}} - {{orgData.indicator.__associatedCasesEndItem}} of {{orgData.indicator.__associatedCasesCount}}
                 </div>
-                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "NextButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "nextPage" indicatorId "associatedCases"}} disabled={{orgData.indicator.__associatedCasesNextButtonDisabled}}>
                   {{fa-icon icon="angle-right" fixedWidth=false}}
                 </button>
-                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedCases"}} disabled={{get this (concat "associatedCases" indicatorId "NextButtonDisabled")}}>
+                <button class="btn paging-btn" {{action "lastPage" indicatorId "associatedCases"}} disabled={{orgData.indicator.__associatedCasesNextButtonDisabled}}>
                   {{fa-icon icon="angle-double-right" fixedWidth=false}}
                 </button>
               </div>
