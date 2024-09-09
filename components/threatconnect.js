@@ -266,6 +266,7 @@ polarity.export = PolarityComponent.extend({
       let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
       if (currentPage < totalPages) {
         this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, currentPage + 1);
+        console.info('Current Page', currentPage + 1);
       }
     },
     firstPage(indicatorId, field) {
@@ -343,7 +344,7 @@ polarity.export = PolarityComponent.extend({
             Ember.defineProperty(
               this.get(`indicators.${indicatorId}.indicator`),
               `__${field}PrevButtonDisabled`,
-              Ember.computed(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, () => {
+              Ember.computed(`__${field}CurrentPage`, () => {
                 return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
               })
             );
@@ -351,45 +352,36 @@ polarity.export = PolarityComponent.extend({
             Ember.defineProperty(
               this.get(`indicators.${indicatorId}.indicator`),
               `__${field}NextButtonDisabled`,
-              Ember.computed(
-                `indicators.${indicatorId}.indicator.__${field}CurrentPage`,
-                'pageSize',
-                `indicators.${indicatorId}.indicator.${field}.data.length`,
-                () => {
-                  const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                  const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                  const totalPages = Math.ceil(totalItems / this.pageSize);
-                  return currentPage === totalPages;
-                }
-              )
+              Ember.computed(`__${field}CurrentPage`, `${field}.data.length`, () => {
+                const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+                const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+                const totalPages = Math.ceil(totalItems / this.pageSize);
+                return currentPage === totalPages;
+              })
             );
 
             Ember.defineProperty(
               this.get(`indicators.${indicatorId}.indicator`),
               `__${field}Filtered`,
-              Ember.computed(
-                `indicators.${indicatorId}.indicator.${field}.data.length`,
-                `indicators.${indicatorId}.indicator.__${field}CurrentPage`,
-                () => {
-                  let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                  let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                  const startIndex = (currentPage - 1) * this.pageSize;
-                  const endIndex = startIndex + this.pageSize > totalItems ? totalItems : startIndex + this.pageSize;
+              Ember.computed(`${field}.data.length`, `__${field}CurrentPage`, () => {
+                let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+                let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+                const startIndex = (currentPage - 1) * this.pageSize;
+                const endIndex = startIndex + this.pageSize > totalItems ? totalItems : startIndex + this.pageSize;
 
-                  // Can't use set in a computed unless we ensure it only happens once per render
-                  Ember.run.scheduleOnce(
-                    'afterRender',
-                    this,
-                    this.setStartEndIndexes,
-                    indicatorId,
-                    field,
-                    startIndex + 1,
-                    endIndex
-                  );
+                // Can't use set in a computed unless we ensure it only happens once per render
+                Ember.run.scheduleOnce(
+                  'afterRender',
+                  this,
+                  this.setStartEndIndexes,
+                  indicatorId,
+                  field,
+                  startIndex + 1,
+                  endIndex
+                );
 
-                  return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
-                }
-              )
+                return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
+              })
             );
 
             // This notify property change is required as the computed will not be flagged as dirty
