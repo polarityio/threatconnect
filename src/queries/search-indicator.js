@@ -7,8 +7,6 @@ const SUCCESS_CODES = [200];
 async function searchIndicator(entity, options, fields = []) {
   const Logger = getLogger();
 
-  const indicatorType = convertPolarityTypeToThreatConnect(entity.type);
-
   const requestOptions = {
     uri: `${options.url}/v3/indicators`,
     qs: {
@@ -47,7 +45,8 @@ async function searchIndicator(entity, options, fields = []) {
 
 
 function createTqlQuery(entity, options) {
-  let query = `summary="${entity.value}"`;
+  const indicatorType = convertPolarityTypeToThreatConnect(entity.type);
+  let query = `summary="${entity.value}" and typeName="${indicatorType}"`;
   if (typeof options.searchAllowlist === 'string' && options.searchAllowlist.trim().length > 0) {
     query += ` and ownerName in (`;
     options.searchAllowlist.split(',').forEach((org, index) => {

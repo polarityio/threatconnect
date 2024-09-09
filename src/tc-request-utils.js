@@ -11,17 +11,17 @@
 function convertPolarityTypeToThreatConnect(type) {
     switch (type) {
         case 'IPv4':
-            return 'addresses';
+            return 'address';
         case 'IPv6':
-            return 'addresses';
+            return 'address';
         case 'hash':
-            return 'files';
+            return 'file';
         case 'email':
-            return 'emailAddresses';
+            return 'emailAddress';
         case 'domain':
-            return 'hosts';
+            return 'host';
         case 'url':
-            return 'urls';
+            return 'url';
     }
 }
 
