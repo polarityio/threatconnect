@@ -204,7 +204,7 @@
             <div class="tag-container">
               {{#each orgData.indicator.tags.data as |tag tagIndex|}}
                 {{#if tag}}
-                  <a href="{{orgData._baseWebLink}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
+                  <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
                   <span class="threatconnect-summary-tag">
                       {{#if tag.techniqueId}}
                         &#38; {{tag.techniqueId}} -
@@ -595,7 +595,7 @@
                       {{case.name}}
                     </div>
                     <div>
-                      <a href="{{orgData._baseWebLink}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view {{fa-icon
+                      <a href="{{details.appUrl}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view {{fa-icon
                               icon="external-link" class="p-link external-icon"}}</a>
                     </div>
                   </div>
@@ -633,7 +633,13 @@
                   </div>
                   <div>
                     <span class="p-key">Assignee:</span>
-                    <span class="p-value">{{case.assignee.data.firstName}} {{case.assignee.data.lastName}}</span>
+                    <span class="p-value">
+                      {{#if case.assignee.data}}
+                        {{case.assignee.data.firstName}} {{case.assignee.data.lastName}}
+                      {{else}}
+                        Unassigned
+                      {{/if}}
+                    </span>
                   </div>
                   <div>
                     <span class="p-key">Cased Opened:</span>

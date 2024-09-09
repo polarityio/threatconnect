@@ -37,32 +37,13 @@ class PolarityRequest {
 
   async request(requestOptions, userOptions) {
     return new Promise(async (resolve, reject) => {
-      const urlParts = url.parse(requestOptions.uri);
-      const path = urlParts.pathname;
-      const time = unixEpochTimeInSeconds();
-      const accessId = userOptions.accessId;
-      const key = userOptions.apiKey;
-      let qs = '';
-      if (requestOptions.qs) {
-        // Use our custom encodeURIComponent to make sure the way we encode the query string for the signature
-        // matches the way postman encodes the component.
-        qs = querystring.stringify(requestOptions.qs, null, null, {
-          encodeURIComponent: fixedEncodeURIComponent
-        });
-      }
-
-      const toSign = `${path}${qs ? '?' + qs : ''}:${requestOptions.method.toUpperCase()}:${time}`;
-
-      const hmacSignatureInBase64 = crypto.createHmac('sha256', key).update(toSign).digest('base64');
-      const authHeader = `TC ${accessId}:${hmacSignatureInBase64}`;
-
-      getLogger().trace({ toSign, path, time, accessId, key, authHeader, urlParts }, 'Auth Header');
+      const { time, authorization } = getAuthHeaders(requestOptions, userOptions);
 
       if (!requestOptions.headers) {
         requestOptions.headers = {};
       }
 
-      requestOptions.headers.Authorization = authHeader;
+      requestOptions.headers.Authorization = authorization;
       requestOptions.headers.Timestamp = time;
       requestOptions.json = true;
 
@@ -79,6 +60,31 @@ class PolarityRequest {
       });
     });
   }
+}
+
+function getAuthHeaders(requestOptions, userOptions) {
+  const urlParts = url.parse(requestOptions.uri);
+  const path = urlParts.pathname;
+  const time = unixEpochTimeInSeconds();
+  const accessId = userOptions.accessId;
+  const key = userOptions.apiKey;
+  let qs = '';
+  if (requestOptions.qs) {
+    // Use our custom encodeURIComponent to make sure the way we encode the query string for the signature
+    // matches the way postman encodes the component.
+    qs = querystring.stringify(requestOptions.qs, null, null, {
+      encodeURIComponent: fixedEncodeURIComponent
+    });
+  }
+
+  const toSign = `${path}${qs ? '?' + qs : ''}:${requestOptions.method.toUpperCase()}:${time}`;
+
+  const hmacSignatureInBase64 = crypto.createHmac('sha256', key).update(toSign).digest('base64');
+  const authorization = `TC ${accessId}:${hmacSignatureInBase64}`;
+
+  getLogger().trace({ toSign, path, time, accessId, key, authorization, urlParts }, 'Auth Header');
+
+  return { time, authorization };
 }
 
 /**
