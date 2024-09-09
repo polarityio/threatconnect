@@ -3,7 +3,7 @@
   "name": "ThreatConnect",
   "acronym": "TC",
   "logging": {
-    "level": "trace"
+    "level": "info"
   },
   "entityTypes": [
     "IPv4",
