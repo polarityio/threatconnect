@@ -11,6 +11,7 @@ const { updateIndicator } = require('./src/queries/update-indicator');
 const { getIndicatorsById } = require('./src/queries/get-indicators-by-id');
 const { reportFalsePositive } = require('./src/queries/report-false-positive');
 const { updateTag } = require('./src/queries/update-tag');
+const { filterInvalidEntities } = require('./src/tc-request-utils');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -29,7 +30,9 @@ async function doLookup(entities, options, cb) {
   let lookupResults = [];
   const tasks = [];
 
-  entities.forEach((entity) => {
+  const filteredEntities = filterInvalidEntities(entities);
+
+  filteredEntities.forEach((entity) => {
     tasks.push(async () => {
       const indicators = await searchIndicator(entity, options);
       const ownerResultObjects = createResultObjects(entity, indicators, options);
