@@ -1,503 +1,153 @@
 'use strict';
 
-const ipaddr = require('ipaddr.js');
 const async = require('async');
-const url = require('url');
-const ThreatConnect = require('./threatconnect');
-const request = require('postman-request');
-const fp = require('lodash/fp');
-const fs = require('fs');
-const config = require('./config/config');
-const MAX_SUMMARY_TAGS = 3;
 
-let tc;
-let Logger;
+const _ = require('lodash');
+const { setLogger } = require('./src/logger');
+const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
+const { createResultObjects } = require('./src/create-result-object');
+const { getOwners } = require('./src/queries/get-owners');
+const { searchIndicator } = require('./src/queries/search-indicator');
+const { updateIndicator } = require('./src/queries/update-indicator');
+const { getIndicatorsById } = require('./src/queries/get-indicators-by-id');
+const { reportFalsePositive } = require('./src/queries/report-false-positive');
+const { updateTag } = require('./src/queries/update-tag');
+const { filterInvalidEntities } = require('./src/tc-request-utils');
+
+const MAX_TASKS_AT_A_TIME = 2;
+const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
+const VALID_FETCH_FIELDS = ['associatedCases', 'associatedIndicators', 'associatedGroups', 'whois', 'dnsResolution'];
+
+let Logger = null;
 
 function startup(logger) {
   Logger = logger;
-
-  let defaults = {};
-
-  if (typeof config.request.cert === 'string' && config.request.cert.length > 0) {
-    defaults.cert = fs.readFileSync(config.request.cert);
-  }
-
-  if (typeof config.request.key === 'string' && config.request.key.length > 0) {
-    defaults.key = fs.readFileSync(config.request.key);
-  }
-
-  if (typeof config.request.passphrase === 'string' && config.request.passphrase.length > 0) {
-    defaults.passphrase = config.request.passphrase;
-  }
-
-  if (typeof config.request.ca === 'string' && config.request.ca.length > 0) {
-    defaults.ca = fs.readFileSync(config.request.ca);
-  }
-
-  if (typeof config.request.proxy === 'string' && config.request.proxy.length > 0) {
-    defaults.proxy = config.request.proxy;
-  }
-
-  if (typeof config.request.rejectUnauthorized === 'boolean') {
-    defaults.rejectUnauthorized = config.request.rejectUnauthorized;
-  }
-
-  tc = new ThreatConnect(request.defaults(defaults), Logger);
+  setLogger(Logger);
 }
 
-function doLookup(entities, options, cb) {
-  tc.setSecretKey(options.apiKey);
-  tc.setHost(options.url);
-  tc.setAccessId(options.accessId);
+async function doLookup(entities, options, cb) {
+  Logger.trace({ entities }, 'doLookup');
 
-  Logger.trace({ entities: entities, options }, 'doLookup');
-  searchAllOwners(entities, options, (err, lookupResults) => {
-    cb(err, lookupResults);
-  });
-}
-
-function createSearchOrgAllowlist(options) {
-  let allowlistedOrgs = new Set();
-
-  if (typeof options.searchAllowlist === 'string' && options.searchAllowlist.trim().length > 0) {
-    let tokens = options.searchAllowlist.split(',');
-    tokens.forEach((token) => {
-      token = token.trim().toLowerCase();
-      if (token.length > 0) {
-        allowlistedOrgs.add(token);
-      }
-    });
-  }
-
-  Logger.debug({ allowlist: [...allowlistedOrgs] }, 'Organization Search Allowlist');
-
-  return allowlistedOrgs;
-}
-
-function createSearchOrgBlocklist(options) {
-  let blocklistedOrgs = new Set();
-
-  if (typeof options.searchBlocklist === 'string' && options.searchBlocklist.trim().length > 0) {
-    let tokens = options.searchBlocklist.split(',');
-    tokens.forEach((token) => {
-      token = token.trim().toLowerCase();
-      if (token.length > 0) {
-        blocklistedOrgs.add(token);
-      }
-    });
-  }
-
-  Logger.debug({ blocklist: [...blocklistedOrgs] }, 'Organization Search Blocklist');
-
-  return blocklistedOrgs;
-}
-
-function getFilteredOwners(owners, options) {
-  if (options.searchBlocklist.trim().length > 0) {
-    let blocklistedOrgs = createSearchOrgBlocklist(options);
-    return owners.filter((owner) => {
-      return !blocklistedOrgs.has(owner.name.toLowerCase());
-    });
-  } else if (options.searchAllowlist.trim().length > 0) {
-    let allowlistedOrgs = createSearchOrgAllowlist(options);
-    return owners.filter((owner) => {
-      return allowlistedOrgs.has(owner.name.toLowerCase());
-    });
-  } else {
-    return owners;
-  }
-}
-
-function searchAllOwners(entities, options, cb) {
   let lookupResults = [];
-
-  async.each(
-    entities,
-    (entityObj, next) => {
-      let lookupValue = _getSanitizedEntity(entityObj);
-      if (lookupValue !== null) {
-        tc.getOwners(convertPolarityTypeToThreatConnect(entityObj.type), lookupValue, (err, result) => {
-          if (err) {
-            return cb(err);
-          }
-
-          if (result.owners.length === 0) {
-            lookupResults.push({
-              entity: entityObj,
-              data: null
-            });
-          } else {
-            const filteredOwners = getFilteredOwners(result.owners, options);
-            if (filteredOwners.length > 0) {
-              lookupResults.push({
-                entity: entityObj,
-                data: {
-                  summary: _getOwnerSummaryTags(filteredOwners),
-                  details: {
-                    meta: result.meta,
-                    owners: filteredOwners
-                  }
-                }
-              });
-            }
-          }
-          next();
-        });
-      } else {
-        // We attempted to lookup an invalid entity (improperly formatted IPv6)
-        lookupResults.push({
-          entity: entityObj,
-          data: null
-        });
-
-        next();
-      }
-    },
-    (err) => {
-      cb(err, lookupResults);
-    }
-  );
-}
-
-function _getOwnerSummaryTags(owners) {
-  let tags = [];
-
-  for (let i = 0; i < owners.length && i < MAX_SUMMARY_TAGS; i++) {
-    tags.push(`${_getOwnerIcon()} ${owners[i].name}`);
-  }
-  if (owners.length > tags.length) {
-    tags.push(`+${owners.length - tags.length}`);
-  }
-
-  return tags;
-}
-
-/**
- * When looking up indicators in ThreatConnect the "type" of the indicator must be provided.  This method converts
- * the type as specified in Polarity's entity object into the appropriate ThreatConnect type.
- * @param type
- * @returns {string}
- */
-function convertPolarityTypeToThreatConnect(type) {
-  switch (type) {
-    case 'IPv4':
-      return 'addresses';
-    case 'IPv6':
-      return 'addresses';
-    case 'hash':
-      return 'files';
-    case 'email':
-      return 'emailAddresses';
-    case 'domain':
-      return 'hosts';
-    case 'url':
-      return 'urls';
-  }
-}
-
-const INDICATOR_TYPES = {
-  files: 'file',
-  emailAddresses: 'emailAddress',
-  hosts: 'host',
-  urls: 'url',
-  addresses: 'address'
-};
-
-/**
- * ThreatConnect has limited support for IPv6 formats.  This method converts the value of the provided entityObj
- * into a valid value for ThreatConnect.  If a conversion cannot be done, the method returns null.
- * @param entityObj
- * @returns {*}
- * @private
- */
-function _getSanitizedEntity(entityObj) {
-  let lookupValue = entityObj.value;
-
-  if (entityObj.isIPv4 || entityObj.isIPv6) {
-    // TC does not recognize fully expanded IPv6 addresses
-    // TC does not recognize leading zeroes in IPv6 address octets
-    // TC does not recognize IPv6 addresses unless they are lowercase
-    // TC does not recognize IPv6 addresses if they use the "compressed" :: form for zeroes
-    if (entityObj.isIPv6) {
-      if (ipaddr.isValid(lookupValue)) {
-        // convert the IPv6 address into a format TC understands
-        lookupValue = ipaddr.parse(lookupValue).toNormalizedString();
-      } else {
-        // Integration Received an invalid IPv6 address
-        Logger.warn(`Unsupported IPv6 address format ignored: [${entityObj.value}]`);
-        lookupValue = null;
-      }
-    }
-  }
-
-  return lookupValue;
-}
-
-function onDetails(lookupObject, options, cb) {
-  Logger.debug({ lookupObject, options }, 'onDetails Input');
-
-  const details = fp.get('data.details', lookupObject);
   const tasks = [];
 
-  tc.setSecretKey(options.apiKey);
-  tc.setHost(options.url);
-  tc.setAccessId(options.accessId);
+  const filteredEntities = filterInvalidEntities(entities);
 
-  if (!details) {
-    return tc.getPlaybooks((err, playbooks) => {
-      if (err) return cb(err);
-
-      cb(null, {
-        ...lookupObject,
-        isVolatile: true,
-        summary: ['New Entity'],
-        details: {
-          indicatorType: INDICATOR_TYPES[convertPolarityTypeToThreatConnect(fp.get('entity.type', lookupObject))],
-          playbooks
-        }
-      });
-    });
-  }
-
-  if (!details.meta || !Array.isArray(details.owners)) {
-    // invalid data probably due to cached entry
-    Logger.warn(
-      'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
-    );
-
-    return cb({
-      debug: {
-        lookupObject: lookupObject,
-        msg: 'Malformed onDetails lookupObject org.  This can occur if a cached entry from an older version of the ThreatConnect integration is received'
-      },
-      detail: 'Malformed lookupObject received in onDetails hook. Object is missing `meta` or `owner` properties.'
-    });
-  }
-
-  const owners = details.owners;
-  const indicatorType = details.meta.indicatorType;
-  const indicatorValue = details.meta.indicatorValue;
-
-  owners.forEach((owner) => {
-    tasks.push(function (done) {
-      async.parallel(
-        {
-          getIndicator: (subTaskDone) => tc.getIndicatorV3(indicatorType, indicatorValue, owner.name, subTaskDone),
-          getDnsInformation: (subTaskDone) => {
-            if (indicatorType === 'addresses' || indicatorType === 'hosts') {
-              tc.getDnsInformation(indicatorType, indicatorValue, owner.name, subTaskDone);
-            } else {
-              subTaskDone();
-            }
-          },
-          getGroupAssociations: (subTaskDone) =>
-            tc.getGroupAssociations(indicatorType, indicatorValue, owner.name, subTaskDone),
-          getIndicatorAssociations: (subTaskDone) =>
-            tc.getIndicatorAssociations(indicatorType, indicatorValue, owner.name, subTaskDone)
-        },
-        (err, results) => {
-          done(err, results);
-        }
-      );
+  filteredEntities.forEach((entity) => {
+    tasks.push(async () => {
+      const indicators = await searchIndicator(entity, options);
+      const ownerResultObjects = createResultObjects(entity, indicators, options);
+      lookupResults = lookupResults.concat(ownerResultObjects);
     });
   });
 
-  async.parallel(tasks, (err, results) => {
-    if (err) {
-      Logger.error({ err: err }, 'Error in onDetails lookup');
-      cb(err);
-    }
+  try {
+    await async.parallelLimit(tasks, MAX_TASKS_AT_A_TIME);
+  } catch (error) {
+    Logger.error({ error }, 'Error in doLookup');
+    return cb(error);
+  }
 
-    let orgData = fp.map((result) => {
-      const groups = fp.getOr([], 'getGroupAssociations.groups', result);
-      const indicators = fp.getOr([], 'getIndicatorAssociations.indicators', result);
-      const numAssociations = groups.length + indicators.length;
-      // The DNS information endpoint returns duplicate records based on `id` so we filter those out here
-      const dnsInformation = {
-        result: fp.flow(fp.getOr([], 'getDnsInformation.result'), fp.uniqBy('id'))(result)
-      };
-      const getIndicator = { ...result.getIndicator, groups, indicators, numAssociations, dnsInformation };
-      result.getIndicator = getIndicator;
-
-      return getIndicator;
-    }, results);
-
-    orgData.forEach((org) => {
-      _modifyWebLinksWithPort(org); //this method mutates result
-      if (org.threatAssessScore) {
-        org.threatAssessScorePercentage = (org.threatAssessScore / 1000) * 100;
-      } else {
-        org.threatAssessScorePercentage = 0;
-      }
-    });
-
-    cb(null, {
-      summary: lookupObject.data.summary,
-      isVolatile: true,
-      details: {
-        ...fp.getOr({}, 'data.details', lookupObject),
-        results: orgData
-      }
-    });
-  });
+  Logger.trace({ lookupResults }, 'Lookup Results');
+  cb(null, lookupResults);
 }
 
-function onMessage(payload, options, cb) {
-  Logger.debug({ payload }, 'Received onMessage');
-  tc.setSecretKey(options.apiKey);
-  tc.setHost(options.url);
-  tc.setAccessId(options.accessId);
+async function onDetails(resultObject, options, cb) {
+  try {
+    const indicatorIdList = Object.keys(resultObject.data.details.indicators);
+    const indicatorsById = await getIndicatorsById(indicatorIdList, options);
+    for (const indicatorId in indicatorsById) {
+      const indicatorDetails = indicatorsById[indicatorId];
+      resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
+    }
+    Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
+    cb(null, resultObject.data);
+  } catch (error) {
+    cb(error);
+  }
+}
 
+async function onMessage(payload, options, cb) {
+  Logger.trace({ payload }, 'onMessage received');
   switch (payload.action) {
-    case 'SET_RATING':
-      tc.setRating(
-        payload.data.indicatorValue,
-        payload.data.indicatorType,
-        payload.data.owner,
-        payload.data.rating,
-        function (err, result) {
-          if (err) {
-            Logger.error({ err, payload }, 'Error Setting Rating');
-            cb(null, { error: err });
-          } else {
-            Logger.debug({ result: result }, 'Returning SET_RATING');
-            cb(null, { data: result });
+    case 'GET_INDICATOR_FIELD':
+      if (!VALID_FETCH_FIELDS.includes(payload.field)) {
+        return cb(null, {
+          error: {
+            detail: `The field ${payload.field} is not an allowed field for fetching`
+          }
+        });
+      }
+
+      try {
+        const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
+        // dnsResolution requires special handling because it includes "empty" records which we don't want to display
+        // in the template.  We remove them server side so that local paging on the client works.
+        if (payload.field === 'dnsResolution') {
+          let dns = _.get(response, `${payload.indicatorId}.dnsResolution.data`, []);
+          if (dns.length > 0) {
+            response[payload.indicatorId].dnsResolution.data = dns.filter(
+              (dns) => typeof dns.addresses !== 'undefined'
+            );
           }
         }
-      );
+        cb(null, {
+          data: response[payload.indicatorId]
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+
       break;
-    case 'SET_CONFIDENCE':
-      tc.setConfidence(
-        payload.data.indicatorValue,
-        payload.data.indicatorType,
-        payload.data.owner,
-        payload.data.confidence,
-        function (err, result) {
-          if (err) {
-            Logger.error({ err, payload }, 'Error Setting Rating');
-            cb(null, { error: err });
-          } else {
-            Logger.debug({ result: result }, 'Returning SET_CONFIDENCE');
-            cb(null, { data: result });
-          }
+    case 'UPDATE_INDICATOR':
+      if (VALID_UPDATE_FIELDS.includes(payload.field)) {
+        try {
+          const updatedField = await updateIndicator(payload.indicatorId, payload.field, payload.value, options);
+          cb(null, {
+            data: updatedField
+          });
+        } catch (error) {
+          cb(null, {
+            error
+          });
         }
-      );
+      } else {
+        //invalid update field attempted
+        cb(null, {
+          error: {
+            detail: `The field ${payload.field} is not an allowed field for updating`
+          }
+        });
+      }
+
       break;
     case 'REPORT_FALSE_POSITIVE':
-      tc.reportFalsePositive(
-        payload.data.indicatorType,
-        payload.data.indicatorValue,
-        payload.data.owner,
-        (err, result) => {
-          if (err) {
-            Logger.error({ err, payload }, 'Error Reporting False Positive');
-            cb(null, { error: err });
-          } else {
-            Logger.debug({ result: result }, 'Returning REPORT_FALSE_POSITIVE');
-            cb(null, { data: result });
-          }
-        }
-      );
+      try {
+        const response = await reportFalsePositive(payload.entity, payload.owner, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
       break;
-    case 'DELETE_TAG':
-      tc.deleteTag(
-        payload.data.indicatorType,
-        payload.data.indicatorValue,
-        payload.data.tag,
-        payload.data.owner,
-        (err) => {
-          if (err) {
-            Logger.error({ err, payload }, 'Error Deleting Tag');
-            cb(null, { error: err });
-          } else {
-            Logger.debug('Returning DELETE_TAG');
-            cb(null, {});
-          }
-        }
-      );
+    case 'UPDATE_TAG':
+      try {
+        const response = await updateTag(payload.indicatorId, payload.tag, payload.mode, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
       break;
-    case 'ADD_TAG':
-      tc.addTagV3(
-        payload.data.indicatorType,
-        payload.data.indicatorValue,
-        payload.data.tag,
-        payload.data.owner,
-        (err, result) => {
-          if (err) {
-            Logger.error({ err, payload }, 'Error Adding Tag');
-            cb(null, { error: err });
-          } else {
-            Logger.debug({ result }, 'Returning ADD_TAG');
-            result.link = _addPortToLink(result.link, config.settings.threatConnectPort);
-            // result contains a property called link which is the link to the new tag
-            cb(null, { data: result });
-          }
-        }
-      );
-      break;
-    default:
-      cb({
-        detail: "Invalid 'action' provided to onMessage function"
-      });
   }
-}
-
-/**
- * Mutates the provided `result` object by modifying the webLink properties to include a port.  This is required
- * because the TC REST API does not return proper webLinks when you are running an on-prem TC instance on a port that
- * is not 443.
- *
- * @param result
- * @private
- */
-function _modifyWebLinksWithPort(result) {
-  if (result && typeof result.webLink === 'string') {
-    result._baseWebLink = 'https://partnerstage.threatconnect.com/';
-  }
-
-  if (config.settings.threatConnectPort !== null) {
-    const port = config.settings.threatConnectPort;
-
-    if (typeof result.webLink === 'string') {
-      result.webLink = _addPortToLink(result.webLink, port);
-    }
-
-    if (result.tags && Array.isArray(result.tags.data)) {
-      result.tags.data.forEach((tag) => {
-        if (typeof tag.webLink === 'string') {
-          tag.webLink = _addPortToLink(tag.webLink, port);
-        }
-      });
-    }
-
-    if (Array.isArray(result.groups)) {
-      result.groups.forEach((group) => {
-        if (typeof group.webLink === 'string') {
-          group.webLink = _addPortToLink(group.webLink, port);
-        }
-      });
-    }
-
-    if (Array.isArray(result.indicators)) {
-      result.indicators.forEach((indicator) => {
-        if (typeof indicator.webLink === 'string') {
-          indicator.webLink = _addPortToLink(indicator.webLink, port);
-        }
-      });
-    }
-  }
-}
-
-function _addPortToLink(weblinkToTransform, port) {
-  let weblinkAsUrl = url.parse(weblinkToTransform);
-  weblinkAsUrl.port = port;
-  delete weblinkAsUrl.host;
-  //Logger.info({url: url.format(weblinkAsUrl), port: weblinkAsUrl.port}, 'WebLink');
-  return url.format(weblinkAsUrl);
-}
-
-function _getOwnerIcon() {
-  return `<svg viewBox="0 0 448 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true" data-icon="building" data-prefix="fas" id="ember1223" class="svg-inline--fa fa-building fa-w-14  ember-view"><path fill="currentColor" d="M436 480h-20V24c0-13.255-10.745-24-24-24H56C42.745 0 32 10.745 32 24v456H12c-6.627 0-12 5.373-12 12v20h448v-20c0-6.627-5.373-12-12-12zM128 76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76zm0 96c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40zm52 148h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40c0 6.627-5.373 12-12 12zm76 160h-64v-84c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v84zm64-172c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12v-40c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40zm0-96c0 6.627-5.373 12-12 12h-40c-6.627 0-12-5.373-12-12V76c0-6.627 5.373-12 12-12h40c6.627 0 12 5.373 12 12v40z"></path></svg> `;
 }
 
 function isOptionMissing(userOptions, key) {
@@ -554,8 +204,8 @@ function validateOptions(userOptions, cb) {
 }
 
 module.exports = {
-  doLookup,
   startup,
+  doLookup,
   onMessage,
   onDetails,
   validateOptions

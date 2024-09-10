@@ -1,3 +1,122 @@
+@border-color: #e4e9f2;
+
+.org-container {
+  margin-top: 15px;
+  border: 1px solid @border-color;
+  // border-bottom: 1px solid @border-color;
+  border-radius: 4px;
+
+  &:first-child {
+    margin-top: 0px;
+  }
+
+  .header-container {
+    border-bottom: 1px solid @border-color;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &.expanded {
+      border-bottom: 0px;
+    }
+
+    &:hover {
+      box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px !important;
+    }
+
+    .toggle-btn {
+      font-size: 12px;
+      padding: 0px;
+      height: 20px;
+
+      :active {
+        color: darken(#388e3c, 5%);
+      }
+    }
+  }
+
+  .content-container {
+    padding: 6px;
+  }
+}
+
+.paging-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  justify-content: flex-end;
+
+  .paging-info {
+    margin: 0px 5px;
+  }
+
+  .paging-btn {
+    border: 1px solid #e4e9f2;
+    height: 20px;
+    padding: 0px 8px 0px 8px;
+
+    &:hover:enabled {
+      background-color: darken(#e4e9f2, 5%);
+    }
+  }
+}
+
+.preserve-whitespace {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.p-block {
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.scrollable {
+  overflow-y: scroll;
+  max-height: 100px;
+}
+
+.view-link-width {
+  width: 75px;
+}
+
+.emphasize-text {
+  font-weight: 500 !important;
+}
+
+.dns-table {
+  .dns-table-ip {
+    width: 100px;
+  }
+
+  .dns-table-asn {
+    width: 60px;
+  }
+
+  .dns-table-org {
+    word-break: break-word;
+    word-wrap: break-word;
+  }
+
+  td {
+    padding: 2px 5px 2px 0px !important;
+  }
+
+  tr:nth-child(even) {
+    td {
+      padding-bottom: 10px !important;
+    }
+  }
+
+  tr:last-child {
+    td {
+      padding-bottom: 0px !important;
+    }
+  }
+}
+
 a.tc-link-tag {
   .threatconnect-summary-tag {
     background-color: #fff;
@@ -168,7 +287,7 @@ pre {
   }
 }
 
-.report-false-positive-btn {
+.action-btn {
   height: 25px;
   font-size: 0.775rem;
   margin-top: 5px;

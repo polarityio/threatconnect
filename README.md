@@ -24,6 +24,9 @@ Account Identifier that is associated with the API Key
 
 The API (secret) Key associated with the provided Access ID
 
+### Search Inactive Indicators
+If enabled, the integration will return indicators that are "inactive". Inactive indicators are not considered Indicators of Compromise and are kept for historical accuracy.
+
 ### Organization Search Blocklist
 
 By default all organizations visible to the provided API User will be searched. This blocklist is a comma delimited list of organizations you do not want searched. This option cannot be used in conjunction with the "Organization Search Allowlist" option.
