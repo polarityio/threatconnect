@@ -524,7 +524,7 @@
           <h2>No Associated Indicators</h2>
         {{else if orgData.__associatedIndicatorsLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Indicators
-        {{else orgData.indicator.__associatedIndicatorsTimeout}}
+        {{else if orgData.indicator.__associatedIndicatorsTimeout}}
           <h2>Unable to fetch Associated Indicators.</h2>
           <div class="p-footnote">
             We were unable to fetch Associated Indicators due to a request timeout.  You can retry the search by clicking the "Retry" button below.
