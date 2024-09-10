@@ -282,6 +282,9 @@ polarity.export = PolarityComponent.extend({
       const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
       const totalPages = Math.ceil(totalFieldResults / this.pageSize);
       this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, totalPages);
+    },
+    getField(indicatorId, field) {
+      this.getField(indicatorId, field);
     }
   },
   getRatingHuman(rating) {
@@ -326,7 +329,6 @@ polarity.export = PolarityComponent.extend({
     return 'Confirmed';
   },
   getField(indicatorId, field) {
-    this.set('block.isLoadingDetails', true);
     this.set(`indicators.${indicatorId}.__${field}Loading`, true);
     const payload = {
       action: 'GET_INDICATOR_FIELD',
@@ -400,8 +402,13 @@ polarity.export = PolarityComponent.extend({
           }
         }
       })
+      .catch((err) => {
+        console.error('getField Error', err);
+        if (err.status === '504') {
+          this.set(`indicators.${indicatorId}.indicator.__${field}Timeout`, true);
+        }
+      })
       .finally(() => {
-        this.set('block.isLoadingDetails', false);
         this.set(`indicators.${indicatorId}.__${field}Loading`, false);
       });
   },

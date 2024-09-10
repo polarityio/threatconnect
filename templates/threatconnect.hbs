@@ -201,7 +201,7 @@
         </div>
         <div class="d-flex align-items-center">
           <button
-                  class="btn btn-secondary btn-sm report-false-positive-btn"
+             class="btn btn-secondary btn-sm action-btn"
             {{action "reportFalsePositive" indicatorId}}
           >Report False Positive
           </button>
@@ -286,10 +286,20 @@
 
       {{!-- Whois Tab --}}
       {{#if (eq orgData.__activeTab "whois")}}
-        {{#if (and (is-empty orgData.indicator.whois.data)(not orgData.__whoisLoading))}}
+        {{#if (and (is-empty orgData.indicator.whois.data)(not orgData.__whoisLoading)(not orgData.indicator.__whoisTimeout))}}
           <h2>No Whois Information</h2>
         {{else if orgData.__whoisLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Whois
+        {{else if (or orgData.indicator.__whoisTimeout true)}}
+          <h2>Unable to fetch WHOIS.</h2>
+          <div class="p-footnote">
+            We were unable to fetch WHOIS due to a request timeout.  You can retry the search by clicking the "Retry" button below.
+          </div>
+          <button
+                  class="btn btn-secondary btn-sm action-btn"
+            {{action "getField" indicatorId "whois"}}
+          >Retry
+          </button>
         {{/if}}
         {{#if (gt orgData.indicator.whois.data.length 0)}}
             <h1 class="p-title d-flex align-items-center justify-content-between">
@@ -356,10 +366,20 @@
 
       {{!-- DNS Resolutions Tab --}}
       {{#if (eq orgData.__activeTab "dnsResolution")}}
-        {{#if (and (is-empty orgData.indicator.dnsResolution.data)(not orgData.__dnsResolutionLoading))}}
+        {{#if (and (is-empty orgData.indicator.dnsResolution.data)(not orgData.__dnsResolutionLoading)(not orgData.indicator.__dnsResolutionTimeout))}}
           <h2>No DNS Resolution Information</h2>
         {{else if orgData.__dnsResolutionLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading DNS Resolutions
+        {{else if (or orgData.indicator.__dnsResolutionTimeout true)}}
+          <h2>Unable to fetch DNS Resolutions.</h2>
+          <div class="p-footnote">
+            We were unable to fetch DNS Resolutions due to a request timeout.  You can retry the search by clicking the "Retry" button below.
+          </div>
+          <button
+            class="btn btn-secondary btn-sm action-btn"
+            {{action "getField" indicatorId "dnsResolution"}}
+          >Retry
+          </button>
         {{/if}}
         {{#if (gt orgData.indicator.dnsResolution.data.length 0)}}
           <h1 class="p-title d-flex align-items-center justify-content-between">
@@ -422,10 +442,20 @@
 
       {{!-- Groups Tab --}}
       {{#if (eq orgData.__activeTab "groups")}}
-        {{#if (and (is-empty orgData.indicator.associatedGroups.data)(not orgData.__associatedGroupsLoading))}}
+        {{#if (and (is-empty orgData.indicator.associatedGroups.data)(not orgData.__associatedGroupsLoading)(not orgData.indicator.__associatedGroupsTimeout))}}
           <h2>No Associated Groups</h2>
         {{else if orgData.__associatedGroupsLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Groups
+        {{else if (or orgData.indicator.__associatedGroupsTimeout true)}}
+          <h2>Unable to fetch Associated Groups.</h2>
+          <div class="p-footnote">
+            We were unable to fetch the associated groups due to a request timeout.  You can retry the search by clicking the "Retry" button below.
+          </div>
+          <button
+            class="btn btn-secondary btn-sm action-btn"
+            {{action "getField" indicatorId "associatedGroups"}}
+          >Retry
+          </button>
         {{/if}}
         {{#if (gt orgData.indicator.associatedGroups.data.length 0)}}
           <h1 class="p-title d-flex align-items-center justify-content-between">
@@ -490,10 +520,20 @@
 
       {{!-- Indicators Tab --}}
       {{#if (eq orgData.__activeTab "indicators")}}
-        {{#if (and (is-empty orgData.indicator.associatedIndicators.data)(not orgData.__associatedIndicatorsLoading))}}
+        {{#if (and (is-empty orgData.indicator.associatedIndicators.data)(not orgData.__associatedIndicatorsLoading)(not orgData.indicator.__associatedIndicatorsTimeout))}}
           <h2>No Associated Indicators</h2>
         {{else if orgData.__associatedIndicatorsLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Indicators
+        {{else if (or orgData.indicator.__associatedIndicatorsTimeout true)}}
+          <h2>Unable to fetch Associated Indicators.</h2>
+          <div class="p-footnote">
+            We were unable to fetch Associated Indicators due to a request timeout.  You can retry the search by clicking the "Retry" button below.
+          </div>
+          <button
+            class="btn btn-secondary btn-sm action-btn"
+            {{action "getField" indicatorId "associatedIndicators"}}
+          >Retry
+          </button>
         {{/if}}
         {{#if (gt orgData.indicator.associatedIndicators.data.length 0)}}
           <h1 class="p-title d-flex align-items-center justify-content-between">
@@ -587,10 +627,20 @@
 
       {{!-- Cases Tab --}}
       {{#if (eq orgData.__activeTab "cases")}}
-        {{#if (and (is-empty orgData.indicator.associatedCases.data)(not orgData.__associatedCasesLoading))}}
+        {{#if (and (is-empty orgData.indicator.associatedCases.data)(not orgData.__associatedCasesLoading)(not orgData.indicator.__associatedCasesTimeout))}}
           <h2>No Associated Cases</h2>
         {{else if orgData.__associatedCasesLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Cases
+        {{else if (or orgData.indicator.__associatedCasesTimeout true)}}
+          <h2>Unable to fetch Associated Cases.</h2>
+          <div class="p-footnote">
+            We were unable to fetch Associated Cases due to a request timeout.  You can retry the search by clicking the "Retry" button below.
+          </div>
+          <button
+            class="btn btn-secondary btn-sm action-btn"
+            {{action "getField" indicatorId "associatedCases"}}
+          >Retry
+          </button>
         {{/if}}
         {{#if (gt orgData.indicator.__associatedCasesCount 0)}}
           <h1 class="p-title d-flex align-items-center justify-content-between">
