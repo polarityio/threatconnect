@@ -290,7 +290,7 @@
           <h2>No Whois Information</h2>
         {{else if orgData.__whoisLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Whois
-        {{else if (or orgData.indicator.__whoisTimeout true)}}
+        {{else if orgData.indicator.__whoisTimeout}}
           <h2>Unable to fetch WHOIS.</h2>
           <div class="p-footnote">
             We were unable to fetch WHOIS due to a request timeout.  You can retry the search by clicking the "Retry" button below.
@@ -370,7 +370,7 @@
           <h2>No DNS Resolution Information</h2>
         {{else if orgData.__dnsResolutionLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading DNS Resolutions
-        {{else if (or orgData.indicator.__dnsResolutionTimeout true)}}
+        {{else if orgData.indicator.__dnsResolutionTimeout}}
           <h2>Unable to fetch DNS Resolutions.</h2>
           <div class="p-footnote">
             We were unable to fetch DNS Resolutions due to a request timeout.  You can retry the search by clicking the "Retry" button below.
@@ -446,7 +446,7 @@
           <h2>No Associated Groups</h2>
         {{else if orgData.__associatedGroupsLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Groups
-        {{else if (or orgData.indicator.__associatedGroupsTimeout true)}}
+        {{else if orgData.indicator.__associatedGroupsTimeout}}
           <h2>Unable to fetch Associated Groups.</h2>
           <div class="p-footnote">
             We were unable to fetch the associated groups due to a request timeout.  You can retry the search by clicking the "Retry" button below.
@@ -524,7 +524,7 @@
           <h2>No Associated Indicators</h2>
         {{else if orgData.__associatedIndicatorsLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Indicators
-        {{else if (or orgData.indicator.__associatedIndicatorsTimeout true)}}
+        {{else orgData.indicator.__associatedIndicatorsTimeout}}
           <h2>Unable to fetch Associated Indicators.</h2>
           <div class="p-footnote">
             We were unable to fetch Associated Indicators due to a request timeout.  You can retry the search by clicking the "Retry" button below.
@@ -631,7 +631,7 @@
           <h2>No Associated Cases</h2>
         {{else if orgData.__associatedCasesLoading}}
           {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Cases
-        {{else if (or orgData.indicator.__associatedCasesTimeout true)}}
+        {{else if orgData.indicator.__associatedCasesTimeout}}
           <h2>Unable to fetch Associated Cases.</h2>
           <div class="p-footnote">
             We were unable to fetch Associated Cases due to a request timeout.  You can retry the search by clicking the "Retry" button below.
