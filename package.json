@@ -5,7 +5,7 @@
   "description": "Polarity ThreatConnect Integration",
   "private": true,
   "dependencies": {
-    "async": "^3.2.5",
+    "async": "^3.2.6",
     "ipaddr.js": "^2.2.0",
     "lodash": "^4.17.21",
     "node-cache": "^5.1.2",
