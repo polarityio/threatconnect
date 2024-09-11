@@ -258,6 +258,53 @@ a.tc-link-tag {
   }
 }
 
+.score {
+  font-weight: 500;
+  font-size: 14px;
+
+  .score-readable {
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+
+  &.critical {
+    color: rgb(125, 22, 22);
+  }
+
+  &.high {
+    color: rgb(217, 39, 54);
+  }
+
+  &.medium {
+    color: rgb(224, 108, 0);
+  }
+
+  &.low {
+    color: rgb(101, 119, 149)
+  }
+}
+
+.p-key{
+  line-height: 1.4em;
+}
+
+.p-title {
+  font-size: 12px;
+  color: rgb(101, 112, 134);
+  font-weight: 700;
+}
+
+.info-icon {
+  font-size: 10px;
+  color: rgb(101, 112, 134);
+  border: 1px solid rgb(101, 112, 134);
+  border-radius: 11px;
+  height: 11px;
+  width: 11px;
+  padding: 2px;
+}
+
+
 pre {
   overflow-y: scroll;
   overflow-x: auto;
@@ -265,7 +312,17 @@ pre {
   word-wrap: break-word;
   max-height: 150px;
   padding: 5px;
-  background-color: #eee;
+  border: 1px solid @border-color;
+  border-radius: 4px;
+  margin-bottom: 0px;
+}
+
+.active-icon {
+  color: #2a9d75;
+}
+
+.inactive-icon{
+  color: rgb(101, 112, 134);
 }
 
 .elementToFadeIn {
@@ -303,7 +360,21 @@ pre {
   margin: 3px 0;
 
   .progress-bar {
-    background-color: rgb(242, 103, 36);
+    &.critical {
+      background-color: rgb(125, 22, 22);
+    }
+
+    &.high {
+      background-color: rgb(217, 39, 54);
+    }
+
+    &.medium {
+      background-color: rgb(224, 108, 0);
+    }
+
+    &.low {
+      background-color: rgb(101, 119, 149)
+    }
   }
 }
 

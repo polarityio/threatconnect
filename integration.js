@@ -4,19 +4,20 @@ const async = require('async');
 
 const _ = require('lodash');
 const { setLogger } = require('./src/logger');
-const { parseErrorToReadableJSON, ApiRequestError } = require('./src/errors');
 const { createResultObjects } = require('./src/create-result-object');
-const { getOwners } = require('./src/queries/get-owners');
 const { searchIndicator } = require('./src/queries/search-indicator');
 const { updateIndicator } = require('./src/queries/update-indicator');
 const { getIndicatorsById } = require('./src/queries/get-indicators-by-id');
 const { reportFalsePositive } = require('./src/queries/report-false-positive');
 const { updateTag } = require('./src/queries/update-tag');
 const { filterInvalidEntities } = require('./src/tc-request-utils');
+const { getTokenOwner } = require('./src/queries/get-token-owner');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
 const VALID_FETCH_FIELDS = ['associatedCases', 'associatedIndicators', 'associatedGroups', 'whois', 'dnsResolution'];
+
+const tokenOwners = {};
 
 let Logger = null;
 
@@ -33,10 +34,13 @@ async function doLookup(entities, options, cb) {
 
   const filteredEntities = filterInvalidEntities(entities);
 
+  // If not token owner could be determined the value here will be `null`
+  const tokenOwner = await getCachedTokenOwner(options);
+
   filteredEntities.forEach((entity) => {
     tasks.push(async () => {
       const indicators = await searchIndicator(entity, options);
-      const ownerResultObjects = createResultObjects(entity, indicators, options);
+      const ownerResultObjects = createResultObjects(entity, indicators, tokenOwner, options);
       lookupResults = lookupResults.concat(ownerResultObjects);
     });
   });
@@ -50,6 +54,17 @@ async function doLookup(entities, options, cb) {
 
   Logger.trace({ lookupResults }, 'Lookup Results');
   cb(null, lookupResults);
+}
+
+async function getCachedTokenOwner(options) {
+  if (tokenOwners[options.accessId]) {
+    return tokenOwners[options.accessId];
+  }
+
+  const tokenOwner = await getTokenOwner(options);
+  tokenOwners[options.accessId] = tokenOwner;
+
+  return tokenOwner;
 }
 
 async function onDetails(resultObject, options, cb) {
