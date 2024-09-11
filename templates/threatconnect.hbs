@@ -1,5 +1,10 @@
 {{!-- Global ThreatAssess Data --}}
-<div class="org-container">
+<div class="org-container global-details-container {{if isDetailsLoading "loading"}}">
+  {{#if isDetailsLoading}}
+    <div class="loading-overlay">
+      {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
+    </div>
+  {{/if}}
   <div class="content-container">
     <div class="emphasize-text">
       Global Details
@@ -17,7 +22,7 @@
           <span class="score-readable">{{firstIndicator.indicator.__threatAssessScoreHuman}}</span>
         </span>
       </span>
-      {{#if firstIndicator.indicator.threatAssessScore}}
+      {{#if (or firstIndicator.indicator.threatAssessScore isDetailsLoading)}}
         <span class="p-value">{{firstIndicator.indicator.threatAssessScore}}</span>/1000
         <div class="progress threat-assess-bar">
           <div

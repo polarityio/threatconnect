@@ -16,7 +16,7 @@ polarity.export = PolarityComponent.extend({
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
-  firstIndicator: Ember.computed('indicators.[0]', function(){
+  firstIndicator: Ember.computed('indicators.[0]', function () {
     const indicatorOrderById = this.get('details.indicatorOrderById');
     return this.get('indicators')[indicatorOrderById[0]];
   }),
@@ -213,7 +213,7 @@ polarity.export = PolarityComponent.extend({
         });
     },
     reportFalsePositive(indicatorId) {
-      console.info("Report False Positive", indicatorId);
+      console.info('Report False Positive', indicatorId);
       this.set(`indicators.${indicatorId}.__savingFalsePositive`, true);
 
       const payload = {
@@ -296,7 +296,7 @@ polarity.export = PolarityComponent.extend({
       this.getField(indicatorId, field);
     }
   },
-  getScoreHuman(score){
+  getScoreHuman(score) {
     if (score >= 801) {
       return 'critical';
     }
@@ -311,22 +311,25 @@ polarity.export = PolarityComponent.extend({
     return 'low';
   },
   getRatingHuman(rating) {
-    switch (rating) {
-      case 0:
-        return 'Unknown';
-      case 1:
-        return 'Suspicious';
-      case 2:
-        return 'Low';
-      case 3:
-        return 'Moderate';
-      case 4:
-        return 'High';
-      case 5:
-        return 'Critical';
-      default:
-        return 'Unknown';
+    if (rating === 0) {
+      return 'Unknown';
     }
+    if (rating <= 1) {
+      return 'Suspicious';
+    }
+    if (rating <= 2) {
+      return 'Low';
+    }
+    if (rating <= 3) {
+      return 'Moderate';
+    }
+    if (rating <= 4) {
+      return 'High';
+    }
+    if (rating <= 5) {
+      return 'Critical';
+    }
+    return 'Unknown';
   },
   getConfidenceHuman(confidence) {
     if (!confidence || confidence === 0) {

@@ -284,7 +284,37 @@ a.tc-link-tag {
   }
 }
 
-.p-key{
+.global-details-container {
+
+  position: relative;
+
+  .loading-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    font-size: 14px;
+  }
+
+  &.loading {
+    &:after {
+      content: " ";
+      z-index: 10;
+      display: block;
+      position: absolute;
+      height: 100%;
+      top: 0;
+      left: 0;
+      right: 0;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+}
+
+.p-key {
   line-height: 1.4em;
 }
 
@@ -321,7 +351,7 @@ pre {
   color: #2a9d75;
 }
 
-.inactive-icon{
+.inactive-icon {
   color: rgb(101, 112, 134);
 }
 
