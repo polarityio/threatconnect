@@ -6,8 +6,20 @@
     </div>
   {{/if}}
   <div class="content-container">
-    <div class="emphasize-text">
-      Global Details
+    <div class="d-flex align-item-center justify-content-between">
+      <div class="emphaize-text">
+        Global Details
+      </div>
+      {{#unless (is-empty firstIndicator.indicator.active)}}
+        <div class="d-inline-block">
+          {{#if (eq firstIndicator.indicator.active true)}}
+            {{fa-icon icon="check-circle" fixedWidth=true class="active-icon"}} Active
+          {{else if (eq firstIndicator.indicator.active false)}}
+            {{fa-icon icon="minus-circle" fixedWidth=true class="inactive-icon"}} Inactive
+          {{/if}}
+          {{bs-tooltip title='When an indicator is "active" the indicator is considered to be an Indicator of Compromise (IOC) and should be treated in accordance with its CAL Reputation Score.  An "inactive" indicator is not considered an IOC, but is kept for historical accuracy rather than being deleted.'}}
+        </div>
+      {{/unless}}
     </div>
     <div class="d-flex align-items-center justify-content-between">
       <div class="p-title">ThreatAssess</div>
@@ -178,16 +190,6 @@
             </div>
             <div class="d-flex align-items-center justify-content-between">
               <div class="p-title">Details</div>
-              {{#unless (is-empty orgData.indicator.active)}}
-                <div class="d-inline-block">
-                  {{#if (eq orgData.indicator.active true)}}
-                    {{fa-icon icon="check-circle" fixedWidth=true class="active-icon"}} Active
-                  {{else if (eq orgData.indicator.active false)}}
-                    {{fa-icon icon="minus-circle" fixedWidth=true class="inactive-icon"}} Inactive
-                  {{/if}}
-                  {{bs-tooltip title='When an indicator is "active" the indicator is considered to be an Indicator of Compromise (IOC) and should be treated in accordance with its CAL Reputation Score.  An "inactive" indicator is not considered an IOC, but is kept for historical accuracy rather than being deleted.'}}
-                </div>
-              {{/unless}}
             </div>
 
             {{#if (gt orgData.indicator.securityLabels.data.length 0)}}
