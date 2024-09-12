@@ -1,31 +1,29 @@
+const async = require('async');
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
 const SUCCESS_CODES = [200];
 
-async function updateIndicator(indicatorId, field, fieldValue, options) {
+async function getTokenOwner(options) {
   const Logger = getLogger();
+  const indicatorsById = {};
 
   const requestOptions = {
-    uri: `${options.url}/v3/indicators/${indicatorId}`,
-    method: 'PUT',
-    body: {}
+    uri: `${options.url}/v3/security/users`,
+    useQuerystring: true,
+    method: 'GET'
   };
-
-  requestOptions.body[field] = fieldValue;
 
   Logger.trace({ requestOptions }, 'Request Options');
 
   const apiResponse = await polarityRequest.request(requestOptions, options);
-
-  Logger.trace({ apiResponse }, 'Update Indicator API Response');
 
   if (
     !SUCCESS_CODES.includes(apiResponse.statusCode) ||
     (apiResponse.body && apiResponse.body.status && apiResponse.body.status !== 'Success')
   ) {
     throw new ApiRequestError(
-      `Unexpected status code ${apiResponse.statusCode} received when making request to the ThreatConnect API`,
+      `Unexpected status code ${apiResponse.statusCode} received when fetching API Token details via the ThreatConnect API`,
       {
         statusCode: apiResponse.statusCode,
         requestOptions: apiResponse.requestOptions,
@@ -34,16 +32,17 @@ async function updateIndicator(indicatorId, field, fieldValue, options) {
     );
   }
 
-  const response = {};
-  if (apiResponse.body.data && typeof apiResponse.body.data[field] !== 'undefined') {
-    response[field] = apiResponse.body.data[field];
-  } else {
-    Logger.error(`Update Indicator response body does not include the updated field value for ${field}`);
+  Logger.trace({ apiResponse }, 'getTokenOwner API Response');
+
+  let tokenOwner = null;
+  const match = apiResponse.body.data.find((user) => user.userName === options.accessId);
+  if (match) {
+    tokenOwner = match.owner;
   }
 
-  return response;
+  return tokenOwner;
 }
 
 module.exports = {
-  updateIndicator
+  getTokenOwner
 };

@@ -7,7 +7,7 @@ const SUCCESS_CODES = [200];
 async function getIndicatorsById(
   indicatorIds,
   options,
-  fields = ['threatAssess', 'securityLabels', 'tags', 'observations', 'falsePositives']
+  fields = ['threatAssess', 'securityLabels', 'tags', 'observations', 'falsePositives', 'geolocation']
 ) {
   const Logger = getLogger();
   const indicatorsById = {};

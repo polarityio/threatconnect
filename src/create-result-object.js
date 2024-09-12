@@ -3,16 +3,36 @@ const url = require('url');
 
 const MAX_SUMMARY_TAGS = 4;
 /**
- *
- * @param entities
+ * When constructing our response we order the results alphabetically by ownerName.  If one of the result owners
+ * is the same as the API token owner, we always put that result first.
+ * @param entity
  * @param apiResponse
+ * @param tokenOwner
+ * @param options
  * @returns {*[]}
  */
-const createResultObjects = (entity, apiResponse, options) => {
+const createResultObjects = (entity, apiResponse, tokenOwner, options) => {
   const lookupResults = [];
+  const indicatorOrder = [];
 
   if (apiResponse.data && apiResponse.data.length > 0) {
-    const indicatorsById = apiResponse.data.reduce((accum, indicator) => {
+    // sort orgs alphabetically by name
+    const sortedResults = apiResponse.data.sort((a, b) => {
+      if (a.ownerName === tokenOwner) {
+        return -1;
+      }
+
+      if (a.ownerName < b.ownerName) {
+        return -1;
+      }
+      if (a.ownerName > b.ownerName) {
+        return 1;
+      }
+      return 0;
+    });
+
+    const indicatorsById = sortedResults.reduce((accum, indicator) => {
+      indicatorOrder.push(indicator.id);
       accum[indicator.id] = {
         indicator
       };
@@ -26,8 +46,10 @@ const createResultObjects = (entity, apiResponse, options) => {
       data: {
         summary: createSummary(apiResponse.data, options),
         details: {
+          indicatorOrderById: indicatorOrder,
           indicators: indicatorsById,
-          appUrl: `${urlParts.protocol}//${urlParts.host}`
+          appUrl: `${urlParts.protocol}//${urlParts.host}`,
+          defaultOwnerName: tokenOwner
         }
       }
     });

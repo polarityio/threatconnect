@@ -16,6 +16,10 @@ polarity.export = PolarityComponent.extend({
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
+  firstIndicator: Ember.computed('indicators.[0]', function () {
+    const indicatorOrderById = this.get('details.indicatorOrderById');
+    return this.get('indicators')[indicatorOrderById[0]];
+  }),
   pageSize: 10,
   indicatorMessage: '',
   indicatorErrorMessage: '',
@@ -40,12 +44,21 @@ polarity.export = PolarityComponent.extend({
     if (!this.isDestroyed) {
       this.set('isDetailsLoading', false);
       const indicators = this.get('details.indicators');
-      let isFirst = true;
+      const indicatorOrderById = this.get('details.indicatorOrderById');
+
+      if (indicatorOrderById.length > 0) {
+        const firstIndicatorById = indicatorOrderById[0];
+        this.set(`indicators.${firstIndicatorById}.__show`, true);
+      }
+
       for (const id in indicators) {
         let indicator = indicators[id].indicator;
         indicator.__ratingHuman = this.getRatingHuman(indicator.rating);
         indicator.__confidenceHuman = this.getConfidenceHuman(indicator.confidence);
         indicator.__threatAssessScorePercentage = (indicator.threatAssessScore / 1000) * 100;
+        indicator.__threatAssessScoreHuman = this.getScoreHuman(indicator.threatAssessScore);
+        indicator.__threatAssesConfidenceHuman = this.getConfidenceHuman(indicator.threatAssessConfidence);
+        indicator.__threatAssessRatingHuman = this.getRatingHuman(indicator.threatAssessRating);
 
         let totalAssociations = 0;
         if (indicator.associatedGroups && indicator.associatedGroups.data) {
@@ -73,11 +86,6 @@ polarity.export = PolarityComponent.extend({
                 caseObj.__severityColor = '';
             }
           });
-        }
-
-        if (isFirst) {
-          indicators[id].__show = true;
-          isFirst = false;
         }
       }
     }
@@ -205,6 +213,7 @@ polarity.export = PolarityComponent.extend({
         });
     },
     reportFalsePositive(indicatorId) {
+      console.info('Report False Positive', indicatorId);
       this.set(`indicators.${indicatorId}.__savingFalsePositive`, true);
 
       const payload = {
@@ -225,7 +234,7 @@ polarity.export = PolarityComponent.extend({
               this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, false);
             }
             this.set(`indicators.${indicatorId}.indicator.lastFalsePositive`, result.data.lastReported);
-            this.set(`indicators.${indicatorId}.indicator.lastFalsePositive`, result.data.count);
+            this.set(`indicators.${indicatorId}.indicator.falsePositives`, result.data.count);
           }
         })
         .finally(() => {
@@ -287,23 +296,40 @@ polarity.export = PolarityComponent.extend({
       this.getField(indicatorId, field);
     }
   },
-  getRatingHuman(rating) {
-    switch (rating) {
-      case 0:
-        return 'Unknown';
-      case 1:
-        return 'Suspicious';
-      case 2:
-        return 'Low';
-      case 3:
-        return 'Moderate';
-      case 4:
-        return 'High';
-      case 5:
-        return 'Critical';
-      default:
-        return 'Unknown';
+  getScoreHuman(score) {
+    if (score >= 801) {
+      return 'critical';
     }
+    if (score >= 501) {
+      return 'high';
+    }
+
+    if (score >= 201) {
+      return 'medium';
+    }
+
+    return 'low';
+  },
+  getRatingHuman(rating) {
+    if (rating === 0) {
+      return 'Unknown';
+    }
+    if (rating <= 1) {
+      return 'Suspicious';
+    }
+    if (rating <= 2) {
+      return 'Low';
+    }
+    if (rating <= 3) {
+      return 'Moderate';
+    }
+    if (rating <= 4) {
+      return 'High';
+    }
+    if (rating <= 5) {
+      return 'Critical';
+    }
+    return 'Unknown';
   },
   getConfidenceHuman(confidence) {
     if (!confidence || confidence === 0) {
