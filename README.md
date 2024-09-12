@@ -37,27 +37,7 @@ By default all organizations visible to the provided API User will be searched. 
 
 By default all organizations visible to the provided API User will be searched. This whitelist is a comma delimited list of organizations you want searched (organizations not listed will not be searched). This option cannot be used in conjunction with the "Organization Search Blocklist" option
 
-> Note that you cannot use both the Organization Search Allowlist and the Organization Search Blocklist.  
-
-## Custom Ports
-
-If your ThreatConnect instance is running on a custom port you will need to modify the `settings.threatConnectPort` property in the integration's `config.js` file:
-
-```
-vi /app/polarity-server/integrations/threatconnect/config/config.js
-```
-
-Find the property `settings.threatConnectPort` and set it to the proper port:
-
-```
-{
-  settings: {
-    threatConnectPort: 8443
-  }
-}
-```
-
-If you are using the default port (443) then you so not need to modify this setting.  This setting is required to rewrite all the links returns by the ThreatConnect REST API.  Without this setting, all external links within the integration will go to the default port of 443.
+> Note that you cannot use both the Organization Search Allowlist and the Organization Search Blocklist.
 
 ## Installation Instructions
 
