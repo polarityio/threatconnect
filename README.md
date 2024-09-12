@@ -8,7 +8,9 @@ https://threatconnect.com/
 
 The Polarity ThreatConnect integration allows Polarity to search for address, file, host, and email indicators in ThreatConnect.  The Polarity-ThreatConnect integrations includes interactive elements that allow Polarity user's to add and remove tags, modify the severity and confidence level of an indicator, and report false positives directly from the Polarity Overlay Window.
 
-![tc_3 0_demo](assets/overlay.gif)
+| ![](./assets/overlay1.png) | ![](./assets/overlay2.png)            |
+|----------------------------|---------------------------------------|
+| *ThreatAssess Details*     | *Associcated Indicators View* |
 
 ## ThreatConnect Integration Options
 
