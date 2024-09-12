@@ -1,3 +1,122 @@
+@border-color: #e4e9f2;
+
+.org-container {
+  margin-top: 15px;
+  border: 1px solid @border-color;
+  // border-bottom: 1px solid @border-color;
+  border-radius: 4px;
+
+  &:first-child {
+    margin-top: 0px;
+  }
+
+  .header-container {
+    border-bottom: 1px solid @border-color;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    &.expanded {
+      border-bottom: 0px;
+    }
+
+    &:hover {
+      box-shadow: rgba(0, 0, 0, 0.16) 0px 1px 4px !important;
+    }
+
+    .toggle-btn {
+      font-size: 12px;
+      padding: 0px;
+      height: 20px;
+
+      :active {
+        color: darken(#388e3c, 5%);
+      }
+    }
+  }
+
+  .content-container {
+    padding: 6px;
+  }
+}
+
+.paging-bar {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  justify-content: flex-end;
+
+  .paging-info {
+    margin: 0px 5px;
+  }
+
+  .paging-btn {
+    border: 1px solid #e4e9f2;
+    height: 20px;
+    padding: 0px 8px 0px 8px;
+
+    &:hover:enabled {
+      background-color: darken(#e4e9f2, 5%);
+    }
+  }
+}
+
+.preserve-whitespace {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.p-block {
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+.scrollable {
+  overflow-y: scroll;
+  max-height: 100px;
+}
+
+.view-link-width {
+  width: 75px;
+}
+
+.emphasize-text {
+  font-weight: 500 !important;
+}
+
+.dns-table {
+  .dns-table-ip {
+    width: 100px;
+  }
+
+  .dns-table-asn {
+    width: 60px;
+  }
+
+  .dns-table-org {
+    word-break: break-word;
+    word-wrap: break-word;
+  }
+
+  td {
+    padding: 2px 5px 2px 0px !important;
+  }
+
+  tr:nth-child(even) {
+    td {
+      padding-bottom: 10px !important;
+    }
+  }
+
+  tr:last-child {
+    td {
+      padding-bottom: 0px !important;
+    }
+  }
+}
+
 a.tc-link-tag {
   .threatconnect-summary-tag {
     background-color: #fff;
@@ -139,6 +258,83 @@ a.tc-link-tag {
   }
 }
 
+.score {
+  font-weight: 500;
+  font-size: 14px;
+
+  .score-readable {
+    text-transform: uppercase;
+    font-size: 12px;
+  }
+
+  &.critical {
+    color: rgb(125, 22, 22);
+  }
+
+  &.high {
+    color: rgb(217, 39, 54);
+  }
+
+  &.medium {
+    color: rgb(224, 108, 0);
+  }
+
+  &.low {
+    color: rgb(101, 119, 149)
+  }
+}
+
+.global-details-container {
+
+  position: relative;
+
+  .loading-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 11;
+    font-size: 14px;
+  }
+
+  &.loading {
+    &:after {
+      content: " ";
+      z-index: 10;
+      display: block;
+      position: absolute;
+      height: 100%;
+      top: 0;
+      left: 0;
+      right: 0;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.8);
+    }
+  }
+
+}
+
+.p-key {
+  line-height: 1.4em;
+}
+
+.p-title {
+  font-size: 12px;
+  color: rgb(101, 112, 134);
+  font-weight: 700;
+}
+
+.info-icon {
+  font-size: 10px;
+  color: rgb(101, 112, 134);
+  border: 1px solid rgb(101, 112, 134);
+  border-radius: 11px;
+  height: 11px;
+  width: 11px;
+  padding: 2px;
+}
+
+
 pre {
   overflow-y: scroll;
   overflow-x: auto;
@@ -146,7 +342,17 @@ pre {
   word-wrap: break-word;
   max-height: 150px;
   padding: 5px;
-  background-color: #eee;
+  border: 1px solid @border-color;
+  border-radius: 4px;
+  margin-bottom: 0px;
+}
+
+.active-icon {
+  color: #2a9d75;
+}
+
+.inactive-icon {
+  color: rgb(101, 112, 134);
 }
 
 .elementToFadeIn {
@@ -168,7 +374,7 @@ pre {
   }
 }
 
-.report-false-positive-btn {
+.action-btn {
   height: 25px;
   font-size: 0.775rem;
   margin-top: 5px;
@@ -184,7 +390,21 @@ pre {
   margin: 3px 0;
 
   .progress-bar {
-    background-color: rgb(242, 103, 36);
+    &.critical {
+      background-color: rgb(125, 22, 22);
+    }
+
+    &.high {
+      background-color: rgb(217, 39, 54);
+    }
+
+    &.medium {
+      background-color: rgb(224, 108, 0);
+    }
+
+    &.low {
+      background-color: rgb(101, 119, 149)
+    }
   }
 }
 

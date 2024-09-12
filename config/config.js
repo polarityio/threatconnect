@@ -77,7 +77,7 @@ module.exports = {
     ca: '',
     // An HTTP proxy to be used. Supports proxy Auth with Basic Auth, identical to support for
     // the url parameter (by embedding the auth info in the uri)
-    proxy: ""
+    proxy: ''
   },
   /**
    * Options that are displayed to the user/admin in the Polarity integration user-interface.  Should be structured
@@ -90,7 +90,8 @@ module.exports = {
     {
       key: 'url',
       name: 'ThreatConnect Instance API URL',
-      description: 'The API URL of the ThreatConnect instance you would like to connect to (including http:// or https://)',
+      description:
+        'The API URL of the ThreatConnect instance you would like to connect to (including http:// or https://)',
       default: '',
       type: 'text',
       userCanEdit: false,
@@ -111,6 +112,16 @@ module.exports = {
       description: 'The API (secret) Key associated with the provided Access ID',
       default: '',
       type: 'password',
+      userCanEdit: false,
+      adminOnly: true
+    },
+    {
+      key: 'searchInactiveIndicators',
+      name: 'Search Inactive Indicators',
+      description:
+        'If enabled, the integration will return indicators that are "inactive" in addition to "active" indicators.  Inactive indicators are not considered Indicators of Compromise and are kept for historical accuracy.',
+      default: true,
+      type: 'boolean',
       userCanEdit: false,
       adminOnly: true
     },
