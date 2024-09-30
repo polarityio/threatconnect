@@ -51,23 +51,7 @@
         <span class="p-value">No Threat Assess Score</span>
       {{/if}}
     </div>
-
-    <div>
-      <span class="p-key">Threat Assess Rating: </span>
-      {{#if firstIndicator.indicator.threatAssessRating}}
-        <span class="p-value">{{firstIndicator.indicator.threatAssessRating}} - {{firstIndicator.indicator.__threatAssessRatingHuman}}</span>
-      {{else}}
-        <span class="p-value">No Threat Assess Rating</span>
-      {{/if}}
-    </div>
-    <div>
-      <span class="p-key">Threat Assess Confidence: </span>
-      {{#if firstIndicator.indicator.threatAssessConfidence}}
-        <span class="p-value">{{firstIndicator.indicator.threatAssessConfidence}} - {{firstIndicator.indicator.__threatAssesConfidenceHuman}}</span>
-      {{else}}
-        <span class="p-value">No Threat Assess Confidence</span>
-      {{/if}}
-    </div>
+    
     <div class="d-flex justify-content-between align-items-center">
       <div class="p-title">Observations/False Positives</div>
       <div>
