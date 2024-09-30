@@ -57,8 +57,6 @@ polarity.export = PolarityComponent.extend({
         indicator.__confidenceHuman = this.getConfidenceHuman(indicator.confidence);
         indicator.__threatAssessScorePercentage = (indicator.threatAssessScore / 1000) * 100;
         indicator.__threatAssessScoreHuman = this.getScoreHuman(indicator.threatAssessScore);
-        indicator.__threatAssesConfidenceHuman = this.getConfidenceHuman(indicator.threatAssessConfidence);
-        indicator.__threatAssessRatingHuman = this.getRatingHuman(indicator.threatAssessRating);
 
         let totalAssociations = 0;
         if (indicator.associatedGroups && indicator.associatedGroups.data) {
