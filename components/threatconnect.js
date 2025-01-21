@@ -39,6 +39,7 @@ polarity.export = PolarityComponent.extend({
       this.set('isDetailsLoading', true);
     }
     this._super(...arguments);
+    this.set('newTagValues', {});
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
@@ -154,14 +155,15 @@ polarity.export = PolarityComponent.extend({
         });
     },
     addTag(indicatorId) {
-      const newTag = this.get('newTagValue').trim();
+      const newTag = this.get(`newTagValues.${indicatorId}`);
 
-      if (newTag.length === 0) {
+      if (!newTag || newTag.length === 0) {
         this.set('actionMessage', 'You must enter a tag');
         return;
       }
 
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
+
       const payload = {
         action: 'UPDATE_TAG',
         indicatorId,
@@ -180,7 +182,7 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set('newTagValue', '');
+          this.set(`newTagValues`, {});
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
