@@ -90,6 +90,9 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
+    toggleIsExpanded(organizationData) {
+      Ember.set(organizationData, 'isExpanded', !organizationData.isExpanded);
+    },
     stopPropagation: function (e) {
       e.stopPropagation();
       return false;

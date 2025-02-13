@@ -100,65 +100,87 @@
       <span class='p-footnote'>False positive already reported today</span>
     </div>
     <div class='d-flex flex-column'>
-      <div class='p-title'>Tags Across Owners</div>
+
       {{#each details.indicatorOrderById as |indicatorId|}}
-        {{#let (get indicators indicatorId) as |orgData|}}
-          <div class='emphasize-text'>
-            {{orgData.indicator.ownerName}}
-          </div>
-          {{#unless orgData.indicator.tags.data.length}}
-            <div class='p-footnote mb-2'>
-              <span>No Tags</span>
-            </div>
-          {{else}}
-            <div class='tag-container'>
-              {{#each orgData.indicator.tags.data as |tag tagIndex|}}
-                {{#if tag}}
-                  <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
-                    <span class='threatconnect-summary-tag'>
-                      {{#if tag.techniqueId}}
-                        &#38;
-                        {{tag.techniqueId}}
-                        -
-                      {{/if}}
-                      {{tag.name}}
-                      <span {{action 'deleteTag' indicatorId tag.name}}>
-                        {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
-                      </span>
-                    </span>
-                  </a>
+        {{#let (get indicators indicatorId) as |organizationData|}}
+          {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
+            <div {{action 'toggleIsExpanded' organizationData}} class='header-container'>
+              <div class='emphasize-text'>
+                {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
+                  <span>
+                    {{fa-icon icon='house' fixedWidth=true}}
+                    {{bs-tooltip title='This indicator is from your organization'}}
+                  </span>
                 {{/if}}
-              {{/each}}
+                {{organizationData.indicator.ownerName}}
+              </div>
+              <div>
+                <button class='btn toggle-btn p-action' title='View indicator details'>
+                  {{#if isDetailsLoading}}
+                    {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+                  {{else if organizationData.isExpanded}}
+                    {{fa-icon icon='chevron-up' fixedWidth=true}}
+                  {{else}}
+                    {{fa-icon icon='chevron-down' fixedWidth=true}}
+                  {{/if}}
+                </button>
+              </div>
             </div>
-            <div style='clear:both'></div>
-          {{/unless}}
-
-          <div class='input-group-append' style='margin-bottom: 10px;'>
-            <input
-              type='text'
-              class='form-control add-tag-input'
-              style=''
-              value={{newTagValues.indicatorId}}
-              oninput={{action (mut (get newTagValues indicatorId)) value='target.value'}}
-            />
-            <button
-              class='btn btn-secondary btn-add-tag'
-              type='button'
-              disabled={{if
-                (or indicators.indicatorId.__updatingTags (eq (get newTagValues indicatorId) ''))
-                true
-                false
-              }}
-              {{action 'addTag' indicatorId}}
-            >
-              {{#if indicators.indicatorId.__updatingTags}}
-                {{fa-icon 'spinner-third' spin=true}}
-              {{else}}
-                Add Tag
+            {{#unless organizationData.indicator.tags.data.length}}
+              <div class='p-footnote mb-2'>
+                <span>No Tags</span>
+              </div>
+            {{else}}
+              {{#if organizationData.isExpanded}}
+                <div class='tag-container'>
+                  {{#each organizationData.indicator.tags.data as |tag tagIndex|}}
+                    {{#if tag}}
+                      <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
+                        <span class='threatconnect-summary-tag'>
+                          {{#if tag.techniqueId}}
+                            &#38;
+                            {{tag.techniqueId}}
+                            -
+                          {{/if}}
+                          {{tag.name}}
+                          <span {{action 'deleteTag' indicatorId tag.name}}>
+                            {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
+                          </span>
+                        </span>
+                      </a>
+                    {{/if}}
+                  {{/each}}
+                </div>
+                <div style='clear:both'></div>
+                <div class='input-group-append' style='margin-bottom: 10px;'>
+                  <input
+                    type='text'
+                    class='form-control add-tag-input'
+                    style=''
+                    value={{newTagValues.indicatorId}}
+                    oninput={{action (mut (get newTagValues indicatorId)) value='target.value'}}
+                  />
+                  <button
+                    class='btn btn-secondary btn-add-tag'
+                    type='button'
+                    disabled={{if
+                      (or indicators.indicatorId.__updatingTags (eq (get newTagValues indicatorId) ''))
+                      true
+                      false
+                    }}
+                    {{action 'addTag' indicatorId}}
+                  >
+                    {{#if indicators.indicatorId.__updatingTags}}
+                      {{fa-icon 'spinner-third' spin=true}}
+                    {{else}}
+                      Add Tag
+                    {{/if}}
+                  </button>
+                </div>
               {{/if}}
-            </button>
-          </div>
+            {{/unless}}
 
+          {{/if}}
         {{/let}}
       {{/each}}
     </div>
@@ -374,6 +396,66 @@
                 {{/if}}
               {{/if}}
             {{/let}}
+
+            <div class='d-flex align-items-center justify-content-between'>
+              <div class='p-title'>
+                Tags
+              </div>
+              <div class='p-footnote'>
+                {{#if orgData.__updatingTags}}
+                  {{fa-icon icon='spinner-third' spin=true}}
+                  updating tags
+                {{/if}}
+              </div>
+            </div>
+            {{#unless orgData.indicator.tags.data.length}}
+              <div class='p-footnote mb-2'>
+                <span>No Tags</span>
+              </div>
+            {{else}}
+              <div class='tag-container'>
+                {{#each orgData.indicator.tags.data as |tag tagIndex|}}
+                  {{#if tag}}
+                    <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
+                      <span class='threatconnect-summary-tag'>
+                        {{#if tag.techniqueId}}
+                          &#38;
+                          {{tag.techniqueId}}
+                          -
+                        {{/if}}
+                        {{tag.name}}
+                        {{#if (eq details.defaultOwnerName orgData.indicator.ownerName)}}
+                          <span {{action 'deleteTag' indicatorId tag.name}}>
+                            {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
+                          </span>
+                        {{/if}}
+                      </span>
+                    </a>
+                  {{/if}}
+                {{/each}}
+              </div>
+              <div style='clear:both'></div>
+            {{/unless}}
+
+            {{#if (eq details.defaultOwnerName orgData.indicator.ownerName)}}
+              <div class='input-group input-group-sm'>
+                {{input
+                  type='text'
+                  placeholder='Add Tag'
+                  enter=(action 'addTag' orgData orgDataIndex)
+                  class='form-control add-tag-input'
+                  value=newTagValue
+                }}
+                <div class='input-group-append'>
+                  <button
+                    class='btn btn-secondary btn-add-tag'
+                    type='button'
+                    disabled={{if (or orgData.indicator.__addingTag (eq newTagValue.length 0)) true false}}
+                    {{action 'addTag' indicatorId}}
+                  >{{#if orgData.indicator.__addingTag}}{{fa-icon 'spinner-third' spin=true}}{{else}}Add Tag{{/if}}</button>
+                </div>
+              </div>
+            {{/if}}
 
             {{#if orgData.indicator.playbooks.length}}
               <div class='d-flex flex-row justify-content-between align-items-center playbook-title mb-1'>
