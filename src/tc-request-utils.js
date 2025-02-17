@@ -14,6 +14,12 @@ function convertPolarityTypeToThreatConnectSingular(type) {
       return 'address';
     case 'hash':
       return 'file';
+    case 'MD5':
+      return 'file';
+    case 'SHA1':
+      return 'file';
+    case 'SHA256':
+      return 'file';
     case 'email':
       return 'emailAddress';
     case 'domain':
@@ -31,6 +37,12 @@ function convertPolarityTypeToThreatConnectPlural(type) {
       return 'addresses';
     case 'hash':
       return 'files';
+    case 'MD5':
+      return 'files';
+    case 'SHA1':
+      return 'files';
+    case 'SHA256':
+      return 'files';      
     case 'email':
       return 'emailAddresses';
     case 'domain':
