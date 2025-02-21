@@ -13,12 +13,16 @@ polarity.export = PolarityComponent.extend({
   playbooks: Ember.computed.alias('details.playbooks'),
   indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
+  casesList: Ember.computed.alias('details.casesList'),
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
   firstIndicator: Ember.computed('indicators.[0]', function () {
     const indicatorOrderById = this.get('details.indicatorOrderById');
     return this.get('indicators')[indicatorOrderById[0]];
+  }),
+  casesArray: Ember.computed('casesList', function () {
+    return this.get('casesList') ? Object.values(this.get('casesList')) : [];
   }),
   pageSize: 10,
   indicatorMessage: '',

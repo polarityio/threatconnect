@@ -690,7 +690,7 @@
 
           {{!-- Cases Tab --}}
           {{#if (eq orgData.__activeTab "cases")}}
-            {{#if (and (is-empty orgData.indicator.associatedCases.data)(not orgData.__associatedCasesLoading)(not orgData.indicator.__associatedCasesTimeout))}}
+            {{#if (is-empty casesList)}}
               <h2>No Associated Cases</h2>
             {{else if orgData.__associatedCasesLoading}}
               {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Cases
@@ -705,7 +705,7 @@
               >Retry
               </button>
             {{/if}}
-            {{#if (gt orgData.indicator.__associatedCasesCount 0)}}
+            {{#if (not (is-empty casesList))}}
               <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   Associated Cases
@@ -716,7 +716,7 @@
                   </div>
                 {{/if}}
               </h1>
-              {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
+              {{#each casesArray as |case|}}
                 <div class="card">
                   <div class="card-title">
                     <div class="d-flex align-items-center justify-content-between">
@@ -791,6 +791,7 @@
                     </div>
                   </div>
                 </div>
+                
               {{/each}}
               {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
                 <div class="paging-bar">
