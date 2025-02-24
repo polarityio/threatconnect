@@ -1,5 +1,4 @@
 const fp = require('lodash/fp');
-const {} = require('./constants');
 const { requestWithDefaults } = require('../polarity-request');
 
 const parseErrorToReadableJson = (error) => JSON.parse(JSON.stringify(error, Object.getOwnPropertyNames(error)));
@@ -176,5 +175,6 @@ const updateArtifacts = (caseId, artifacts, options, requestWithDefaults) =>
   );
 
 module.exports = {
-  updateCases
+  updateCases,
+  updateTags
 };

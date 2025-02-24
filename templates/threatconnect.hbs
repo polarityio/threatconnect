@@ -792,6 +792,57 @@
                   </div>
                 </div>
                 
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="p-title">
+                    Tags
+                  </div>
+                  <div class="p-footnote">
+                    {{#if case.__updatingTags}}
+                      {{fa-icon icon="spinner-third" spin=true}} updating tags
+                    {{/if}}
+                  </div>
+                </div>
+
+                {{#unless case.tags.data.length}}
+                  <div class="p-footnote mb-2">
+                    <span>No Tags</span>
+                  </div>
+                {{else}}
+                  <div class="tag-container">
+                    {{#each case.tags.data as |tag tagIndex|}}
+                      {{#if tag}}
+                        <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
+                          <span class="threatconnect-summary-tag">
+                            {{#if tag.techniqueId}}
+                              &#38; {{tag.techniqueId}} -
+                            {{/if}}
+                            {{tag.name}}
+                          </span>
+                        </a>
+                      {{/if}}
+                    {{/each}}
+                  </div>
+                  <div style="clear:both"></div>
+                {{/unless}}
+
+                <div class="input-group input-group-sm">
+                  {{input
+                          type="text"
+                          placeholder="Add Tag"
+                          enter=(action "addCaseTag" case.id)
+                          class="form-control add-tag-input"
+                          value=newTagValue
+                  }}
+                  <div class="input-group-append">
+                    <button
+                            class="btn btn-secondary btn-add-tag"
+                            type="button"
+                            disabled={{if (or case.__addingTag (eq newTagValue.length 0)) true false}}
+                      {{action "addCaseTag" case.id}}
+                    >{{#if case.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
+                  </div>
+                </div>
+
               {{/each}}
               {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
                 <div class="paging-bar">

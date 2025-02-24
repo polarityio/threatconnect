@@ -188,6 +188,37 @@ polarity.export = PolarityComponent.extend({
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
+    addCaseTag(caseId) {
+      const newTags = this.get('newTagValue').trim();
+
+      if (newTags.length === 0) {
+        this.set('actionMessage', 'You must enter a tag');
+        return;
+      }
+
+      // this.set(`cases.${caseId}.__updatingTags`, true);
+      const payload = {
+        action: 'UPDATE_CASE_TAG',
+        caseId,
+        tags: newTags,
+        mode: 'append'
+      };
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error(result.error);
+            this._flashError(result.error.detail, 'error');
+          } else {
+            this.set('actionMessage', 'Added Tag');
+            this.set(`casesList.${caseId}.tags`, result.data);
+          }
+        })
+        .finally(() => {
+          this.set('newTagValue', '');
+          this.set(`casesList.${caseId}.__updatingTags`, false);
+        });
+    },
     deleteTag(indicatorId, tagToRemove) {
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
 
