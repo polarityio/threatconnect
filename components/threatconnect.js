@@ -158,8 +158,7 @@ polarity.export = PolarityComponent.extend({
         });
     },
     addTag(indicatorId) {
-      const newTag = this.get(`newTagValues.${indicatorId}`);
-
+      const newTag = this.get(`newTagValues.${indicatorId}`) || this.get('newTagValue');
       if (!newTag || newTag.length === 0) {
         this.set('actionMessage', 'You must enter a tag');
         return;
@@ -185,7 +184,10 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set(`newTagValues`, {});
+          this.setProperties({
+            newTagValues: {},
+            newTagValue: ''
+          });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
