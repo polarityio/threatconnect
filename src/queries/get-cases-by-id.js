@@ -1,29 +1,23 @@
-const async = require('async');
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
+const { getIndicatorsById } = require('./get-indicators-by-id');
 const SUCCESS_CODES = [200];
 
-async function getIndicatorsById(
-  indicatorIds,
-  options,
-  fields = [
-    'threatAssess',
-    'securityLabels',
-    'tags',
-    'observations',
-    'falsePositives',
-    'geolocation',
-    'associatedCases'
-  ]
-) {
+async function getCasesById(indicatorIdList, options) {
   const Logger = getLogger();
-  const indicatorsById = {};
+  const casesById = {};
+  const indicatorsList = await getIndicatorsById(indicatorIdList, options);
 
+  const casesIds = Object.values(indicatorsList)
+    .flatMap((indicator) => indicator.associatedCases?.data || [])
+    .map((caseObj) => caseObj.id);
+
+  const fields = ['artifacts', 'associatedIndicators', 'tags', 'attributes'];
   const requestOptions = {
-    uri: `${options.url}/v3/indicators`,
+    uri: `${options.url}/v3/cases`,
     qs: {
-      tql: `id in (${indicatorIds.join(',')}) and (indicatorActive=false or indicatorActive=true)`,
+      tql: `id in (${casesIds.join(',')})`,
       fields
     },
     useQuerystring: true,
@@ -48,15 +42,15 @@ async function getIndicatorsById(
     );
   }
 
-  Logger.trace({ apiResponse }, 'getIndicatorById API Response');
+  Logger.trace({ apiResponse }, 'getCasesById API Response');
 
-  apiResponse.body.data.forEach((indicator) => {
-    indicatorsById[indicator.id] = indicator;
+  apiResponse.body.data.forEach((caseObj) => {
+    casesById[caseObj.id] = caseObj;
   });
 
-  return indicatorsById;
+  return casesById;
 }
 
 module.exports = {
-  getIndicatorsById
+  getCasesById
 };

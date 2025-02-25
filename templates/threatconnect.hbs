@@ -690,7 +690,7 @@
 
           {{!-- Cases Tab --}}
           {{#if (eq orgData.__activeTab "cases")}}
-            {{#if (and (is-empty orgData.indicator.associatedCases.data)(not orgData.__associatedCasesLoading)(not orgData.indicator.__associatedCasesTimeout))}}
+            {{#if (is-empty casesList)}}
               <h2>No Associated Cases</h2>
             {{else if orgData.__associatedCasesLoading}}
               {{fa-icon icon="spinner-third" fixedWidth=true spin=true}} Loading Associated Cases
@@ -705,7 +705,7 @@
               >Retry
               </button>
             {{/if}}
-            {{#if (gt orgData.indicator.__associatedCasesCount 0)}}
+            {{#if (not (is-empty casesList))}}
               <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   Associated Cases
@@ -716,7 +716,7 @@
                   </div>
                 {{/if}}
               </h1>
-              {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
+              {{#each casesArray as |case|}}
                 <div class="card">
                   <div class="card-title">
                     <div class="d-flex align-items-center justify-content-between">
@@ -791,6 +791,59 @@
                     </div>
                   </div>
                 </div>
+                
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="p-title">
+                    Tags
+                  </div>
+                  <div class="p-footnote">
+                    {{#if case.__updatingTags}}
+                      {{fa-icon icon="spinner-third" spin=true}} updating tags
+                    {{/if}}
+                  </div>
+                </div>
+
+                {{#unless case.tags.data.length}}
+                  <div class="p-footnote mb-2">
+                    <span>No Tags</span>
+                  </div>
+                {{else}}
+                  <div class="tag-container">
+                    {{#each case.tags.data as |tag tagIndex|}}
+                      {{#if tag}}
+                        <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
+                          <span class="threatconnect-summary-tag">
+                            {{#if tag.techniqueId}}
+                              &#38; {{tag.techniqueId}} -
+                            {{/if}}
+                            {{tag.name}}
+                          </span>
+                        </a>
+                      {{/if}}
+                    {{/each}}
+                  </div>
+                  <div style="clear:both"></div>
+                {{/unless}}
+
+                <div class="input-group input-group-sm">
+                  {{input
+                          type="text"
+                          placeholder="Add Tag"
+                          enter=(action "addCaseTag" case.id)
+                          class="form-control add-tag-input"
+                          value=(get newCaseTagValues case.id)
+                          input=(action "updateCaseTagValue" case.id)
+                  }}
+                  <div class="input-group-append">
+                    <button
+                            class="btn btn-secondary btn-add-tag"
+                            type="button"
+                            disabled={{if (or case.__addingTag (eq newCaseTagValue.length 0)) true false}}
+                      {{action "addCaseTag" case.id}}
+                    >{{#if case.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
+                  </div>
+                </div>
+
               {{/each}}
               {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
                 <div class="paging-bar">

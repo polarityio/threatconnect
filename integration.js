@@ -12,6 +12,8 @@ const { reportFalsePositive } = require('./src/queries/report-false-positive');
 const { updateTag } = require('./src/queries/update-tag');
 const { filterInvalidEntities } = require('./src/tc-request-utils');
 const { getTokenOwner } = require('./src/queries/get-token-owner');
+const { getCasesById } = require('./src/queries/get-cases-by-id');
+const { updateCaseTags } = require('./src/queries/update-cases');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -75,7 +77,10 @@ async function onDetails(resultObject, options, cb) {
       const indicatorDetails = indicatorsById[indicatorId];
       resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
     }
+    const casesList = await getCasesById(indicatorIdList, options);
+    resultObject.data.details.casesList = casesList;
     Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
+
     cb(null, resultObject.data);
   } catch (error) {
     cb(error);
@@ -153,6 +158,18 @@ async function onMessage(payload, options, cb) {
     case 'UPDATE_TAG':
       try {
         const response = await updateTag(payload.indicatorId, payload.tag, payload.mode, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+      break;
+    case 'UPDATE_CASE_TAG':
+      try {
+        const response = await updateCaseTags(payload.caseId, payload.tag, payload.mode, options);
         cb(null, {
           data: response
         });
