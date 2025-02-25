@@ -14,6 +14,7 @@ polarity.export = PolarityComponent.extend({
   indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
   casesList: Ember.computed.alias('details.casesList'),
+  newCaseTagValues: {},
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
@@ -188,34 +189,38 @@ polarity.export = PolarityComponent.extend({
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
+    updateCaseTagValue(caseId, event) {
+      this.set(`newCaseTagValues.${caseId}`, event.target.value);
+    },
     addCaseTag(caseId) {
-      const newTags = this.get('newTagValue').trim();
+      const newTag = this.get(`newCaseTagValues.${caseId}`).trim();
 
-      if (newTags.length === 0) {
+      if (!newTag) {
         this.set('actionMessage', 'You must enter a tag');
         return;
       }
 
-      // this.set(`cases.${caseId}.__updatingTags`, true);
+      this.set(`casesList.${caseId}.__updatingTags`, true);
+
       const payload = {
         action: 'UPDATE_CASE_TAG',
         caseId,
-        tags: newTags,
+        tag: newTag,
         mode: 'append'
       };
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
-            console.error(result.error);
+            console.error('Result Error', result.error);
             this._flashError(result.error.detail, 'error');
           } else {
             this.set('actionMessage', 'Added Tag');
-            this.set(`casesList.${caseId}.tags`, result.data);
+            this.set(`casesList.${caseId}.tags`, result.data.tags);
           }
         })
         .finally(() => {
-          this.set('newTagValue', '');
+          this.set(`newCaseTagValues.${caseId}`, ''); // Clear only this case's input
           this.set(`casesList.${caseId}.__updatingTags`, false);
         });
     },

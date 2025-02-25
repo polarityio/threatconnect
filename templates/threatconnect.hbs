@@ -831,13 +831,14 @@
                           placeholder="Add Tag"
                           enter=(action "addCaseTag" case.id)
                           class="form-control add-tag-input"
-                          value=newTagValue
+                          value=(get newCaseTagValues case.id)
+                          input=(action "updateCaseTagValue" case.id)
                   }}
                   <div class="input-group-append">
                     <button
                             class="btn btn-secondary btn-add-tag"
                             type="button"
-                            disabled={{if (or case.__addingTag (eq newTagValue.length 0)) true false}}
+                            disabled={{if (or case.__addingTag (eq newCaseTagValue.length 0)) true false}}
                       {{action "addCaseTag" case.id}}
                     >{{#if case.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
                   </div>
