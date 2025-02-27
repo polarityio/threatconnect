@@ -99,91 +99,63 @@
     <div class='{{if firstIndicator.indicator.__showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}'>
       <span class='p-footnote'>False positive already reported today</span>
     </div>
-    <div class='d-flex flex-column'>
 
+    {{#let false as |hasDisplayedInput|}}
       {{#each details.indicatorOrderById as |indicatorId|}}
         {{#let (get indicators indicatorId) as |organizationData|}}
-          {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
-            <div {{action 'toggleIsExpanded' organizationData}} class='header-container'>
-              <div class='emphasize-text'>
-                {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
-                  <span>
-                    {{fa-icon icon='house' fixedWidth=true}}
-                    {{bs-tooltip title='This indicator is from your organization'}}
+          <div class='tag-container'>
+            {{#each organizationData.indicator.tags.data as |tag|}}
+              {{#if tag}}
+                <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
+                  <span class='threatconnect-summary-tag'>
+                    {{#if tag.techniqueId}}
+                      &#38;
+                      {{tag.techniqueId}}
+                      -
+                    {{/if}}
+                    {{tag.name}}
+                    {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
+                      <span {{action 'deleteTag' indicatorId tag.name}}>
+                        {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
+                      </span>
+                    {{/if}}
                   </span>
-                {{/if}}
-                {{organizationData.indicator.ownerName}}
-              </div>
-              <div>
-                <button class='btn toggle-btn p-action' title='View indicator details'>
-                  {{#if isDetailsLoading}}
-                    {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
-                  {{else if organizationData.isExpanded}}
-                    {{fa-icon icon='chevron-up' fixedWidth=true}}
-                  {{else}}
-                    {{fa-icon icon='chevron-down' fixedWidth=true}}
-                  {{/if}}
-                </button>
-              </div>
-            </div>
-            {{#unless organizationData.indicator.tags.data.length}}
-              <div class='p-footnote mb-2'>
-                <span>No Tags</span>
-              </div>
-            {{else}}
-              {{#if organizationData.isExpanded}}
-                <div class='tag-container'>
-                  {{#each organizationData.indicator.tags.data as |tag tagIndex|}}
-                    {{#if tag}}
-                      <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
-                        <span class='threatconnect-summary-tag'>
-                          {{#if tag.techniqueId}}
-                            &#38;
-                            {{tag.techniqueId}}
-                            -
-                          {{/if}}
-                          {{tag.name}}
-                          <span {{action 'deleteTag' indicatorId tag.name}}>
-                            {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
-                          </span>
-                        </span>
-                      </a>
-                    {{/if}}
-                  {{/each}}
-                </div>
-                <div style='clear:both'></div>
-                <div class='input-group-append' style='margin-bottom: 10px;'>
-                  <input
-                    type='text'
-                    class='form-control add-tag-input'
-                    style=''
-                    value={{newTagValues.indicatorId}}
-                    oninput={{action (mut (get newTagValues indicatorId)) value='target.value'}}
-                  />
-                  <button
-                    class='btn btn-secondary btn-add-tag'
-                    type='button'
-                    disabled={{if
-                      (or indicators.indicatorId.__updatingTags (eq (get newTagValues indicatorId) ''))
-                      true
-                      false
-                    }}
-                    {{action 'addTag' indicatorId}}
-                  >
-                    {{#if indicators.indicatorId.__updatingTags}}
-                      {{fa-icon 'spinner-third' spin=true}}
-                    {{else}}
-                      Add Tag
-                    {{/if}}
-                  </button>
-                </div>
+                </a>
               {{/if}}
-            {{/unless}}
-
+            {{/each}}
+          </div>
+          {{#if (and (eq details.defaultOwnerName organizationData.indicator.ownerName) (not hasDisplayedInput))}}
+            <span hidden>{{assign hasDisplayedInput true}}</span>
+            <div style='clear:both'></div>
+            <div class='input-group-append' style='margin-bottom: 10px;'>
+              <input
+                type='text'
+                class='form-control add-tag-input'
+                value={{newTagValues.indicatorId}}
+                oninput={{action (mut (get newTagValues indicatorId)) value='target.value'}}
+              />
+              <button
+                class='btn btn-secondary btn-add-tag'
+                type='button'
+                disabled={{if
+                  (or organizationData.indicator.__updatingTags (eq (get newTagValues indicatorId) ''))
+                  true
+                  false
+                }}
+                {{action 'addTag' indicatorId}}
+              >
+                {{#if organizationData.indicator.__updatingTags}}
+                  {{fa-icon 'spinner-third' spin=true}}
+                {{else}}
+                  Add Tag
+                {{/if}}
+              </button>
+            </div>
           {{/if}}
+
         {{/let}}
       {{/each}}
-    </div>
+    {{/let}}
   </div>
 </div>
 

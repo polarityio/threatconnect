@@ -20,6 +20,7 @@ polarity.export = PolarityComponent.extend({
     const indicatorOrderById = this.get('details.indicatorOrderById');
     return this.get('indicators')[indicatorOrderById[0]];
   }),
+  newTagValues: Ember.computed(() => ({})),
   pageSize: 10,
   indicatorMessage: '',
   indicatorErrorMessage: '',
@@ -39,7 +40,6 @@ polarity.export = PolarityComponent.extend({
       this.set('isDetailsLoading', true);
     }
     this._super(...arguments);
-    this.set('newTagValues', {});
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
