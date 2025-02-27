@@ -21,6 +21,7 @@ polarity.export = PolarityComponent.extend({
     return this.get('indicators')[indicatorOrderById[0]];
   }),
   newTagValues: Ember.computed(() => ({})),
+  isExpanded: false,
   pageSize: 10,
   indicatorMessage: '',
   indicatorErrorMessage: '',
@@ -90,6 +91,9 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
+    expandTags() {
+      this.toggleProperty('isExpanded');
+    },
     toggleIsExpanded(organizationData) {
       Ember.set(organizationData, 'isExpanded', !organizationData.isExpanded);
     },

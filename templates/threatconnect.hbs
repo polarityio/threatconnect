@@ -86,6 +86,7 @@
     <div class='d-flex align-items-center mt-1'>
       <button
         class='btn btn-secondary btn-sm action-btn'
+        style="margin-bottom: 10px;"
         {{action 'reportFalsePositive' firstIndicator.indicator.id}}
       >Report False Positive
       </button>
@@ -100,31 +101,52 @@
       <span class='p-footnote'>False positive already reported today</span>
     </div>
 
+    <div {{action 'expandTags'}} class='header-container'>
+      <div class='emphasize-text'>
+        All Tags
+      </div>
+      <div>
+        <button class='btn toggle-btn p-action' title='View indicator details'>
+          {{#if isDetailsLoading}}
+            {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+          {{else if isExpanded}}
+            {{fa-icon icon='chevron-up' fixedWidth=true}}
+          {{else}}
+            {{fa-icon icon='chevron-down' fixedWidth=true}}
+          {{/if}}
+        </button>
+      </div>
+    </div>
     {{#let false as |hasDisplayedInput|}}
       {{#each details.indicatorOrderById as |indicatorId|}}
         {{#let (get indicators indicatorId) as |organizationData|}}
-          <div class='tag-container'>
-            {{#each organizationData.indicator.tags.data as |tag|}}
-              {{#if tag}}
-                <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
-                  <span class='threatconnect-summary-tag'>
-                    {{#if tag.techniqueId}}
-                      &#38;
-                      {{tag.techniqueId}}
-                      -
-                    {{/if}}
-                    {{tag.name}}
-                    {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
-                      <span {{action 'deleteTag' indicatorId tag.name}}>
-                        {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
-                      </span>
-                    {{/if}}
-                  </span>
-                </a>
-              {{/if}}
-            {{/each}}
-          </div>
-          {{#if (and (eq details.defaultOwnerName organizationData.indicator.ownerName) (not hasDisplayedInput))}}
+          
+
+          {{!-- Conditionally display the tag container if expanded --}}
+          {{#if isExpanded}}
+            <div class='tag-container'>
+              {{#each organizationData.indicator.tags.data as |tag|}}
+                {{#if tag}}
+                  <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
+                    <span class='threatconnect-summary-tag'>
+                      {{#if tag.techniqueId}}
+                        &#38;
+                        {{tag.techniqueId}}
+                        -
+                      {{/if}}
+                      {{tag.name}}
+                      {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
+                        <span {{action 'deleteTag' indicatorId tag.name}}>
+                          {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
+                        </span>
+                      {{/if}}
+                    </span>
+                  </a>
+                {{/if}}
+              {{/each}}
+            </div>
+          {{/if}}
+          {{#if (and isExpanded (eq details.defaultOwnerName organizationData.indicator.ownerName) (not hasDisplayedInput))}}
             <span hidden>{{assign hasDisplayedInput true}}</span>
             <div style='clear:both'></div>
             <div class='input-group-append' style='margin-bottom: 10px;'>
