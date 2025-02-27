@@ -86,7 +86,7 @@
     <div class='d-flex align-items-center mt-1'>
       <button
         class='btn btn-secondary btn-sm action-btn'
-        style="margin-bottom: 10px;"
+        style='margin-bottom: 10px;'
         {{action 'reportFalsePositive' firstIndicator.indicator.id}}
       >Report False Positive
       </button>
@@ -120,9 +120,8 @@
     {{#let false as |hasDisplayedInput|}}
       {{#each details.indicatorOrderById as |indicatorId|}}
         {{#let (get indicators indicatorId) as |organizationData|}}
-          
 
-          {{!-- Conditionally display the tag container if expanded --}}
+          {{! Conditionally display the tag container if expanded }}
           {{#if isExpanded}}
             <div class='tag-container'>
               {{#each organizationData.indicator.tags.data as |tag|}}
@@ -146,7 +145,9 @@
               {{/each}}
             </div>
           {{/if}}
-          {{#if (and isExpanded (eq details.defaultOwnerName organizationData.indicator.ownerName) (not hasDisplayedInput))}}
+          {{#if
+            (and isExpanded (eq details.defaultOwnerName organizationData.indicator.ownerName) (not hasDisplayedInput))
+          }}
             <span hidden>{{assign hasDisplayedInput true}}</span>
             <div style='clear:both'></div>
             <div class='input-group-append' style='margin-bottom: 10px;'>
