@@ -25,6 +25,8 @@ polarity.export = PolarityComponent.extend({
   casesArray: Ember.computed('casesList', function () {
     return this.get('casesList') ? Object.values(this.get('casesList')) : [];
   }),
+  newTagValues: Ember.computed(() => ({})),
+  isExpanded: false,
   pageSize: 10,
   indicatorMessage: '',
   indicatorErrorMessage: '',
@@ -94,6 +96,12 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
+    expandTags() {
+      this.toggleProperty('isExpanded');
+    },
+    toggleIsExpanded(organizationData) {
+      Ember.set(organizationData, 'isExpanded', !organizationData.isExpanded);
+    },
     stopPropagation: function (e) {
       e.stopPropagation();
       return false;
@@ -159,14 +167,14 @@ polarity.export = PolarityComponent.extend({
         });
     },
     addTag(indicatorId) {
-      const newTag = this.get('newTagValue').trim();
-
-      if (newTag.length === 0) {
+      const newTag = this.get(`newTagValues.${indicatorId}`) || this.get('newTagValue');
+      if (!newTag || newTag.length === 0) {
         this.set('actionMessage', 'You must enter a tag');
         return;
       }
 
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
+
       const payload = {
         action: 'UPDATE_TAG',
         indicatorId,
@@ -185,7 +193,10 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
-          this.set('newTagValue', '');
+          this.setProperties({
+            newTagValues: {},
+            newTagValue: ''
+          });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
     },
