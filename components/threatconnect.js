@@ -13,12 +13,17 @@ polarity.export = PolarityComponent.extend({
   playbooks: Ember.computed.alias('details.playbooks'),
   indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
+  casesList: Ember.computed.alias('details.casesList'),
+  newCaseTagValues: {},
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
   firstIndicator: Ember.computed('indicators.[0]', function () {
     const indicatorOrderById = this.get('details.indicatorOrderById');
     return this.get('indicators')[indicatorOrderById[0]];
+  }),
+  casesArray: Ember.computed('casesList', function () {
+    return this.get('casesList') ? Object.values(this.get('casesList')) : [];
   }),
   newTagValues: Ember.computed(() => ({})),
   isExpanded: false,
@@ -193,6 +198,41 @@ polarity.export = PolarityComponent.extend({
             newTagValue: ''
           });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
+        });
+    },
+    updateCaseTagValue(caseId, event) {
+      this.set(`newCaseTagValues.${caseId}`, event.target.value);
+    },
+    addCaseTag(caseId) {
+      const newTag = this.get(`newCaseTagValues.${caseId}`).trim();
+
+      if (!newTag) {
+        this.set('actionMessage', 'You must enter a tag');
+        return;
+      }
+
+      this.set(`casesList.${caseId}.__updatingTags`, true);
+
+      const payload = {
+        action: 'UPDATE_CASE_TAG',
+        caseId,
+        tag: newTag,
+        mode: 'append'
+      };
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this._flashError(result.error.detail, 'error');
+          } else {
+            this.set('actionMessage', 'Added Tag');
+            this.set(`casesList.${caseId}.tags`, result.data.tags);
+          }
+        })
+        .finally(() => {
+          this.set(`newCaseTagValues.${caseId}`, ''); // Clear only this case's input
+          this.set(`casesList.${caseId}.__updatingTags`, false);
         });
     },
     deleteTag(indicatorId, tagToRemove) {
