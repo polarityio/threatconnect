@@ -13,6 +13,7 @@ polarity.export = PolarityComponent.extend({
   playbooks: Ember.computed.alias('details.playbooks'),
   indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
+  newCaseTagValues: {},
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
@@ -193,6 +194,45 @@ polarity.export = PolarityComponent.extend({
             newTagValue: ''
           });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
+        });
+    },
+    updateCaseTagValue(caseId, event) {
+      this.set(`newCaseTagValues.${caseId}`, event.target.value);
+    },
+    addCaseTag(caseId, indicatorId) {
+      const newTag = this.get(`newCaseTagValues.${caseId}`).trim();
+      if (!newTag) {
+        this.set('actionMessage', 'You must enter a tag');
+        return;
+      }
+      let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+
+      const caseToUpdate = casesArray.find((c) => c.id === caseId); // Find the specific case
+      if (caseToUpdate) {
+        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, true);
+      }
+
+      const payload = {
+        action: 'UPDATE_CASE_TAG',
+        caseId,
+        tag: newTag,
+        mode: 'append'
+      };
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this._flashError(result.error.detail, 'error');
+          } else {
+            this.set('actionMessage', 'Added Tag');
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.tags`, result.data.tags);
+          }
+        })
+        .finally(() => {
+          this.set(`newCaseTagValues.${caseId}`, '');
+          this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, false);
         });
     },
     deleteTag(indicatorId, tagToRemove) {
