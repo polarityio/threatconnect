@@ -78,7 +78,15 @@ async function onDetails(resultObject, options, cb) {
       resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
     }
     const casesList = await getCasesById(indicatorIdList, options);
-    resultObject.data.details.casesList = casesList;
+    Object.keys(resultObject.data.details.indicators).forEach((indicatorId) => {
+      const numericIndicatorId = Number(indicatorId);
+      if (casesList[numericIndicatorId] && casesList[numericIndicatorId].associatedCases) {
+        const associatedCases = casesList[numericIndicatorId].associatedCases;
+        resultObject.data.details.indicators[indicatorId].indicator.associatedCases = {
+          data: Object.values(associatedCases)
+        };
+      }
+    });
     Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
 
     cb(null, resultObject.data);

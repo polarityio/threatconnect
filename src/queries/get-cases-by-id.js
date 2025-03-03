@@ -6,12 +6,17 @@ const SUCCESS_CODES = [200];
 
 async function getCasesById(indicatorIdList, options) {
   const Logger = getLogger();
-  const casesById = {};
-  const indicatorsList = await getIndicatorsById(indicatorIdList, options);
+  const casesByIndicator = {};
+  const indicatorsListResponse = await getIndicatorsById(indicatorIdList, options);
 
-  const casesIds = Object.values(indicatorsList)
-    .flatMap((indicator) => indicator.associatedCases?.data || [])
-    .map((caseObj) => caseObj.id);
+  const casesIds = Object.values(indicatorsListResponse)
+    .flatMap((indicator) => (indicator.associatedCases?.data || []).map((caseObj) => caseObj.id))
+    .filter((id) => id !== undefined);
+
+  if (casesIds.length === 0) {
+    Logger.trace('No cases found for the given indicators.');
+    return {};
+  }
 
   const fields = ['artifacts', 'associatedIndicators', 'tags', 'attributes'];
   const requestOptions = {
@@ -44,11 +49,30 @@ async function getCasesById(indicatorIdList, options) {
 
   Logger.trace({ apiResponse }, 'getCasesById API Response');
 
-  apiResponse.body.data.forEach((caseObj) => {
-    casesById[caseObj.id] = caseObj;
+  Object.entries(indicatorsListResponse).forEach(([indicatorId, indicator]) => {
+    casesByIndicator[indicatorId] = {
+      indicatorId: parseInt(indicatorId, 10),
+      ownerName: indicator.ownerName,
+      associatedCases: {}
+    };
   });
 
-  return casesById;
+  apiResponse.body.data.forEach((caseObj) => {
+    Object.entries(indicatorsListResponse).forEach(([indicatorId, indicator]) => {
+      const associatedCases = indicator.associatedCases?.data || [];
+
+      // If the case ID is listed under the indicator, add it
+      if (associatedCases.some((c) => c.id === caseObj.id)) {
+        casesByIndicator[indicatorId].associatedCases[caseObj.id] = {
+          ...caseObj,
+          indicatorId: parseInt(indicatorId, 10),
+          ownerName: indicator.ownerName
+        };
+      }
+    });
+  });
+
+  return casesByIndicator;
 }
 
 module.exports = {
