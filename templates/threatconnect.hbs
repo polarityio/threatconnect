@@ -998,7 +998,6 @@
                           {{#if isEditing}}
                             <select class='info-bar-value' {{on 'change' (fn (action 'updateStatus' case.id))}}>
                               <option value='Open' selected={{eq case.status 'Open'}}>Open</option>
-                              <option value='In Progress' selected={{eq case.status 'In Progress'}}>In Progress</option>
                               <option value='Closed' selected={{eq case.status 'Closed'}}>Closed</option>
                             </select>
                           {{else}}
