@@ -979,13 +979,13 @@
                   </div>
                   <div class='card-item'>
                     <div class='p-block mb-1'>
-                      {{#if isEditing}}
+                      {{#if (get isEditingCases case.id)}}
                         <textarea
                           class='info-bar-value'
                           rows='3'
                           {{on 'input' (fn (action 'updateDescription' case.id))}}
                         >
-                          {{case.description}}
+                          {{or (get newCaseDescriptionValues case.id) case.description}}
                         </textarea>
                       {{else}}
                         {{case.description}}
@@ -995,10 +995,14 @@
                       <div class='info-bar-row'>
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Status</span>
-                          {{#if isEditing}}
-                            <select class='info-bar-value' {{on 'change' (fn (action 'updateStatus' case.id))}}>
-                              <option value='Open' selected={{eq case.status 'Open'}}>Open</option>
-                              <option value='Closed' selected={{eq case.status 'Closed'}}>Closed</option>
+                          {{#if (get isEditingCases case.id)}}
+                            <select
+                              class='info-bar-value'
+                              {{on 'change' (fn (action 'updateStatus' case.id))}}
+                              value={{or (get newCaseStatusValues case.id) case.status}}
+                            >
+                              <option value='Open'>Open</option>
+                              <option value='Closed'>Closed</option>
                             </select>
                           {{else}}
                             <span class='info-bar-value'>{{case.status}}</span>
@@ -1007,12 +1011,16 @@
 
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Severity</span>
-                          {{#if isEditing}}
-                            <select class='info-bar-value' {{on 'change' (fn (action 'updateSeverity' case.id))}}>
-                              <option value='Critical' selected={{eq case.severity 'Critical'}}>Critical</option>
-                              <option value='High' selected={{eq case.severity 'High'}}>High</option>
-                              <option value='Medium' selected={{eq case.severity 'Medium'}}>Medium</option>
-                              <option value='Low' selected={{eq case.severity 'Low'}}>Low</option>
+                          {{#if (get isEditingCases case.id)}}
+                            <select
+                              class='info-bar-value'
+                              {{on 'change' (fn (action 'updateSeverity' case.id))}}
+                              value={{or (get newCaseSeverityValues case.id) case.severity}}
+                            >
+                              <option value='Critical'>Critical</option>
+                              <option value='High'>High</option>
+                              <option value='Medium'>Medium</option>
+                              <option value='Low'>Low</option>
                             </select>
                           {{else}}
                             <span class='info-bar-value'>{{case.severity}}</span>
@@ -1021,36 +1029,27 @@
 
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Resolution</span>
-                          {{#if isEditing}}
-                            <select class='info-bar-value' {{on 'change' (fn (action 'updateResolution' case.id))}}>
-                              <option
-                                value='Containment Achieved'
-                                selected={{eq case.resolution 'Containment Achieved'}}
-                              >Containment Achieved</option>
-                              <option
-                                value='Deferred / Delayed'
-                                selected={{eq case.resolution 'Deferred / Delayed'}}
-                              >Deferred / Delayed</option>
-                              <option value='Escalated' selected={{eq case.resolution 'Escalated'}}>Escalated</option>
-                              <option value='False Positive' selected={{eq case.resolution 'False Positive'}}>False
-                                Positive</option>
-                              <option
-                                value='In Progress / Investigating'
-                                selected={{eq case.resolution 'In Progress / Investigating'}}
-                              >In Progress / Investigating</option>
-                              <option value='Rejected' selected={{eq case.resolution 'Rejected'}}>Rejected</option>
-                              <option
-                                value='Restoration Achieved'
-                                selected={{eq case.resolution 'Restoration Achieved'}}
-                              >Restoration Achieved</option>
+                          {{#if (get isEditingCases case.id)}}
+                            <select
+                              class='info-bar-value'
+                              {{on 'change' (fn (action 'updateResolution' case.id))}}
+                              value={{or (get newCaseResolutionValues case.id) case.resolution}}
+                            >
+                              <option value='Containment Achieved'>Containment Achieved</option>
+                              <option value='Deferred / Delayed'>Deferred / Delayed</option>
+                              <option value='Escalated'>Escalated</option>
+                              <option value='False Positive'>False Positive</option>
+                              <option value='In Progress / Investigating'>In Progress / Investigating</option>
+                              <option value='Rejected'>Rejected</option>
+                              <option value='Restoration Achieved'>Restoration Achieved</option>
                             </select>
                           {{else}}
                             <span class='info-bar-value'>{{case.resolution}}</span>
                           {{/if}}
                         </div>
 
-                        <button class='edit-button' {{action 'toggleEdit'}}>
-                          {{if isEditing 'Save' 'Edit'}}
+                        <button class='edit-button' {{action 'toggleEdit' case.id orgData.indicator.id}}>
+                          {{if (get isEditingCases case.id) 'Save' 'Edit'}}
                         </button>
                       </div>
                     </div>
