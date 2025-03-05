@@ -920,7 +920,7 @@
           {{/if}}
 
           {{! Cases Tab }}
-          
+
           {{#if (eq orgData.__activeTab 'cases')}}
             {{#if
               (and
@@ -979,28 +979,80 @@
                   </div>
                   <div class='card-item'>
                     <div class='p-block mb-1'>
-                      {{case.description}}
+                      {{#if isEditing}}
+                        <textarea
+                          class='info-bar-value'
+                          rows='3'
+                          {{on 'input' (fn (action 'updateDescription' case.id))}}
+                        >
+                          {{case.description}}
+                        </textarea>
+                      {{else}}
+                        {{case.description}}
+                      {{/if}}
                     </div>
                     <div class='info-bar mb-1 no-border'>
                       <div class='info-bar-row'>
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Status</span>
-                          <span class='info-bar-value {{if (eq case.status "Closed") "red-text" "green-text"}}'>
-                            {{case.status}}
-                          </span>
+                          {{#if isEditing}}
+                            <select class='info-bar-value' {{on 'change' (fn (action 'updateStatus' case.id))}}>
+                              <option value='Open' selected={{eq case.status 'Open'}}>Open</option>
+                              <option value='In Progress' selected={{eq case.status 'In Progress'}}>In Progress</option>
+                              <option value='Closed' selected={{eq case.status 'Closed'}}>Closed</option>
+                            </select>
+                          {{else}}
+                            <span class='info-bar-value'>{{case.status}}</span>
+                          {{/if}}
                         </div>
+
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Severity</span>
-                          <span class='info-bar-value {{case.__severityColor}}'>
-                            {{case.severity}}
-                          </span>
+                          {{#if isEditing}}
+                            <select class='info-bar-value' {{on 'change' (fn (action 'updateSeverity' case.id))}}>
+                              <option value='Critical' selected={{eq case.severity 'Critical'}}>Critical</option>
+                              <option value='High' selected={{eq case.severity 'High'}}>High</option>
+                              <option value='Medium' selected={{eq case.severity 'Medium'}}>Medium</option>
+                              <option value='Low' selected={{eq case.severity 'Low'}}>Low</option>
+                            </select>
+                          {{else}}
+                            <span class='info-bar-value'>{{case.severity}}</span>
+                          {{/if}}
                         </div>
+
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Resolution</span>
-                          <span class='info-bar-value'>
-                            {{case.resolution}}
-                          </span>
+                          {{#if isEditing}}
+                            <select class='info-bar-value' {{on 'change' (fn (action 'updateResolution' case.id))}}>
+                              <option
+                                value='Containment Achieved'
+                                selected={{eq case.resolution 'Containment Achieved'}}
+                              >Containment Achieved</option>
+                              <option
+                                value='Deferred / Delayed'
+                                selected={{eq case.resolution 'Deferred / Delayed'}}
+                              >Deferred / Delayed</option>
+                              <option value='Escalated' selected={{eq case.resolution 'Escalated'}}>Escalated</option>
+                              <option value='False Positive' selected={{eq case.resolution 'False Positive'}}>False
+                                Positive</option>
+                              <option
+                                value='In Progress / Investigating'
+                                selected={{eq case.resolution 'In Progress / Investigating'}}
+                              >In Progress / Investigating</option>
+                              <option value='Rejected' selected={{eq case.resolution 'Rejected'}}>Rejected</option>
+                              <option
+                                value='Restoration Achieved'
+                                selected={{eq case.resolution 'Restoration Achieved'}}
+                              >Restoration Achieved</option>
+                            </select>
+                          {{else}}
+                            <span class='info-bar-value'>{{case.resolution}}</span>
+                          {{/if}}
                         </div>
+
+                        <button class='edit-button' {{action 'toggleEdit'}}>
+                          {{if isEditing 'Save' 'Edit'}}
+                        </button>
                       </div>
                     </div>
                     <div>
@@ -1034,29 +1086,32 @@
                           timeZone=timezone
                         }}</span>
                     </div>
-                    <div class="d-flex align-items-center justify-content-between">
-                      <div class="p-title">
+                    <div class='d-flex align-items-center justify-content-between'>
+                      <div class='p-title'>
                         Tags
                       </div>
-                      <div class="p-footnote">
+                      <div class='p-footnote'>
                         {{#if case.__updatingTags}}
-                          {{fa-icon icon="spinner-third" spin=true}} updating tags
+                          {{fa-icon icon='spinner-third' spin=true}}
+                          updating tags
                         {{/if}}
                       </div>
                     </div>
 
                     {{#unless case.tags.data.length}}
-                      <div class="p-footnote mb-2">
+                      <div class='p-footnote mb-2'>
                         <span>No Tags</span>
                       </div>
                     {{else}}
-                      <div class="tag-container">
+                      <div class='tag-container'>
                         {{#each case.tags.data as |tag tagIndex|}}
                           {{#if tag}}
-                            <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
-                              <span class="threatconnect-summary-tag">
+                            <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
+                              <span class='threatconnect-summary-tag'>
                                 {{#if tag.techniqueId}}
-                                  &#38; {{tag.techniqueId}} -
+                                  &#38;
+                                  {{tag.techniqueId}}
+                                  -
                                 {{/if}}
                                 {{tag.name}}
                               </span>
@@ -1064,31 +1119,30 @@
                           {{/if}}
                         {{/each}}
                       </div>
-                      <div style="clear:both"></div>
+                      <div style='clear:both'></div>
                     {{/unless}}
-                    <div class="input-group input-group-sm">
+                    <div class='input-group input-group-sm'>
                       {{input
-                        type="text"
-                        placeholder="Add Tag"
-                        enter=(action "addCaseTag" case.id orgData.indicator.id)
-                        class="form-control add-tag-input"
+                        type='text'
+                        placeholder='Add Tag'
+                        enter=(action 'addCaseTag' case.id orgData.indicator.id)
+                        class='form-control add-tag-input'
                         value=(get newCaseTagValues case.id)
-                        input=(action "updateCaseTagValue" case.id)
+                        input=(action 'updateCaseTagValue' case.id)
                       }}
-                      <div class="input-group-append">
+                      <div class='input-group-append'>
                         <button
-                                class="btn btn-secondary btn-add-tag"
-                                type="button"
-                                disabled={{if (or case.__addingTag (eq newCaseTagValue.length 0)) true false}}
-                          {{action "addCaseTag" case.id orgData.indicator.id}}
-                        >{{#if case.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
+                          class='btn btn-secondary btn-add-tag'
+                          type='button'
+                          disabled={{if (or case.__addingTag (eq newCaseTagValue.length 0)) true false}}
+                          {{action 'addCaseTag' case.id orgData.indicator.id}}
+                        >{{#if case.__addingTag}}{{fa-icon 'spinner-third' spin=true}}{{else}}Add Tag{{/if}}</button>
                       </div>
                     </div>
                   </div>
-                  
+
                 </div>
 
-                
               {{/each}}
               {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
                 <div class='paging-bar'>

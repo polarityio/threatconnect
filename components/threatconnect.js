@@ -28,6 +28,11 @@ polarity.export = PolarityComponent.extend({
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
   isRunning: false,
+  isEditing: false,
+  newCaseStatusValues: {},
+  newCaseSeverityValues: {},
+  newCaseResolutionValues: {},
+  newCaseDescriptionValues: {},
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
@@ -92,6 +97,28 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
+    toggleEdit() {
+      this.set('isEditing', !this.get('isEditing'));
+    },
+
+    updateStatus(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseStatusValues.${caseId}`, newValue);
+    },
+
+    updateSeverity(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseSeverityValues.${caseId}`, newValue);
+    },
+
+    updateResolution(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseResolutionValues.${caseId}`, newValue);
+    },
+    updateDescription(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseDescriptionValues.${caseId}`, newValue);
+    },
     expandTags() {
       this.toggleProperty('isExpanded');
     },
