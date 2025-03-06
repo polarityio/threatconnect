@@ -107,19 +107,15 @@ polarity.export = PolarityComponent.extend({
       }
     },
     saveCaseUpdates(caseId, indicatorId) {
-      const newStatus = this.get(`newCaseStatusValues.${caseId}`);
-      const newSeverity = this.get(`newCaseSeverityValues.${caseId}`);
-      const newResolution = this.get(`newCaseResolutionValues.${caseId}`);
-      const newDescription = this.get(`newCaseDescriptionValues.${caseId}`);
-
-      if (!newStatus && !newSeverity && !newResolution && !newDescription) {
-        this.set('actionMessage', 'No changes to save');
-        return;
-      }
+      const newValues = {
+        status: this.get(`newCaseStatusValues.${caseId}`),
+        severity: this.get(`newCaseSeverityValues.${caseId}`),
+        resolution: this.get(`newCaseResolutionValues.${caseId}`),
+        description: this.get(`newCaseDescriptionValues.${caseId}`)
+      };
 
       let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
-      console.log('CASES ARRAY', indicatorPath);
       const caseToUpdate = casesArray.find((c) => c.id === caseId);
       if (caseToUpdate) {
         this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, true);
@@ -131,11 +127,6 @@ polarity.export = PolarityComponent.extend({
         mode: 'append'
       };
 
-      if (newStatus) payload.status = newStatus;
-      if (newSeverity) payload.severity = newSeverity;
-      if (newResolution) payload.resolution = newResolution;
-      if (newDescription) payload.description = newDescription;
-      console.log('PAYLOAD', payload);
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
@@ -143,13 +134,11 @@ polarity.export = PolarityComponent.extend({
             this._flashError(result.error.detail, 'error');
           } else {
             this.set('actionMessage', 'Case updated successfully');
-
-            if (newStatus) this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.status`, newStatus);
-            if (newSeverity) this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.severity`, newSeverity);
-            if (newResolution)
-              this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.resolution`, newResolution);
-            if (newDescription)
-              this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.description`, newDescription);
+            Object.entries(newValues).forEach(([key, value]) => {
+              if (value) {
+                this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
+              }
+            });
           }
         })
         .finally(() => {
@@ -160,8 +149,8 @@ polarity.export = PolarityComponent.extend({
             [`newCaseDescriptionValues.${caseId}`]: null
           });
           this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, false);
-          this.set(`isEditingCases.${caseId}`, false);
         });
+      this.set(`isEditingCases.${caseId}`, false);
     },
     updateStatus(caseId, event) {
       let newValue = event.target.value;

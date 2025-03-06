@@ -1065,7 +1065,10 @@
                           {{/if}}
                         </div>
 
-                        <button class='edit-button' {{action 'toggleEdit' case.id orgData.indicator.id}}>
+                        <button
+                          class='btn btn-secondary btn-add-tag'
+                          {{action 'toggleEdit' case.id orgData.indicator.id}}
+                        >
                           {{if (get isEditingCases case.id) 'Save' 'Edit'}}
                         </button>
                       </div>
