@@ -127,7 +127,8 @@ polarity.export = PolarityComponent.extend({
 
       const payload = {
         action: 'UPDATE_CASE',
-        caseId
+        caseId,
+        mode: 'append'
       };
 
       if (newStatus) payload.status = newStatus;
@@ -138,7 +139,7 @@ polarity.export = PolarityComponent.extend({
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
-            console.error(result.error);
+            console.error('ERR', result.error);
             this._flashError(result.error.detail, 'error');
           } else {
             this.set('actionMessage', 'Case updated successfully');
@@ -162,19 +163,20 @@ polarity.export = PolarityComponent.extend({
           this.set(`isEditingCases.${caseId}`, false);
         });
     },
-    updateStatus(caseId, newValue) {
+    updateStatus(caseId, event) {
+      let newValue = event.target.value;
       this.set(`newCaseStatusValues.${caseId}`, newValue);
     },
-
-    updateSeverity(caseId, newValue) {
+    updateSeverity(caseId, event) {
+      let newValue = event.target.value;
       this.set(`newCaseSeverityValues.${caseId}`, newValue);
     },
-
-    updateResolution(caseId, newValue) {
+    updateResolution(caseId, event) {
+      let newValue = event.target.value;
       this.set(`newCaseResolutionValues.${caseId}`, newValue);
     },
-
-    updateDescription(caseId, newValue) {
+    updateDescription(caseId, event) {
+      let newValue = event.target.value;
       this.set(`newCaseDescriptionValues.${caseId}`, newValue);
     },
     expandTags() {

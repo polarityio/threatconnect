@@ -14,6 +14,7 @@ const { filterInvalidEntities } = require('./src/tc-request-utils');
 const { getTokenOwner } = require('./src/queries/get-token-owner');
 const { getCasesById } = require('./src/queries/get-cases-by-id');
 const { updateCaseTags } = require('./src/queries/update-cases');
+const { updateCase } = require('./src/queries/update-cases');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -178,6 +179,18 @@ async function onMessage(payload, options, cb) {
     case 'UPDATE_CASE_TAG':
       try {
         const response = await updateCaseTags(payload.caseId, payload.tag, payload.mode, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+      break;
+    case 'UPDATE_CASE':
+      try {
+        const response = await updateCase(payload, options);
         cb(null, {
           data: response
         });

@@ -978,28 +978,37 @@
 
                   </div>
                   <div class='card-item'>
-                    <div class='p-block mb-1'>
-                      {{#if (get isEditingCases case.id)}}
-                        <textarea
-                          class='info-bar-value'
-                          rows='3'
-                          {{on 'input' (fn (action 'updateDescription' case.id))}}
-                        >
-                          {{or (get newCaseDescriptionValues case.id) case.description}}
-                        </textarea>
-                      {{else}}
-                        {{case.description}}
-                      {{/if}}
-                    </div>
                     <div class='info-bar mb-1 no-border'>
+                      <div class='info-bar-pill'>
+                        <span class='info-bar-key'>Description</span>
+                        {{#if (get isEditingCases case.id)}}
+                          <textarea
+                            class='info-bar-value'
+                            rows='3'
+                            {{on 'input' (fn (action 'updateDescription' case.id))}}
+                          >
+                            {{if
+                              (get newCaseDescriptionValues case.id)
+                              (get newCaseDescriptionValues case.id)
+                              case.description
+                            }}
+                          </textarea>
+                        {{else}}
+                          <span class='info-bar-value'>{{case.description}}</span>
+                        {{/if}}
+                      </div>
                       <div class='info-bar-row'>
                         <div class='info-bar-pill'>
                           <span class='info-bar-key'>Status</span>
                           {{#if (get isEditingCases case.id)}}
                             <select
                               class='info-bar-value'
+                              value={{if
+                                (get newCaseStatusValues case.id)
+                                (get newCaseStatusValues case.id)
+                                case.status
+                              }}
                               {{on 'change' (fn (action 'updateStatus' case.id))}}
-                              value={{or (get newCaseStatusValues case.id) case.status}}
                             >
                               <option value='Open'>Open</option>
                               <option value='Closed'>Closed</option>
@@ -1015,12 +1024,16 @@
                             <select
                               class='info-bar-value'
                               {{on 'change' (fn (action 'updateSeverity' case.id))}}
-                              value={{or (get newCaseSeverityValues case.id) case.severity}}
+                              value={{if
+                                (get newCaseSeverityValues case.id)
+                                (get newCaseSeverityValues case.id)
+                                case.severity
+                              }}
                             >
-                              <option value='Critical'>Critical</option>
-                              <option value='High'>High</option>
-                              <option value='Medium'>Medium</option>
-                              <option value='Low'>Low</option>
+                              <option value='Critical' selected={{eq case.severity 'Critical'}}>Critical</option>
+                              <option value='High' selected={{eq case.severity 'High'}}>High</option>
+                              <option value='Medium' selected={{eq case.severity 'Medium'}}>Medium</option>
+                              <option value='Low' selected={{eq case.severity 'Low'}}>Low</option>
                             </select>
                           {{else}}
                             <span class='info-bar-value'>{{case.severity}}</span>
@@ -1032,8 +1045,12 @@
                           {{#if (get isEditingCases case.id)}}
                             <select
                               class='info-bar-value'
+                              value={{if
+                                (get newCaseResolutionValues case.id)
+                                (get newCaseResolutionValues case.id)
+                                case.resolution
+                              }}
                               {{on 'change' (fn (action 'updateResolution' case.id))}}
-                              value={{or (get newCaseResolutionValues case.id) case.resolution}}
                             >
                               <option value='Containment Achieved'>Containment Achieved</option>
                               <option value='Deferred / Delayed'>Deferred / Delayed</option>
