@@ -15,6 +15,7 @@ const { getTokenOwner } = require('./src/queries/get-token-owner');
 const { getCasesById } = require('./src/queries/get-cases-by-id');
 const { updateCaseTags } = require('./src/queries/update-cases');
 const { updateCase } = require('./src/queries/update-cases');
+const { getCaseAttributeTypes } = require('./src/queries/get-case-attribute-types');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -79,6 +80,7 @@ async function onDetails(resultObject, options, cb) {
       resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
     }
     const casesList = await getCasesById(indicatorIdList, options);
+    // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
     Object.keys(resultObject.data.details.indicators).forEach((indicatorId) => {
       const numericIndicatorId = Number(indicatorId);
       if (casesList[numericIndicatorId] && casesList[numericIndicatorId].associatedCases) {
@@ -88,6 +90,9 @@ async function onDetails(resultObject, options, cb) {
         };
       }
     });
+
+    const caseAttributeTypes = await getCaseAttributeTypes(options);
+    resultObject.data.details.caseAttributeTypes = caseAttributeTypes.body;
     Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
 
     cb(null, resultObject.data);

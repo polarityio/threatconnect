@@ -62,7 +62,7 @@ async function updateCaseTags(caseId, tag, mode, options) {
 /**
  * Used to add or remove tags to an indicator
  *
- * @param payload
+ * @param payload contains the fields that need to be updated
  * @param options user options object
  * @returns {Promise<{}>}
  */

@@ -127,30 +127,34 @@ polarity.export = PolarityComponent.extend({
         mode: 'append'
       };
 
-      this.sendIntegrationMessage(payload)
-        .then((result) => {
-          if (result.error) {
-            console.error('ERR', result.error);
-            this._flashError(result.error.detail, 'error');
-          } else {
-            this.set('actionMessage', 'Case updated successfully');
-            Object.entries(newValues).forEach(([key, value]) => {
-              if (value) {
-                this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
-              }
+      if (Object.values(newValues).some((value) => value)) {
+        this.sendIntegrationMessage(payload)
+          .then((result) => {
+            if (result.error) {
+              console.error('ERR', result.error);
+              this._flashError(result.error.detail, 'error');
+            } else {
+              this.set('actionMessage', 'Case updated successfully');
+              Object.entries(newValues).forEach(([key, value]) => {
+                if (value) {
+                  this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
+                }
+              });
+            }
+          })
+          .finally(() => {
+            this.setProperties({
+              [`newCaseStatusValues.${caseId}`]: null,
+              [`newCaseSeverityValues.${caseId}`]: null,
+              [`newCaseResolutionValues.${caseId}`]: null,
+              [`newCaseDescriptionValues.${caseId}`]: null
             });
-          }
-        })
-        .finally(() => {
-          this.setProperties({
-            [`newCaseStatusValues.${caseId}`]: null,
-            [`newCaseSeverityValues.${caseId}`]: null,
-            [`newCaseResolutionValues.${caseId}`]: null,
-            [`newCaseDescriptionValues.${caseId}`]: null
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, false);
           });
-          this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, false);
-        });
-      this.set(`isEditingCases.${caseId}`, false);
+        this.set(`isEditingCases.${caseId}`, false);
+      } else {
+        this.set(`isEditingCases.${caseId}`, false);
+      }
     },
     updateStatus(caseId, event) {
       let newValue = event.target.value;

@@ -18,7 +18,7 @@ async function getCasesById(indicatorIdList, options) {
     return {};
   }
 
-  const fields = ['artifacts', 'associatedIndicators', 'tags', 'attributes'];
+  const fields = ['tags', 'attributes'];
   const requestOptions = {
     uri: `${options.url}/v3/cases`,
     qs: {
@@ -38,7 +38,7 @@ async function getCasesById(indicatorIdList, options) {
     (apiResponse.body && apiResponse.body.status && apiResponse.body.status !== 'Success')
   ) {
     throw new ApiRequestError(
-      `Unexpected status code ${apiResponse.statusCode} received when fetching indicator details via the ThreatConnect API`,
+      `Unexpected status code ${apiResponse.statusCode} received when fetching Cases details via the ThreatConnect API`,
       {
         statusCode: apiResponse.statusCode,
         requestOptions: apiResponse.requestOptions,
