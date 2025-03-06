@@ -1065,6 +1065,27 @@
                           {{/if}}
                         </div>
 
+                        {{#if (get isEditingCases case.id)}}
+                          <div class='info-bar-pill'>
+                            <span class='info-bar-key'>Attributes</span>
+                            <select
+                              class='info-bar-value'
+                              value={{if
+                                (get newCaseAttributeValues case.id)
+                                (get newCaseAttributeValues case.id)
+                                case.selectedAttribute
+                              }}
+                              {{on 'change' (fn (action 'updateAttributes' case.id))}}
+                            >
+                              {{#each caseAttributeTypes.data as |attribute|}}
+                                <option value='{{json-stringify attribute}}'>
+                                  {{attribute.name}}
+                                </option>
+                              {{/each}}
+                            </select>
+                          </div>
+                        {{/if}}
+
                         <button
                           class='btn btn-secondary btn-add-tag'
                           {{action 'toggleEdit' case.id orgData.indicator.id}}

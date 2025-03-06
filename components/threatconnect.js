@@ -33,6 +33,7 @@ polarity.export = PolarityComponent.extend({
   newCaseSeverityValues: {},
   newCaseResolutionValues: {},
   newCaseDescriptionValues: {},
+  caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
@@ -127,6 +128,8 @@ polarity.export = PolarityComponent.extend({
         mode: 'append'
       };
 
+      Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
+
       if (Object.values(newValues).some((value) => value)) {
         this.sendIntegrationMessage(payload)
           .then((result) => {
@@ -169,6 +172,10 @@ polarity.export = PolarityComponent.extend({
       this.set(`newCaseResolutionValues.${caseId}`, newValue);
     },
     updateDescription(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseDescriptionValues.${caseId}`, newValue);
+    },
+    updateAttributes(caseId, event) {
       let newValue = event.target.value;
       this.set(`newCaseDescriptionValues.${caseId}`, newValue);
     },
