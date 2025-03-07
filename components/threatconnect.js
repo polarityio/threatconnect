@@ -35,7 +35,7 @@ polarity.export = PolarityComponent.extend({
   newCaseDescriptionValues: {},
   newCaseAttributeValues: {},
   caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
-  caseAttributes: Ember.computed('indicators', function () {
+  existingCaseAttributes: Ember.computed('indicators', function () {
     let indicators = this.get('indicators') || {};
     let casesArray = [];
 
@@ -44,7 +44,7 @@ polarity.export = PolarityComponent.extend({
       associatedCases.forEach((caseItem) => {
         let attributes = caseItem.attributes.data || [];
         casesArray.push({
-          id: caseItem.id,
+          caseId: caseItem.id,
           attributes: attributes.map((attr) => ({
             type: attr.type,
             value: attr.value
@@ -55,6 +55,7 @@ polarity.export = PolarityComponent.extend({
     console.log('Cases Array', casesArray);
     return casesArray;
   }),
+  newCaseAttributes: [],
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
@@ -129,22 +130,22 @@ polarity.export = PolarityComponent.extend({
       }
     },
     saveCaseUpdates(caseId, indicatorId) {
-      const caseAttributes = this.get('caseAttributes') || [];
+      const existingCaseAttributes = this.get('newCaseAttributes') || [];
       let data = [];
-      caseAttributes.forEach((item) => {
-        if (item.id === caseId) {
+      existingCaseAttributes.forEach((item) => {
+        if (item.caseId === caseId) {
           data = data.concat(item.attributes);
         }
       });
 
-      console.log('Case Attributes', data);
+      console.log('Attributes to be updated:', data);
 
       const newValues = {
         status: this.get(`newCaseStatusValues.${caseId}`),
         severity: this.get(`newCaseSeverityValues.${caseId}`),
         resolution: this.get(`newCaseResolutionValues.${caseId}`),
         description: this.get(`newCaseDescriptionValues.${caseId}`),
-        attributes: this.get(`caseAttributes`)
+        attributes: { data: data }
       };
 
       let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
@@ -218,16 +219,26 @@ polarity.export = PolarityComponent.extend({
       };
 
       console.log('Transformed Value', newValue);
-      let caseAttributes = this.get('caseAttributes') || [];
+      let existingCaseAttributes = this.get('existingCaseAttributes') || [];
+      let newCaseAttributes = this.get('newCaseAttributes') || [];
 
-      caseAttributes.push({
-        id: caseId,
+      // for display
+      existingCaseAttributes.push({
+        caseId: caseId,
         attributes: newValue.data
       });
 
-      console.log('Updated Case Attributes', caseAttributes);
+      // for logic:
+      newCaseAttributes.push({
+        caseId: caseId,
+        attributes: newValue.data
+      });
 
-      this.set('caseAttributes', [...caseAttributes]);
+      console.log('New Case Attributes', newCaseAttributes);
+
+      console.log('Existing Case Attributes', existingCaseAttributes);
+
+      this.set('existingCaseAttributes', [...existingCaseAttributes]);
 
       this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
     },
