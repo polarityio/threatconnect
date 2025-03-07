@@ -206,9 +206,19 @@ polarity.export = PolarityComponent.extend({
       let newValue = {
         data: [{ type: parsedValue.name, value: parsedValue.description }]
       };
+
       console.log('Transformed Value', newValue.data);
-      const caseAttributes = this.get('caseAttributes');
-      console.log('Case Attributes', caseAttributes);
+      let caseAttributes = this.get('caseAttributes') || [];
+
+      caseAttributes.push({
+        id: caseId,
+        attributes: newValue.data
+      });
+
+      console.log('Updated Case Attributes', caseAttributes);
+
+      this.set('caseAttributes', [...caseAttributes]);
+
       this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
     },
     expandTags() {
