@@ -129,12 +129,22 @@ polarity.export = PolarityComponent.extend({
       }
     },
     saveCaseUpdates(caseId, indicatorId) {
+      const caseAttributes = this.get('caseAttributes') || [];
+      let data = [];
+      caseAttributes.forEach((item) => {
+        if (item.id === caseId) {
+          data = data.concat(item.attributes);
+        }
+      });
+
+      console.log('Case Attributes', data);
+
       const newValues = {
         status: this.get(`newCaseStatusValues.${caseId}`),
         severity: this.get(`newCaseSeverityValues.${caseId}`),
         resolution: this.get(`newCaseResolutionValues.${caseId}`),
         description: this.get(`newCaseDescriptionValues.${caseId}`),
-        attributes: this.get(`newCaseAttributeValues.${caseId}`)
+        attributes: this.get(`caseAttributes`)
       };
 
       let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
@@ -207,7 +217,7 @@ polarity.export = PolarityComponent.extend({
         data: [{ type: parsedValue.name, value: parsedValue.description }]
       };
 
-      console.log('Transformed Value', newValue.data);
+      console.log('Transformed Value', newValue);
       let caseAttributes = this.get('caseAttributes') || [];
 
       caseAttributes.push({
