@@ -106,6 +106,13 @@ async function updateCase(payload, options) {
     };
   }
 
+  const attributes = payload.attributes;
+  if (attributes && attributes !== 'undefined') {
+    requestOptions.body = {
+      attributes: attributes
+    };
+  }
+
   Logger.trace({ requestOptions }, 'Request Options');
 
   const apiResponse = await polarityRequest.request(requestOptions, options);

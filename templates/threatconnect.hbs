@@ -1067,7 +1067,7 @@
 
                         {{#if (get isEditingCases case.id)}}
                           <div class='info-bar-pill'>
-                            <span class='info-bar-key'>Attributes</span>
+                            <span class='info-bar-key'>Attribute Types</span>
                             <select
                               class='info-bar-value'
                               value={{if
@@ -1093,7 +1093,26 @@
                           {{if (get isEditingCases case.id) 'Save' 'Edit'}}
                         </button>
                       </div>
+
+                      {{#each caseAttributes as |caseAttr|}}
+                        {{#if (eq caseAttr.id case.id)}}
+                          <div class='info-bar-pill'>
+                            <span class='info-bar-key'>Case Attributes</span>
+                            <div class='info-bar-value'>
+                              {{#if caseAttr.attributes.length}}
+                                {{#each caseAttr.attributes as |attribute|}}
+                                  <div><strong>{{attribute.type}}:</strong> {{attribute.value}}</div>
+                                {{/each}}
+                              {{else}}
+                                <span>No attributes assigned</span>
+                              {{/if}}
+                            </div>
+                          </div>
+                        {{/if}}
+                      {{/each}}
+
                     </div>
+
                     <div>
                       <span class='p-key'>Owner:</span>
                       <span class='p-value'>{{case.owner}}</span>

@@ -33,7 +33,28 @@ polarity.export = PolarityComponent.extend({
   newCaseSeverityValues: {},
   newCaseResolutionValues: {},
   newCaseDescriptionValues: {},
+  newCaseAttributeValues: {},
   caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
+  caseAttributes: Ember.computed('indicators', function () {
+    let indicators = this.get('indicators') || {};
+    let casesArray = [];
+
+    Object.values(indicators).forEach((indicatorObj) => {
+      let associatedCases = indicatorObj.indicator.associatedCases.data || [];
+      associatedCases.forEach((caseItem) => {
+        let attributes = caseItem.attributes.data || [];
+        casesArray.push({
+          id: caseItem.id,
+          attributes: attributes.map((attr) => ({
+            type: attr.type,
+            value: attr.value
+          }))
+        });
+      });
+    });
+    console.log('Cases Array', casesArray);
+    return casesArray;
+  }),
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
@@ -112,7 +133,8 @@ polarity.export = PolarityComponent.extend({
         status: this.get(`newCaseStatusValues.${caseId}`),
         severity: this.get(`newCaseSeverityValues.${caseId}`),
         resolution: this.get(`newCaseResolutionValues.${caseId}`),
-        description: this.get(`newCaseDescriptionValues.${caseId}`)
+        description: this.get(`newCaseDescriptionValues.${caseId}`),
+        attributes: this.get(`newCaseAttributeValues.${caseId}`)
       };
 
       let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
@@ -130,6 +152,8 @@ polarity.export = PolarityComponent.extend({
 
       Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
 
+      console.log('Payload', payload);
+
       if (Object.values(newValues).some((value) => value)) {
         this.sendIntegrationMessage(payload)
           .then((result) => {
@@ -138,6 +162,7 @@ polarity.export = PolarityComponent.extend({
               this._flashError(result.error.detail, 'error');
             } else {
               this.set('actionMessage', 'Case updated successfully');
+              console.log('Result', result);
               Object.entries(newValues).forEach(([key, value]) => {
                 if (value) {
                   this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
@@ -150,7 +175,8 @@ polarity.export = PolarityComponent.extend({
               [`newCaseStatusValues.${caseId}`]: null,
               [`newCaseSeverityValues.${caseId}`]: null,
               [`newCaseResolutionValues.${caseId}`]: null,
-              [`newCaseDescriptionValues.${caseId}`]: null
+              [`newCaseDescriptionValues.${caseId}`]: null,
+              [`newCaseAttributeValues.${caseId}`]: null
             });
             this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, false);
           });
@@ -176,8 +202,14 @@ polarity.export = PolarityComponent.extend({
       this.set(`newCaseDescriptionValues.${caseId}`, newValue);
     },
     updateAttributes(caseId, event) {
-      let newValue = event.target.value;
-      this.set(`newCaseDescriptionValues.${caseId}`, newValue);
+      let parsedValue = JSON.parse(event.target.value);
+      let newValue = {
+        data: [{ type: parsedValue.name, value: parsedValue.description }]
+      };
+      console.log('Transformed Value', newValue.data);
+      const caseAttributes = this.get('caseAttributes');
+      console.log('Case Attributes', caseAttributes);
+      this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
     },
     expandTags() {
       this.toggleProperty('isExpanded');
