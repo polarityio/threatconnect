@@ -920,8 +920,68 @@
           {{/if}}
 
           {{! Cases Tab }}
-
+          
           {{#if (eq orgData.__activeTab 'cases')}}
+          <h1 class='p-title d-flex align-items-center justify-content-between' style="color:#f97b06">
+            <div>
+              Create New Case
+            </div>
+            <form {{action "createCase" "{{indicatorId}} "on="submit"}} class="case-form">
+              <div class="form-group">
+                <label for="case-name">Case Name:</label>
+                <input 
+                type="text" 
+                id="case-name" 
+                class="form-control" 
+                {{on "input" (action "updateNewCaseName")}} required>
+              </div>
+
+              <div class="form-group">
+                <label for="case-severity">Severity:</label>
+                <select
+                  id="case-severity"
+                  class="form-control"
+                  value={{newCaseSeverity}}
+                  {{on "change" (action "updateNewCaseSeverity")}}
+                >
+                  <option value="Low">Low</option>
+                  <option value="Medium">Medium</option>
+                  <option value="High">High</option>
+                  <option value="Critical">Critical</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="case-status">Status:</label>
+                <select id="case-status"
+                class="form-control"
+                value = {{newCaseStatus}}
+                {{on "change" (action "updateNewCaseStatus")}}>
+                  <option value="Open">Open</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+
+              <input
+                type="checkbox"
+                id="associate-indicator"
+                class="form-check-input"
+                checked={{associateIndicator}}
+                {{on "change" (action "toggleAssociateIndicator")}}
+              />
+              <label for="associate-indicator" class="form-check-label">
+                Associate with current indicator
+              </label>
+
+              <button type="submit" class="btn btn-primary">Create Case</button>
+            </form>
+
+          </h1>
+            <div class='card'>
+                  <div class='card-title'>
+                    
+                  </div>
+            </div>  
             {{#if
               (and
                 (is-empty orgData.indicator.associatedCases.data)

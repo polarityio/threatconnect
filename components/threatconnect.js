@@ -1,5 +1,4 @@
 'use strict';
-
 polarity.export = PolarityComponent.extend({
   newTagValue: '',
   showFalsePositiveAlreadyReported: false,
@@ -56,6 +55,10 @@ polarity.export = PolarityComponent.extend({
     return casesArray;
   }),
   newCaseAttributes: [],
+  newCaseName: '',
+  newCaseStatus: '',
+  newCaseSeverity: '',
+  associateIndicator: false,
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
@@ -241,6 +244,44 @@ polarity.export = PolarityComponent.extend({
       this.set('existingCaseAttributes', [...existingCaseAttributes]);
 
       this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
+    },
+    updateNewCaseName(event) {
+      this.set('newCaseName', event.target.value);
+    },
+    updateNewCaseSeverity(event) {
+      console.log('EVENT', event.target.value);
+      this.set('newCaseSeverity', event.target.value);
+    },
+    updateNewCaseStatus(event) {
+      this.set('newCaseStatus', event.target.value);
+    },
+    toggleAssociateIndicator(event) {
+      this.set('associateIndicator', event.target.checked);
+    },
+    createCase(indicatorId) {
+      const payload = {
+        action: 'CREATE_CASE',
+        name: this.get('newCaseName'),
+        severity: this.get('newCaseSeverity'),
+        status: this.get('newCaseStatus'),
+        associateIndicator: this.get('associateIndicator'),
+        indicatorId: indicatorId
+      };
+
+      console.log('Payload', payload);
+
+      this.sendIntegrationMessage(payload).then((result) => {
+        if (result.error) {
+          console.error('Result Error', result.error);
+          this._flashError(result.error.detail, 'error');
+        } else {
+          this.set('actionMessage', 'Case created successfully');
+        }
+        this.set('newCaseName', '');
+        this.set('newCaseSeverity', '');
+        this.set('newCaseStatus', '');
+        this.set('associateIndicator', false);
+      });
     },
     expandTags() {
       this.toggleProperty('isExpanded');
