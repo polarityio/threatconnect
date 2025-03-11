@@ -56,8 +56,8 @@ polarity.export = PolarityComponent.extend({
   }),
   newCaseAttributes: [],
   newCaseName: '',
-  newCaseStatus: '',
-  newCaseSeverity: '',
+  newCaseStatus: 'Open',
+  newCaseSeverity: 'Low',
   associateIndicator: false,
   _flashError: function (msg) {
     this.get('flashMessages').add({
@@ -259,11 +259,26 @@ polarity.export = PolarityComponent.extend({
       this.set('associateIndicator', event.target.checked);
     },
     createCase(indicatorId) {
+      const name = this.get('newCaseName');
+      if (!name) {
+        this._flashError('Name is required', 'error');
+      }
+
+      const severity = this.get('newCaseSeverity');
+      if (!severity) {
+        this._flashError('Severity is required', 'error');
+      }
+
+      const status = this.get('newCaseStatus');
+      if (!status) {
+        this._flashError('Status is required', 'error');
+      }
+
       const payload = {
         action: 'CREATE_CASE',
-        name: this.get('newCaseName'),
-        severity: this.get('newCaseSeverity'),
-        status: this.get('newCaseStatus'),
+        name: name,
+        severity: severity,
+        status: status,
         associateIndicator: this.get('associateIndicator'),
         indicatorId: indicatorId
       };
