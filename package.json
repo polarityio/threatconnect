@@ -1,6 +1,6 @@
 {
   "name": "ThreatConnect",
-  "version": "3.5.7",
+  "version": "3.5.8",
   "main": "./integration.js",
   "description": "Polarity ThreatConnect Integration",
   "private": true,
@@ -8,6 +8,6 @@
     "async": "^3.2.6",
     "ipaddr.js": "^2.2.0",
     "lodash": "^4.17.21",
-    "postman-request": "^2.88.1-postman.40"
+    "postman-request": "^2.88.1-postman.42"
   }
 }
