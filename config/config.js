@@ -16,7 +16,7 @@ module.exports = {
    * @required
    */
   acronym: 'TC',
-  logging: { level: 'info' },
+  logging: { level: 'trace' },
   entityTypes: ['IPv4', 'IPv6', 'MD5', 'SHA1', 'SHA256', 'email', 'domain', 'url'],
   /**
    * Description for this integration which is displayed in the Polarity integrations user interface

@@ -1,5 +1,4 @@
 'use strict';
-
 polarity.export = PolarityComponent.extend({
   newTagValue: '',
   showFalsePositiveAlreadyReported: false,
@@ -13,6 +12,7 @@ polarity.export = PolarityComponent.extend({
   playbooks: Ember.computed.alias('details.playbooks'),
   indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
+  newCaseTagValues: {},
   onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
     return this.block.entity.requestContext.requestType === 'OnDemand';
   }),
@@ -27,6 +27,37 @@ polarity.export = PolarityComponent.extend({
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
   isRunning: false,
+  isEditingCases: {},
+  newCaseStatusValues: {},
+  newCaseSeverityValues: {},
+  newCaseResolutionValues: {},
+  newCaseDescriptionValues: {},
+  newCaseAttributeValues: {},
+  caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
+  existingCaseAttributes: Ember.computed('indicators', function () {
+    let indicators = this.get('indicators') || {};
+    let casesArray = [];
+
+    Object.values(indicators).forEach((indicatorObj) => {
+      let associatedCases = indicatorObj.indicator.associatedCases.data || [];
+      associatedCases.forEach((caseItem) => {
+        let attributes = caseItem.attributes.data || [];
+        casesArray.push({
+          caseId: caseItem.id,
+          attributes: attributes.map((attr) => ({
+            type: attr.type,
+            value: attr.value
+          }))
+        });
+      });
+    });
+    return casesArray;
+  }),
+  newCaseAttributes: [],
+  newCaseName: '',
+  newCaseStatus: 'Open',
+  newCaseSeverity: 'Low',
+  associateIndicator: false,
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
@@ -91,6 +122,162 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
+    toggleEdit(caseId, indicatorId) {
+      let isEditing = this.get(`isEditingCases.${caseId}`) || false;
+
+      if (isEditing) {
+        this.send('saveCaseUpdates', caseId, indicatorId);
+      } else {
+        this.set(`isEditingCases.${caseId}`, true);
+      }
+    },
+    saveCaseUpdates(caseId, indicatorId) {
+      const existingCaseAttributes = this.get('newCaseAttributes') || [];
+      let data = [];
+      existingCaseAttributes.forEach((item) => {
+        if (item.caseId === caseId) {
+          data = data.concat(item.attributes);
+        }
+      });
+
+      const newValues = {
+        status: this.get(`newCaseStatusValues.${caseId}`),
+        severity: this.get(`newCaseSeverityValues.${caseId}`),
+        resolution: this.get(`newCaseResolutionValues.${caseId}`),
+        description: this.get(`newCaseDescriptionValues.${caseId}`),
+        attributes: { data: data }
+      };
+
+      let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseToUpdate = casesArray.find((c) => c.id === caseId);
+      if (caseToUpdate) {
+        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, true);
+      }
+
+      const payload = {
+        action: 'UPDATE_CASE',
+        caseId,
+        mode: 'append'
+      };
+
+      Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
+
+      if (Object.values(newValues).some((value) => value)) {
+        this.sendIntegrationMessage(payload)
+          .then((result) => {
+            if (result.error) {
+              console.error('Error', result.error);
+              this._flashError(result.error.detail, 'error');
+            } else {
+              this.set('actionMessage', 'Case updated successfully');
+              Object.entries(newValues).forEach(([key, value]) => {
+                if (value) {
+                  this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
+                }
+              });
+            }
+          })
+          .finally(() => {
+            this.setProperties({
+              [`newCaseStatusValues.${caseId}`]: null,
+              [`newCaseSeverityValues.${caseId}`]: null,
+              [`newCaseResolutionValues.${caseId}`]: null,
+              [`newCaseDescriptionValues.${caseId}`]: null,
+              [`newCaseAttributeValues.${caseId}`]: null
+            });
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updating`, false);
+          });
+        this.set(`isEditingCases.${caseId}`, false);
+      } else {
+        this.set(`isEditingCases.${caseId}`, false);
+      }
+    },
+    updateStatus(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseStatusValues.${caseId}`, newValue);
+    },
+    updateSeverity(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseSeverityValues.${caseId}`, newValue);
+    },
+    updateResolution(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseResolutionValues.${caseId}`, newValue);
+    },
+    updateDescription(caseId, event) {
+      let newValue = event.target.value;
+      this.set(`newCaseDescriptionValues.${caseId}`, newValue);
+    },
+    updateAttributes(caseId, event) {
+      let parsedValue = JSON.parse(event.target.value);
+      let newValue = {
+        data: [{ type: parsedValue.name, value: parsedValue.description }]
+      };
+      let existingCaseAttributes = this.get('existingCaseAttributes') || [];
+      let newCaseAttributes = this.get('newCaseAttributes') || [];
+
+      // for display
+      existingCaseAttributes.push({
+        caseId: caseId,
+        attributes: newValue.data
+      });
+
+      // for logic:
+      newCaseAttributes.push({
+        caseId: caseId,
+        attributes: newValue.data
+      });
+
+      this.set('existingCaseAttributes', [...existingCaseAttributes]);
+
+      this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
+    },
+    updateNewCaseName(event) {
+      this.set('newCaseName', event.target.value);
+    },
+    updateNewCaseSeverity(event) {
+      this.set('newCaseSeverity', event.target.value);
+    },
+    updateNewCaseStatus(event) {
+      this.set('newCaseStatus', event.target.value);
+    },
+    toggleAssociateIndicator(event) {
+      this.set('associateIndicator', event.target.checked);
+    },
+    createCase(indicatorId) {
+      const name = this.get('newCaseName');
+      if (!name) {
+        this._flashError('Name is required', 'error');
+      }
+
+      const payload = {
+        action: 'CREATE_CASE',
+        name: name,
+        severity: this.get('newCaseSeverity'),
+        status: this.get('newCaseStatus'),
+        associateIndicator: this.get('associateIndicator'),
+        indicatorId: indicatorId
+      };
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this._flashError(result.error.detail, 'error');
+          } else {
+            this.set('actionMessage', 'Case created successfully');
+          }
+        })
+        .finally(() => {
+          this.setProperties({
+            ['newCaseName']: '',
+            ['newCaseSeverity']: 'Low',
+            ['newCaseStatus']: 'Open',
+            ['associateIndicator']: false
+          });
+        });
+    },
     expandTags() {
       this.toggleProperty('isExpanded');
     },
@@ -193,6 +380,45 @@ polarity.export = PolarityComponent.extend({
             newTagValue: ''
           });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
+        });
+    },
+    updateCaseTagValue(caseId, event) {
+      this.set(`newCaseTagValues.${caseId}`, event.target.value);
+    },
+    addCaseTag(caseId, indicatorId) {
+      const newTag = this.get(`newCaseTagValues.${caseId}`).trim();
+      if (!newTag) {
+        this.set('actionMessage', 'You must enter a tag');
+        return;
+      }
+      let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+
+      const caseToUpdate = casesArray.find((c) => c.id === caseId);
+      if (caseToUpdate) {
+        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, true);
+      }
+
+      const payload = {
+        action: 'UPDATE_CASE_TAG',
+        caseId,
+        tag: newTag,
+        mode: 'append'
+      };
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this._flashError(result.error.detail, 'error');
+          } else {
+            this.set('actionMessage', 'Added Tag');
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.tags`, result.data.tags);
+          }
+        })
+        .finally(() => {
+          this.set(`newCaseTagValues.${caseId}`, '');
+          this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, false);
         });
     },
     deleteTag(indicatorId, tagToRemove) {
