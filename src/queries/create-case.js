@@ -1,7 +1,7 @@
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
-const SUCCESS_CODES = [200];
+const SUCCESS_CODES = [201];
 
 async function createCase(payload, options) {
   const Logger = getLogger();
@@ -13,31 +13,24 @@ async function createCase(payload, options) {
   };
 
   const name = payload.name;
+  Logger.trace('CASE NAME', name);
   if (name && name !== 'undefined') {
-    requestOptions.body = {
-      name: name
-    };
+    requestOptions.body.name = name;
   }
 
   const severity = payload.severity;
   if (severity && severity !== 'undefined') {
-    requestOptions.body = {
-      severity: severity
-    };
+    requestOptions.body.severity = severity;
   }
 
   const status = payload.status;
   if (status && status !== 'undefined') {
-    requestOptions.body = {
-      status: status
-    };
+    requestOptions.body.status = status;
   }
 
   const associateIndicator = payload.associateIndicator;
   if (associateIndicator && associateIndicator !== 'undefined') {
-    requestOptions.body = {
-      associatedIndicators: { data: [{ id: payload.indicatorId }] }
-    };
+    requestOptions.body.associatedIndicators = { data: [{ id: payload.indicatorId }] };
   }
 
   Logger.trace({ requestOptions }, 'Request Options');

@@ -926,13 +926,14 @@
             <div>
               Create New Case
             </div>
-            <form {{action "createCase" "{{indicatorId}} "on="submit"}} class="case-form">
+            <form {{action "createCase" indicatorId on="submit"}} class="case-form">
               <div class="form-group">
                 <label for="case-name">Case Name:</label>
                 <input 
                 type="text" 
                 id="case-name" 
                 class="form-control" 
+                value = {{newCaseName}}
                 {{on "input" (action "updateNewCaseName")}} required>
               </div>
 

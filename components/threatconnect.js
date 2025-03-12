@@ -172,7 +172,7 @@ polarity.export = PolarityComponent.extend({
         this.sendIntegrationMessage(payload)
           .then((result) => {
             if (result.error) {
-              console.error('ERR', result.error);
+              console.error('Error', result.error);
               this._flashError(result.error.detail, 'error');
             } else {
               this.set('actionMessage', 'Case updated successfully');
@@ -264,39 +264,36 @@ polarity.export = PolarityComponent.extend({
         this._flashError('Name is required', 'error');
       }
 
-      const severity = this.get('newCaseSeverity');
-      if (!severity) {
-        this._flashError('Severity is required', 'error');
-      }
-
-      const status = this.get('newCaseStatus');
-      if (!status) {
-        this._flashError('Status is required', 'error');
-      }
-
       const payload = {
         action: 'CREATE_CASE',
         name: name,
-        severity: severity,
-        status: status,
+        severity: this.get('newCaseSeverity'),
+        status: this.get('newCaseStatus'),
         associateIndicator: this.get('associateIndicator'),
         indicatorId: indicatorId
       };
 
       console.log('Payload', payload);
 
-      this.sendIntegrationMessage(payload).then((result) => {
-        if (result.error) {
-          console.error('Result Error', result.error);
-          this._flashError(result.error.detail, 'error');
-        } else {
-          this.set('actionMessage', 'Case created successfully');
-        }
-        this.set('newCaseName', '');
-        this.set('newCaseSeverity', '');
-        this.set('newCaseStatus', '');
-        this.set('associateIndicator', false);
-      });
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this._flashError(result.error.detail, 'error');
+          } else {
+            this.set('actionMessage', 'Case created successfully');
+            console.log('Result', result);
+          }
+        })
+        .finally(() => {
+          console.log('Got Here');
+          this.setProperties({
+            ['newCaseName']: '',
+            ['newCaseSeverity']: 'Low',
+            ['newCaseStatus']: 'Open',
+            ['associateIndicator']: false
+          });
+        });
     },
     expandTags() {
       this.toggleProperty('isExpanded');
