@@ -51,7 +51,6 @@ polarity.export = PolarityComponent.extend({
         });
       });
     });
-    console.log('Cases Array', casesArray);
     return casesArray;
   }),
   newCaseAttributes: [],
@@ -141,8 +140,6 @@ polarity.export = PolarityComponent.extend({
         }
       });
 
-      console.log('Attributes to be updated:', data);
-
       const newValues = {
         status: this.get(`newCaseStatusValues.${caseId}`),
         severity: this.get(`newCaseSeverityValues.${caseId}`),
@@ -166,8 +163,6 @@ polarity.export = PolarityComponent.extend({
 
       Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
 
-      console.log('Payload', payload);
-
       if (Object.values(newValues).some((value) => value)) {
         this.sendIntegrationMessage(payload)
           .then((result) => {
@@ -176,7 +171,6 @@ polarity.export = PolarityComponent.extend({
               this._flashError(result.error.detail, 'error');
             } else {
               this.set('actionMessage', 'Case updated successfully');
-              console.log('Result', result);
               Object.entries(newValues).forEach(([key, value]) => {
                 if (value) {
                   this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
@@ -220,8 +214,6 @@ polarity.export = PolarityComponent.extend({
       let newValue = {
         data: [{ type: parsedValue.name, value: parsedValue.description }]
       };
-
-      console.log('Transformed Value', newValue);
       let existingCaseAttributes = this.get('existingCaseAttributes') || [];
       let newCaseAttributes = this.get('newCaseAttributes') || [];
 
@@ -237,10 +229,6 @@ polarity.export = PolarityComponent.extend({
         attributes: newValue.data
       });
 
-      console.log('New Case Attributes', newCaseAttributes);
-
-      console.log('Existing Case Attributes', existingCaseAttributes);
-
       this.set('existingCaseAttributes', [...existingCaseAttributes]);
 
       this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
@@ -249,7 +237,6 @@ polarity.export = PolarityComponent.extend({
       this.set('newCaseName', event.target.value);
     },
     updateNewCaseSeverity(event) {
-      console.log('EVENT', event.target.value);
       this.set('newCaseSeverity', event.target.value);
     },
     updateNewCaseStatus(event) {
@@ -273,8 +260,6 @@ polarity.export = PolarityComponent.extend({
         indicatorId: indicatorId
       };
 
-      console.log('Payload', payload);
-
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
@@ -282,11 +267,9 @@ polarity.export = PolarityComponent.extend({
             this._flashError(result.error.detail, 'error');
           } else {
             this.set('actionMessage', 'Case created successfully');
-            console.log('Result', result);
           }
         })
         .finally(() => {
-          console.log('Got Here');
           this.setProperties({
             ['newCaseName']: '',
             ['newCaseSeverity']: 'Low',
