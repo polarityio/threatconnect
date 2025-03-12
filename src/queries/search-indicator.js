@@ -45,7 +45,22 @@ async function searchIndicator(entity, options, fields = []) {
 
 function createTqlQuery(entity, options) {
   const indicatorType = convertPolarityTypeToThreatConnectSingular(entity.type);
-  let query = `summary="${entity.value}" and typeName="${indicatorType}"`;
+
+  let query = `(summary="${entity.value}"`;
+
+  if (entity.types.includes('MD5')) {
+    query += ` or value1="${entity.value}"`;
+  }
+
+  if (entity.types.includes('SHA1')) {
+    query += ` or value2="${entity.value}"`;
+  }
+
+  if (entity.types.includes('SHA256')) {
+    query += ` or value3="${entity.value}"`;
+  }
+
+  query += `) and typeName="${indicatorType}"`;
 
   if (options.searchInactiveIndicators) {
     query += ` and (indicatorActive=true or indicatorActive=false)`;
