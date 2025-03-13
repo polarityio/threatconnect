@@ -214,6 +214,7 @@ polarity.export = PolarityComponent.extend({
       let newValue = {
         data: [{ type: parsedValue.name, value: parsedValue.description }]
       };
+
       let existingCaseAttributes = this.get('existingCaseAttributes') || [];
       let newCaseAttributes = this.get('newCaseAttributes') || [];
 
