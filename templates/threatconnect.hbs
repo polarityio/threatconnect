@@ -922,17 +922,19 @@
           {{! Cases Tab }}
 
           {{#if (eq orgData.__activeTab 'cases')}}
-            <h1 class='p-title d-flex align-items-center justify-content-between' style='color:#f97b06'>
-              <div>
-                Create New Case
-              </div>
+            <div>
+              <h1 class='p-title d-flex align-items-center justify-content-between' style='color:#f97b06'>
+                <div>
+                  Create New Case
+                </div>
+              </h1>
               <form {{action 'createCase' indicatorId on='submit'}} class='case-form'>
                 <div class='form-group'>
-                  <label for='case-name'>Case Name:</label>
+                  <label for='case-name'>Name</label>
                   <input
                     type='text'
                     id='case-name'
-                    class='form-control'
+                    class='form-control-new-case'
                     value={{newCaseName}}
                     {{on 'input' (action 'updateNewCaseName')}}
                     required
@@ -940,10 +942,10 @@
                 </div>
 
                 <div class='form-group'>
-                  <label for='case-severity'>Severity:</label>
+                  <label for='case-severity'>Severity</label>
                   <select
                     id='case-severity'
-                    class='form-control'
+                    class='form-control-new-case'
                     value={{newCaseSeverity}}
                     {{on 'change' (action 'updateNewCaseSeverity')}}
                   >
@@ -955,10 +957,10 @@
                 </div>
 
                 <div class='form-group'>
-                  <label for='case-status'>Status:</label>
+                  <label for='case-status'>Status</label>
                   <select
                     id='case-status'
-                    class='form-control'
+                    class='form-control-new-case'
                     value={{newCaseStatus}}
                     {{on 'change' (action 'updateNewCaseStatus')}}
                   >
@@ -967,26 +969,27 @@
                   </select>
                 </div>
 
-                <input
-                  type='checkbox'
-                  id='associate-indicator'
-                  class='form-check-input'
-                  checked={{associateIndicator}}
-                  {{on 'change' (action 'toggleAssociateIndicator')}}
-                />
-                <label for='associate-indicator' class='form-check-label'>
-                  Associate with current indicator
-                </label>
+                <div class='checkbox-new-case'>
+                  <input
+                    type='checkbox'
+                    id='associate-indicator'
+                    class='form-check-input-new-case'
+                    checked={{associateIndicator}}
+                    {{on 'change' (action 'toggleAssociateIndicator')}}
+                  />
+                  <label
+                    for='associate-indicator'
+                    class='form-check-label'
+                    style='margin-left: 20px; padding-top: 5px;'
+                  >
+                    Associate with current indicator
+                  </label>
+                </div>
 
-                <button type='submit' class='btn btn-primary'>Create Case</button>
+                <button type='submit' class='btn btn-primary btn-new-case' style='border-radius: 0px'>Create Case</button>
               </form>
-
-            </h1>
-            <div class='card'>
-              <div class='card-title'>
-
-              </div>
             </div>
+
             {{#if
               (and
                 (is-empty orgData.indicator.associatedCases.data)
@@ -1043,7 +1046,10 @@
 
                   </div>
                   <div class='card-item'>
-                    <div class='info-bar mb-1 no-border'>
+                    <div
+                      class='info-bar mb-1 no-border'
+                      style='padding-bottom: 5px; border-bottom: 1px solid #eeee; border-radius: 0px;'
+                    >
                       <div class='info-bar-pill'>
                         <span class='info-bar-key'>Description</span>
                         {{#if (get isEditingCases case.id)}}
@@ -1150,23 +1156,16 @@
                             </select>
                           </div>
                         {{/if}}
-
-                        <button
-                          class='btn btn-secondary btn-add-tag'
-                          {{action 'toggleEdit' case.id orgData.indicator.id}}
-                        >
-                          {{if (get isEditingCases case.id) 'Save' 'Edit'}}
-                        </button>
                       </div>
-
                       {{#each existingCaseAttributes as |caseAttr|}}
                         {{#if (eq caseAttr.caseId case.id)}}
-                          <div class='info-bar-pill'>
+                          <div class='info-bar-pill' style='width: 100%; padding-bottom: 5px;'>
                             <span class='info-bar-key'>Case Attributes</span>
                             <div class='info-bar-value'>
                               {{#if caseAttr.attributes.length}}
                                 {{#each caseAttr.attributes as |attribute|}}
-                                  <div><strong>{{attribute.type}}:</strong> {{attribute.value}}</div>
+                                  <div><strong>{{attribute.type}}</strong></div>
+                                  <div>{{attribute.value}}</div>
                                 {{/each}}
                               {{else}}
                                 <span>No attributes assigned</span>
@@ -1176,6 +1175,13 @@
                         {{/if}}
                       {{/each}}
 
+                      <button
+                        class='btn btn-secondary btn-add-tag'
+                        style='border-radius: 0px;'
+                        {{action 'toggleEdit' case.id orgData.indicator.id}}
+                      >
+                        {{if (get isEditingCases case.id) 'Save' 'Edit'}}
+                      </button>
                     </div>
 
                     <div>
