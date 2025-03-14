@@ -34,26 +34,7 @@ polarity.export = PolarityComponent.extend({
   newCaseDescriptionValues: {},
   newCaseAttributeValues: {},
   caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
-  existingCaseAttributes: Ember.computed('indicators', function () {
-    let indicators = this.get('indicators') || {};
-    let casesArray = [];
-
-    Object.values(indicators).forEach((indicatorObj) => {
-      let associatedCases = indicatorObj.indicator.associatedCases.data || [];
-      associatedCases.forEach((caseItem) => {
-        let attributes = caseItem.attributes.data || [];
-        casesArray.push({
-          caseId: caseItem.id,
-          attributes: attributes.map((attr) => ({
-            type: attr.type,
-            value: attr.value
-          }))
-        });
-      });
-    });
-    return casesArray;
-  }),
-  newCaseAttributes: [],
+  newCaseAttributes: {},
   newCaseName: '',
   newCaseStatus: 'Open',
   newCaseSeverity: 'Low',
@@ -211,29 +192,23 @@ polarity.export = PolarityComponent.extend({
     },
     updateAttributes(caseId, event) {
       let parsedValue = JSON.parse(event.target.value);
-      let newValue = {
-        data: [{ type: parsedValue.name, value: parsedValue.description }]
-      };
+      let newValue = { type: parsedValue.name, value: parsedValue.description };
 
-      let existingCaseAttributes = this.get('existingCaseAttributes') || [];
-      let newCaseAttributes = this.get('newCaseAttributes') || [];
+      let newCaseAttributes = Object.assign({}, this.get('newCaseAttributes'));
 
-      // for display
-      existingCaseAttributes.push({
-        caseId: caseId,
-        attributes: newValue.data
-      });
+      if (!newCaseAttributes[caseId]) {
+        newCaseAttributes[caseId] = [];
+      }
 
-      // for logic:
-      newCaseAttributes.push({
-        caseId: caseId,
-        attributes: newValue.data
-      });
+      newCaseAttributes[caseId] = [...newCaseAttributes[caseId], newValue];
 
-      this.set('existingCaseAttributes', [...existingCaseAttributes]);
+      this.set('newCaseAttributes', newCaseAttributes);
 
-      this.set(`newCaseAttributeValues.${caseId}`, newValue.data.type);
+      console.log('Updated newCaseAttributes:', this.get('newCaseAttributes'));
+
+      this.set(`newCaseAttributeValues.${caseId}`, newValue.type);
     },
+    // Create New Case Functionality
     updateNewCaseName(event) {
       this.set('newCaseName', event.target.value);
     },
