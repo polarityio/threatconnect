@@ -132,9 +132,9 @@ polarity.export = PolarityComponent.extend({
       }
     },
     saveCaseUpdates(caseId, indicatorId) {
-      const existingCaseAttributes = this.get('newCaseAttributes') || [];
+      const newCaseAttributes = this.get('newCaseAttributes') || [];
       let data = [];
-      existingCaseAttributes.forEach((item) => {
+      newCaseAttributes.forEach((item) => {
         if (item.caseId === caseId) {
           data = data.concat(item.attributes);
         }

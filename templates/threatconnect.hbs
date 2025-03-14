@@ -1157,23 +1157,24 @@
                           </div>
                         {{/if}}
                       </div>
-                      {{#each existingCaseAttributes as |caseAttr|}}
-                        {{#if (eq caseAttr.caseId case.id)}}
-                          <div class='info-bar-pill' style='width: 100%; padding-bottom: 5px;'>
-                            <span class='info-bar-key'>Case Attributes</span>
-                            <div class='info-bar-value'>
-                              {{#if caseAttr.attributes.length}}
+
+                      {{#if existingCaseAttributes.length}}
+                        <div class='info-bar-pill' style='width: 100%; padding-bottom: 5px;'>
+                          <span class='info-bar-key'>Case Attributes</span>
+                          {{#each existingCaseAttributes as |caseAttr|}}
+                            {{#if (eq caseAttr.caseId case.id)}}
+                              <div class='info-bar-value'>
                                 {{#each caseAttr.attributes as |attribute|}}
                                   <div><strong>{{attribute.type}}</strong></div>
                                   <div>{{attribute.value}}</div>
                                 {{/each}}
-                              {{else}}
-                                <span>No attributes assigned</span>
-                              {{/if}}
-                            </div>
-                          </div>
-                        {{/if}}
-                      {{/each}}
+                              </div>
+                            {{/if}}
+                          {{/each}}
+                        </div>
+                      {{else}}
+                        <span class='info-bar-key'>No Attributes Associated</span>
+                      {{/if}}
 
                       <button
                         class='btn btn-secondary btn-add-tag'
