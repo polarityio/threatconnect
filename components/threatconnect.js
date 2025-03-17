@@ -204,9 +204,27 @@ polarity.export = PolarityComponent.extend({
 
       this.set('newCaseAttributes', newCaseAttributes);
 
+      console.log('newValue', newValue);
+
       console.log('Updated newCaseAttributes:', this.get('newCaseAttributes'));
 
       this.set(`newCaseAttributeValues.${caseId}`, newValue.type);
+    },
+    removeAttribute(caseId, index) {
+      console.log('GOT HERE');
+      let newCaseAttributes = this.get('newCaseAttributes') || {};
+      console.log('newCaseAttributes:', newCaseAttributes);
+      if (newCaseAttributes[caseId]) {
+        newCaseAttributes[caseId].splice(index, 1);
+
+        if (newCaseAttributes[caseId].length === 0) {
+          delete newCaseAttributes[caseId];
+        }
+      }
+
+      console.log('newCaseAttributes:', newCaseAttributes);
+
+      this.set('newCaseAttributes', newCaseAttributes);
     },
     // Create New Case Functionality
     updateNewCaseName(event) {

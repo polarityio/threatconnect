@@ -1175,13 +1175,13 @@
                       {{#if (get isEditingCases case.id)}}
                         {{#if (get newCaseAttributes case.id)}}
                           <div class='info-bar-pill' style='width: 100%; padding-bottom: 5px;'>
-                            <span class='info-bar-key'>Pending Attributes...</span>
+                            <span class='info-bar-key'>New Case Attributes</span>
                             {{#each (get newCaseAttributes case.id) as |caseAttr index|}}
                               <div class='info-bar-value'>
                                 <div><strong>{{caseAttr.type}}</strong></div>
                                 <div>{{caseAttr.value}}</div>
                                 <button class="remove-attribute" {{on 'click' (fn (action 'removeAttribute' case.id index))}}>
-                                  {{fa-icon icon='fa-remove'}}
+                                  {{fa-icon icon='times'}}
                                 </button>
                               </div>
                             {{/each}}
