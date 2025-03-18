@@ -74,6 +74,7 @@ async function updateCase(payload, options) {
 
   const requestOptions = {
     uri: `${options.url}/v3/cases/${payload.caseId}`,
+    qs: { fields: 'attributes' },
     method: 'PUT',
     body: {}
   };

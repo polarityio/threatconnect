@@ -114,19 +114,13 @@ polarity.export = PolarityComponent.extend({
     },
     saveCaseUpdates(caseId, indicatorId) {
       const newCaseAttributes = this.get('newCaseAttributes') || [];
-      let data = [];
-      newCaseAttributes.forEach((item) => {
-        if (item.caseId === caseId) {
-          data = data.concat(item.attributes);
-        }
-      });
 
       const newValues = {
         status: this.get(`newCaseStatusValues.${caseId}`),
         severity: this.get(`newCaseSeverityValues.${caseId}`),
         resolution: this.get(`newCaseResolutionValues.${caseId}`),
         description: this.get(`newCaseDescriptionValues.${caseId}`),
-        attributes: { data: data }
+        attributes: { data: newCaseAttributes[caseId] }
       };
 
       let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
@@ -152,11 +146,17 @@ polarity.export = PolarityComponent.extend({
               this._flashError(result.error.detail, 'error');
             } else {
               this.set('actionMessage', 'Case updated successfully');
+
               Object.entries(newValues).forEach(([key, value]) => {
                 if (value) {
                   this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.${key}`, value);
                 }
               });
+
+              if (result.data && result.data.attributes && result.data.attributes.data) {
+                let updatedAttributes = result.data.attributes.data;
+                this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.attributes.data`, updatedAttributes);
+              }
             }
           })
           .finally(() => {
@@ -208,8 +208,6 @@ polarity.export = PolarityComponent.extend({
       newCaseAttributes[caseId] = existingAttributes;
 
       this.set('newCaseAttributes', newCaseAttributes);
-
-      console.log('Updated newCaseAttributes:', JSON.stringify(this.get('newCaseAttributes')));
 
       this.set(`newCaseAttributeValues.${caseId}`, JSON.stringify(parsedValue));
     },

@@ -197,6 +197,8 @@ async function onMessage(payload, options, cb) {
     case 'UPDATE_CASE':
       try {
         const response = await updateCase(payload, options);
+        Logger.trace({ response }, 'Update Case Response');
+
         cb(null, {
           data: response
         });

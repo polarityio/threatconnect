@@ -1177,9 +1177,11 @@
                           <div class='info-bar-pill' style='width: 100%; padding-bottom: 5px;'>
                             <span class='info-bar-key'>New Case Attributes</span>
                             {{#each (get newCaseAttributes case.id) as |caseAttr index|}}
-                              <div class='info-bar-value'>
-                                <div><strong>{{caseAttr.type}}</strong></div>
-                                <div>{{caseAttr.value}}</div>
+                              <div style="display: flex; justify-content: space-between;">
+                                <div class='info-bar-value'>
+                                  <div><strong>{{caseAttr.type}}</strong></div>
+                                  <div>{{caseAttr.value}}</div>
+                                </div>
                                 <button class="remove-attribute" {{on 'click' (fn (action 'removeAttribute' case.id index))}}>
                                   {{fa-icon icon='times'}}
                                 </button>
