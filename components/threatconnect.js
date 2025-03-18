@@ -200,31 +200,34 @@ polarity.export = PolarityComponent.extend({
         newCaseAttributes[caseId] = [];
       }
 
-      newCaseAttributes[caseId] = [...newCaseAttributes[caseId], newValue];
-
-      this.set('newCaseAttributes', newCaseAttributes);
-
-      console.log('newValue', newValue);
-
-      console.log('Updated newCaseAttributes:', this.get('newCaseAttributes'));
-
-      this.set(`newCaseAttributeValues.${caseId}`, newValue.type);
-    },
-    removeAttribute(caseId, index) {
-      console.log('GOT HERE');
-      let newCaseAttributes = this.get('newCaseAttributes') || {};
-      console.log('newCaseAttributes:', newCaseAttributes);
-      if (newCaseAttributes[caseId]) {
-        newCaseAttributes[caseId].splice(index, 1);
-
-        if (newCaseAttributes[caseId].length === 0) {
-          delete newCaseAttributes[caseId];
-        }
+      let existingAttributes = newCaseAttributes[caseId];
+      if (!existingAttributes.some((attr) => attr.type === newValue.type && attr.value === newValue.value)) {
+        existingAttributes.push(newValue);
       }
 
-      console.log('newCaseAttributes:', newCaseAttributes);
+      newCaseAttributes[caseId] = existingAttributes;
 
       this.set('newCaseAttributes', newCaseAttributes);
+
+      console.log('Updated newCaseAttributes:', JSON.stringify(this.get('newCaseAttributes')));
+
+      this.set(`newCaseAttributeValues.${caseId}`, JSON.stringify(parsedValue));
+    },
+    removeAttribute(caseId, index) {
+      let newCaseAttributes = this.get('newCaseAttributes') || {};
+
+      if (newCaseAttributes[caseId]) {
+        let updatedAttributes = newCaseAttributes[caseId].filter((_, i) => i !== index);
+
+        let updatedCaseAttributes = { newCaseAttributes };
+
+        if (updatedAttributes.length === 0) {
+        } else {
+          updatedCaseAttributes[caseId] = updatedAttributes;
+        }
+
+        this.set('newCaseAttributes', updatedCaseAttributes);
+      }
     },
     // Create New Case Functionality
     updateNewCaseName(event) {
