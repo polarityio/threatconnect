@@ -1215,13 +1215,24 @@
                         {{/if}}
                       {{/if}}
 
-                      <button
-                        class="btn btn-secondary btn-add-tag"
-                        style="border-radius: 0px;"
-                        {{action "toggleEdit" case.id orgData.indicator.id}}
-                      >
-                        {{if (get isEditingCases case.id) "Save" "Edit"}}
-                      </button>
+                      <div>
+                        <button
+                          class="btn btn-secondary btn-add-tag"
+                          style="border-radius: 0px;"
+                          {{action "toggleEdit" case.id orgData.indicator.id}}
+                        >
+                          {{if (get isEditingCases case.id) "Save" "Edit"}}
+                        </button>
+                        {{#if (get isEditingCases case.id)}}
+                          <button
+                            class="btn btn-secondary btn-add-tag"
+                            style="border-radius: 0px;"
+                            {{action "cancelEdit" case.id}}
+                          >
+                            Cancel
+                          </button>
+                        {{/if}}
+                      </div>
                     </div>
 
                     <div>

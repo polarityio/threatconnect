@@ -1,30 +1,30 @@
-'use strict';
+"use strict";
 polarity.export = PolarityComponent.extend({
-  newTagValue: '',
+  newTagValue: "",
   showFalsePositiveAlreadyReported: false,
-  details: Ember.computed.alias('block.data.details'),
-  summary: Ember.computed.alias('block.data.summary'),
-  indicators: Ember.computed.alias('block.data.details.indicators'),
-  results: Ember.computed.alias('details.results'),
-  timezone: Ember.computed('Intl', function () {
+  details: Ember.computed.alias("block.data.details"),
+  summary: Ember.computed.alias("block.data.summary"),
+  indicators: Ember.computed.alias("block.data.details.indicators"),
+  results: Ember.computed.alias("details.results"),
+  timezone: Ember.computed("Intl", function () {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }),
-  playbooks: Ember.computed.alias('details.playbooks'),
-  indicatorType: Ember.computed.alias('details.indicatorType'),
-  entityValue: Ember.computed.alias('block.entity.value'),
+  playbooks: Ember.computed.alias("details.playbooks"),
+  indicatorType: Ember.computed.alias("details.indicatorType"),
+  entityValue: Ember.computed.alias("block.entity.value"),
   newCaseTagValues: {},
-  onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
-    return this.block.entity.requestContext.requestType === 'OnDemand';
+  onDemand: Ember.computed("block.entity.requestContext.requestType", function () {
+    return this.block.entity.requestContext.requestType === "OnDemand";
   }),
-  firstIndicator: Ember.computed('indicators.[0]', function () {
-    const indicatorOrderById = this.get('details.indicatorOrderById');
-    return this.get('indicators')[indicatorOrderById[0]];
+  firstIndicator: Ember.computed("indicators.[0]", function () {
+    const indicatorOrderById = this.get("details.indicatorOrderById");
+    return this.get("indicators")[indicatorOrderById[0]];
   }),
   newTagValues: Ember.computed(() => ({})),
   isExpanded: false,
   pageSize: 10,
-  indicatorMessage: '',
-  indicatorErrorMessage: '',
+  indicatorMessage: "",
+  indicatorErrorMessage: "",
   indicatorPlaybookId: null,
   isRunning: false,
   isEditingCases: {},
@@ -33,32 +33,32 @@ polarity.export = PolarityComponent.extend({
   newCaseResolutionValues: {},
   newCaseDescriptionValues: {},
   newCaseAttributeValues: {},
-  caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
+  caseAttributeTypes: Ember.computed.alias("details.caseAttributeTypes"),
   newCaseAttributes: {},
-  newCaseName: '',
-  newCaseStatus: 'Open',
-  newCaseSeverity: 'Low',
+  newCaseName: "",
+  newCaseStatus: "Open",
+  newCaseSeverity: "Low",
   associateIndicator: false,
   _flashError: function (msg) {
-    this.get('flashMessages').add({
-      message: 'ThreatConnect: ' + msg,
-      type: 'unv-danger',
+    this.get("flashMessages").add({
+      message: "ThreatConnect: " + msg,
+      type: "unv-danger",
       timeout: 3000
     });
   },
   init() {
     let array = new Uint32Array(5);
-    this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
-    if (!this.get('block.detailsLoaded')) {
-      this.set('isDetailsLoading', true);
+    this.set("uniqueIdPrefix", window.crypto.getRandomValues(array).join(""));
+    if (!this.get("block.detailsLoaded")) {
+      this.set("isDetailsLoading", true);
     }
     this._super(...arguments);
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
-      this.set('isDetailsLoading', false);
-      const indicators = this.get('details.indicators');
-      const indicatorOrderById = this.get('details.indicatorOrderById');
+      this.set("isDetailsLoading", false);
+      const indicators = this.get("details.indicators");
+      const indicatorOrderById = this.get("details.indicatorOrderById");
 
       if (indicatorOrderById.length > 0) {
         const firstIndicatorById = indicatorOrderById[0];
@@ -73,7 +73,7 @@ polarity.export = PolarityComponent.extend({
         indicator.__threatAssessScoreHuman = this.getScoreHuman(indicator.threatAssessScore);
         indicator.__threatAssesConfidenceHuman = this.getConfidenceHuman(indicator.threatAssessConfidence);
         indicator.__threatAssessRatingHuman = this.getRatingHuman(indicator.threatAssessRating);
-        
+
         let totalAssociations = 0;
         if (indicator.associatedGroups && indicator.associatedGroups.data) {
           totalAssociations += indicator.associatedGroups.data.length;
@@ -87,17 +87,17 @@ polarity.export = PolarityComponent.extend({
         if (indicator.associatedCases && indicator.associatedCases.data) {
           indicator.associatedCases.data.forEach((caseObj) => {
             switch (caseObj.severity) {
-              case 'Critical':
-                caseObj.__severityColor = 'maroon-text';
+              case "Critical":
+                caseObj.__severityColor = "maroon-text";
                 break;
-              case 'High':
-                caseObj.__severityColor = 'red-text';
+              case "High":
+                caseObj.__severityColor = "red-text";
                 break;
-              case 'Medium':
-                caseObj.__severityColor = 'orange-text';
+              case "Medium":
+                caseObj.__severityColor = "orange-text";
                 break;
               default:
-                caseObj.__severityColor = '';
+                caseObj.__severityColor = "";
             }
           });
         }
@@ -109,13 +109,16 @@ polarity.export = PolarityComponent.extend({
       let isEditing = this.get(`isEditingCases.${caseId}`) || false;
 
       if (isEditing) {
-        this.send('saveCaseUpdates', caseId, indicatorId);
+        this.send("saveCaseUpdates", caseId, indicatorId);
       } else {
         this.set(`isEditingCases.${caseId}`, true);
       }
     },
+    cancelEdit(caseId) {
+      this.set(`isEditingCases.${caseId}`, false);
+    },
     saveCaseUpdates(caseId, indicatorId) {
-      const newCaseAttributes = this.get('newCaseAttributes') || [];
+      const newCaseAttributes = this.get("newCaseAttributes") || [];
 
       const newValues = {
         status: this.get(`newCaseStatusValues.${caseId}`),
@@ -133,9 +136,9 @@ polarity.export = PolarityComponent.extend({
       }
 
       const payload = {
-        action: 'UPDATE_CASE',
+        action: "UPDATE_CASE",
         caseId,
-        mode: 'append'
+        mode: "append"
       };
 
       Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
@@ -144,10 +147,10 @@ polarity.export = PolarityComponent.extend({
         this.sendIntegrationMessage(payload)
           .then((result) => {
             if (result.error) {
-              console.error('Error', result.error);
-              this._flashError(result.error.detail, 'error');
+              console.error("Error", result.error);
+              this._flashError(result.error.detail, "error");
             } else {
-              this.set('actionMessage', 'Case updated successfully');
+              this.set("actionMessage", "Case updated successfully");
 
               Object.entries(newValues).forEach(([key, value]) => {
                 if (value) {
@@ -196,7 +199,7 @@ polarity.export = PolarityComponent.extend({
       let parsedValue = JSON.parse(event.target.value);
       let newValue = { type: parsedValue.name, value: parsedValue.description };
 
-      let newCaseAttributes = Object.assign({}, this.get('newCaseAttributes'));
+      let newCaseAttributes = Object.assign({}, this.get("newCaseAttributes"));
 
       if (!newCaseAttributes[caseId]) {
         newCaseAttributes[caseId] = [];
@@ -209,12 +212,12 @@ polarity.export = PolarityComponent.extend({
 
       newCaseAttributes[caseId] = existingAttributes;
 
-      this.set('newCaseAttributes', newCaseAttributes);
+      this.set("newCaseAttributes", newCaseAttributes);
 
       this.set(`newCaseAttributeValues.${caseId}`, JSON.stringify(parsedValue));
     },
     removeAttribute(caseId, index) {
-      let newCaseAttributes = this.get('newCaseAttributes') || {};
+      let newCaseAttributes = this.get("newCaseAttributes") || {};
 
       if (newCaseAttributes[caseId]) {
         let updatedAttributes = newCaseAttributes[caseId].filter((_, i) => i !== index);
@@ -226,60 +229,60 @@ polarity.export = PolarityComponent.extend({
           updatedCaseAttributes[caseId] = updatedAttributes;
         }
 
-        this.set('newCaseAttributes', updatedCaseAttributes);
+        this.set("newCaseAttributes", updatedCaseAttributes);
       }
     },
     // Create New Case Functionality
     updateNewCaseName(event) {
-      this.set('newCaseName', event.target.value);
+      this.set("newCaseName", event.target.value);
     },
     updateNewCaseSeverity(event) {
-      this.set('newCaseSeverity', event.target.value);
+      this.set("newCaseSeverity", event.target.value);
     },
     updateNewCaseStatus(event) {
-      this.set('newCaseStatus', event.target.value);
+      this.set("newCaseStatus", event.target.value);
     },
     toggleAssociateIndicator(event) {
-      this.set('associateIndicator', event.target.checked);
+      this.set("associateIndicator", event.target.checked);
     },
     createCase(indicatorId) {
-      const name = this.get('newCaseName');
+      const name = this.get("newCaseName");
       if (!name) {
-        this._flashError('Name is required', 'error');
+        this._flashError("Name is required", "error");
       }
 
       const payload = {
-        action: 'CREATE_CASE',
+        action: "CREATE_CASE",
         name: name,
-        severity: this.get('newCaseSeverity'),
-        status: this.get('newCaseStatus'),
-        associateIndicator: this.get('associateIndicator'),
+        severity: this.get("newCaseSeverity"),
+        status: this.get("newCaseStatus"),
+        associateIndicator: this.get("associateIndicator"),
         indicatorId: indicatorId
       };
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
-            console.error('Result Error', result.error);
-            this._flashError(result.error.detail, 'error');
+            console.error("Result Error", result.error);
+            this._flashError(result.error.detail, "error");
           } else {
-            this.set('actionMessage', 'Case created successfully');
+            this.set("actionMessage", "Case created successfully");
           }
         })
         .finally(() => {
           this.setProperties({
-            ['newCaseName']: '',
-            ['newCaseSeverity']: 'Low',
-            ['newCaseStatus']: 'Open',
-            ['associateIndicator']: false
+            ["newCaseName"]: "",
+            ["newCaseSeverity"]: "Low",
+            ["newCaseStatus"]: "Open",
+            ["associateIndicator"]: false
           });
         });
     },
     expandTags() {
-      this.toggleProperty('isExpanded');
+      this.toggleProperty("isExpanded");
     },
     toggleIsExpanded(organizationData) {
-      Ember.set(organizationData, 'isExpanded', !organizationData.isExpanded);
+      Ember.set(organizationData, "isExpanded", !organizationData.isExpanded);
     },
     stopPropagation: function (e) {
       e.stopPropagation();
@@ -289,36 +292,36 @@ polarity.export = PolarityComponent.extend({
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
 
       if (
-        tabName === 'cases' &&
-        typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
+        tabName === "cases" &&
+        typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === "undefined"
       ) {
-        this.getField(indicatorId, 'associatedCases');
+        this.getField(indicatorId, "associatedCases");
       } else if (
-        tabName === 'groups' &&
-        typeof this.get(`indicators.${indicatorId}.indicator.associatedGroups`) === 'undefined'
+        tabName === "groups" &&
+        typeof this.get(`indicators.${indicatorId}.indicator.associatedGroups`) === "undefined"
       ) {
-        this.getField(indicatorId, 'associatedGroups');
+        this.getField(indicatorId, "associatedGroups");
       } else if (
-        tabName === 'indicators' &&
-        typeof this.get(`indicators.${indicatorId}.indicator.associatedIndicators`) === 'undefined'
+        tabName === "indicators" &&
+        typeof this.get(`indicators.${indicatorId}.indicator.associatedIndicators`) === "undefined"
       ) {
-        this.getField(indicatorId, 'associatedIndicators');
-      } else if (tabName === 'whois' && typeof this.get(`indicators.${indicatorId}.indicator.whois`) === 'undefined') {
-        this.getField(indicatorId, 'whois');
+        this.getField(indicatorId, "associatedIndicators");
+      } else if (tabName === "whois" && typeof this.get(`indicators.${indicatorId}.indicator.whois`) === "undefined") {
+        this.getField(indicatorId, "whois");
       } else if (
-        tabName === 'dnsResolution' &&
-        typeof this.get(`indicators.${indicatorId}.indicator.dnsResolution`) === 'undefined'
+        tabName === "dnsResolution" &&
+        typeof this.get(`indicators.${indicatorId}.indicator.dnsResolution`) === "undefined"
       ) {
-        this.getField(indicatorId, 'dnsResolution');
+        this.getField(indicatorId, "dnsResolution");
       }
     },
     saveConfidence(indicatorId) {
       this.set(`indicators.${indicatorId}.__savingConfidence`, true);
 
       const payload = {
-        action: 'UPDATE_INDICATOR',
+        action: "UPDATE_INDICATOR",
         indicatorId,
-        field: 'confidence',
+        field: "confidence",
         value: this.get(`indicators.${indicatorId}.indicator.__shadowConfidence`)
       };
 
@@ -326,7 +329,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, "error");
 
             let originalValue = this.get(`indicators.${indicatorId}.indicator.confidence`);
             // Note: this is a trick to get the property observers to fire so we can reset the
@@ -346,35 +349,35 @@ polarity.export = PolarityComponent.extend({
         });
     },
     addTag(indicatorId) {
-      const newTag = this.get(`newTagValues.${indicatorId}`) || this.get('newTagValue');
+      const newTag = this.get(`newTagValues.${indicatorId}`) || this.get("newTagValue");
       if (!newTag || newTag.length === 0) {
-        this.set('actionMessage', 'You must enter a tag');
+        this.set("actionMessage", "You must enter a tag");
         return;
       }
 
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
 
       const payload = {
-        action: 'UPDATE_TAG',
+        action: "UPDATE_TAG",
         indicatorId,
         tag: newTag,
-        mode: 'append'
+        mode: "append"
       };
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, "error");
           } else {
-            this.set('actionMessage', 'Added Tag');
+            this.set("actionMessage", "Added Tag");
             this.set(`indicators.${indicatorId}.indicator.tags`, result.data);
           }
         })
         .finally(() => {
           this.setProperties({
             newTagValues: {},
-            newTagValue: ''
+            newTagValue: ""
           });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
         });
@@ -385,7 +388,7 @@ polarity.export = PolarityComponent.extend({
     addCaseTag(caseId, indicatorId) {
       const newTag = this.get(`newCaseTagValues.${caseId}`).trim();
       if (!newTag) {
-        this.set('actionMessage', 'You must enter a tag');
+        this.set("actionMessage", "You must enter a tag");
         return;
       }
       let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
@@ -397,24 +400,24 @@ polarity.export = PolarityComponent.extend({
       }
 
       const payload = {
-        action: 'UPDATE_CASE_TAG',
+        action: "UPDATE_CASE_TAG",
         caseId,
         tag: newTag,
-        mode: 'append'
+        mode: "append"
       };
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
-            console.error('Result Error', result.error);
-            this._flashError(result.error.detail, 'error');
+            console.error("Result Error", result.error);
+            this._flashError(result.error.detail, "error");
           } else {
-            this.set('actionMessage', 'Added Tag');
+            this.set("actionMessage", "Added Tag");
             this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.tags`, result.data.tags);
           }
         })
         .finally(() => {
-          this.set(`newCaseTagValues.${caseId}`, '');
+          this.set(`newCaseTagValues.${caseId}`, "");
           this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, false);
         });
     },
@@ -422,17 +425,17 @@ polarity.export = PolarityComponent.extend({
       this.set(`indicators.${indicatorId}.__updatingTags`, true);
 
       const payload = {
-        action: 'UPDATE_TAG',
+        action: "UPDATE_TAG",
         indicatorId,
         tag: tagToRemove,
-        mode: 'delete'
+        mode: "delete"
       };
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, "error");
           } else {
             const updatedTags = this.get(`indicators.${indicatorId}.indicator.tags.data`).filter(
               (tag) => tag.name !== tagToRemove
@@ -445,12 +448,12 @@ polarity.export = PolarityComponent.extend({
         });
     },
     reportFalsePositive(indicatorId) {
-      console.info('Report False Positive', indicatorId);
+      console.info("Report False Positive", indicatorId);
       this.set(`indicators.${indicatorId}.__savingFalsePositive`, true);
 
       const payload = {
-        action: 'REPORT_FALSE_POSITIVE',
-        entity: this.get('block.entity'),
+        action: "REPORT_FALSE_POSITIVE",
+        entity: this.get("block.entity"),
         owner: this.get(`indicators.${indicatorId}.indicator.ownerName`)
       };
 
@@ -458,7 +461,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, "error");
           } else {
             if (this.get(`indicators.${indicatorId}.indicator.falsePositives`) === result.data.count) {
               this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, true);
@@ -476,8 +479,8 @@ polarity.export = PolarityComponent.extend({
     setRating(indicatorId, rating) {
       this.set(`indicators.${indicatorId}.__savingRating`, true);
       const payload = {
-        action: 'UPDATE_INDICATOR',
-        field: 'rating',
+        action: "UPDATE_INDICATOR",
+        field: "rating",
         value: rating,
         indicatorId
       };
@@ -486,9 +489,9 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this._flashError(result.error.detail, "error");
           } else {
-            this.set('actionMessage', 'Set rating to : ' + result.data.rating);
+            this.set("actionMessage", "Set rating to : " + result.data.rating);
             this.set(`details.indicators.${indicatorId}.indicator.rating`, result.data.rating);
             this.set(
               `details.indicators.${indicatorId}.indicator.__ratingHuman`,
@@ -513,7 +516,7 @@ polarity.export = PolarityComponent.extend({
       let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
       if (currentPage < totalPages) {
         this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, currentPage + 1);
-        console.info('Current Page', currentPage + 1);
+        console.info("Current Page", currentPage + 1);
       }
     },
     firstPage(indicatorId, field) {
@@ -530,66 +533,66 @@ polarity.export = PolarityComponent.extend({
   },
   getScoreHuman(score) {
     if (score >= 801) {
-      return 'critical';
+      return "critical";
     }
     if (score >= 501) {
-      return 'high';
+      return "high";
     }
 
     if (score >= 201) {
-      return 'medium';
+      return "medium";
     }
 
-    return 'low';
+    return "low";
   },
   getRatingHuman(rating) {
     if (rating === 0) {
-      return 'Unknown';
+      return "Unknown";
     }
     if (rating <= 1) {
-      return 'Suspicious';
+      return "Suspicious";
     }
     if (rating <= 2) {
-      return 'Low';
+      return "Low";
     }
     if (rating <= 3) {
-      return 'Moderate';
+      return "Moderate";
     }
     if (rating <= 4) {
-      return 'High';
+      return "High";
     }
     if (rating <= 5) {
-      return 'Critical';
+      return "Critical";
     }
-    return 'Unknown';
+    return "Unknown";
   },
   getConfidenceHuman(confidence) {
     if (!confidence || confidence === 0) {
-      return 'Unassessed';
+      return "Unassessed";
     }
 
     if (confidence <= 25) {
-      return 'Improbable';
+      return "Improbable";
     }
 
     if (confidence <= 49) {
-      return 'Doubtful';
+      return "Doubtful";
     }
 
     if (confidence <= 69) {
-      return 'Possible';
+      return "Possible";
     }
 
     if (confidence <= 89) {
-      return 'Probable';
+      return "Probable";
     }
 
-    return 'Confirmed';
+    return "Confirmed";
   },
   getField(indicatorId, field) {
     this.set(`indicators.${indicatorId}.__${field}Loading`, true);
     const payload = {
-      action: 'GET_INDICATOR_FIELD',
+      action: "GET_INDICATOR_FIELD",
       field,
       indicatorId
     };
@@ -598,8 +601,8 @@ polarity.export = PolarityComponent.extend({
       .then((result) => {
         if (result.error) {
           console.error(result.error);
-          this._flashError(result.error.detail, 'error');
-        } else if (result.data && typeof result.data[field] !== 'undefined') {
+          this._flashError(result.error.detail, "error");
+        } else if (result.data && typeof result.data[field] !== "undefined") {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
           if (result.data[field].data) {
             this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
@@ -637,7 +640,7 @@ polarity.export = PolarityComponent.extend({
 
                 // Can't use set in a computed unless we ensure it only happens once per render
                 Ember.run.scheduleOnce(
-                  'afterRender',
+                  "afterRender",
                   this,
                   this.setStartEndIndexes,
                   indicatorId,
@@ -661,8 +664,8 @@ polarity.export = PolarityComponent.extend({
         }
       })
       .catch((err) => {
-        console.error('getField Error', err);
-        if (err.status === '504') {
+        console.error("getField Error", err);
+        if (err.status === "504") {
           this.set(`indicators.${indicatorId}.indicator.__${field}Timeout`, true);
         }
       })
