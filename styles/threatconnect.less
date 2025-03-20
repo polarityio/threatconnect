@@ -220,6 +220,10 @@ a.tc-link-tag {
       width: 33%;
     }
 
+    &.full-width {
+      width: 100%;
+    }
+
     .info-bar-key {
       width: 100%;
       display: inline-block;
@@ -299,7 +303,7 @@ a.tc-link-tag {
 
   &.loading {
     &:after {
-      content: ' ';
+      content: " ";
       z-index: 10;
       display: block;
       position: absolute;
@@ -447,7 +451,7 @@ a.tc-link-tag:hover {
 .form-control-new-case {
   display: block;
   width: 100%;
-  height: calc(1.5em + 0.5rem + 2px);
+  height: auto;
   padding: 0.375rem 0.75rem;
   font-size: 12px;
   font-weight: 500;
