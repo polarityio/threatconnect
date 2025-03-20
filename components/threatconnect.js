@@ -39,6 +39,7 @@ polarity.export = PolarityComponent.extend({
   newCaseStatus: "Open",
   newCaseSeverity: "Low",
   associateIndicator: false,
+  isCreatingCase: {},
   _flashError: function (msg) {
     this.get("flashMessages").add({
       message: "ThreatConnect: " + msg,
@@ -117,8 +118,9 @@ polarity.export = PolarityComponent.extend({
     cancelEdit(caseId) {
       this.set(`isEditingCases.${caseId}`, false);
     },
-    toggleCreateCase() {
-      this.toggleProperty("isCreatingCase");
+    toggleCreateCase(indicatorId) {
+      let isCreating = this.get(`isCreatingCase.${indicatorId}`) || false;
+      this.set(`isCreatingCase.${indicatorId}`, !isCreating);
     },
     saveCaseUpdates(caseId, indicatorId) {
       const newCaseAttributes = this.get("newCaseAttributes") || [];
@@ -252,6 +254,7 @@ polarity.export = PolarityComponent.extend({
       const name = this.get("newCaseName");
       if (!name) {
         this._flashError("Name is required", "error");
+        return;
       }
 
       const payload = {

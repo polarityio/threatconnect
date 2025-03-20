@@ -947,16 +947,16 @@
               <h1
                 class="p-title d-flex align-items-center justify-content-between"
                 style="color:#f97b06"
-                {{action "toggleCreateCase"}}
+                {{action "toggleCreateCase" indicatorId}}
               >
-                {{#unless isCreatingCase}}
+                {{#unless (get isCreatingCase indicatorId)}}
                   <div>
                     {{fa-icon icon="plus" fixedWidth=true}}
                     Create New Case
                   </div>
                 {{/unless}}
               </h1>
-              {{#if isCreatingCase}}
+              {{#if (get isCreatingCase indicatorId)}}
                 <div>
                   <form {{action "createCase" indicatorId on="submit"}} class="case-form">
                     <div class="form-group">
@@ -1024,7 +1024,7 @@
                         type="submit"
                         class="btn btn-primary btn-new-case cancel"
                         style="border-radius: 0px"
-                        {{action "toggleCreateCase"}}
+                        {{action "toggleCreateCase" indicatorId}}
                       >
                         Cancel
                       </button>
@@ -1213,7 +1213,8 @@
                           {{/each}}
                         </div>
                       {{else}}
-                        <span class="info-bar-key">No Attributes Associated</span>
+                        <span class="info-bar-key" style="margin-top: 10px; margin-bottom: 10px;">No Attributes
+                          Associated</span>
                       {{/if}}
 
                       {{#if (get isEditingCases case.id)}}
