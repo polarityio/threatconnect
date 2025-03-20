@@ -117,6 +117,9 @@ polarity.export = PolarityComponent.extend({
     cancelEdit(caseId) {
       this.set(`isEditingCases.${caseId}`, false);
     },
+    toggleCreateCase() {
+      this.toggleProperty("isCreatingCase");
+    },
     saveCaseUpdates(caseId, indicatorId) {
       const newCaseAttributes = this.get("newCaseAttributes") || [];
 

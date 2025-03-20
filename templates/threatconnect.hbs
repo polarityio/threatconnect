@@ -944,73 +944,94 @@
 
           {{#if (eq orgData.__activeTab "cases")}}
             {{#if block.userOptions.enableEditingCases}}
-              <div>
-                <h1 class="p-title d-flex align-items-center justify-content-between" style="color:#f97b06">
+              <h1
+                class="p-title d-flex align-items-center justify-content-between"
+                style="color:#f97b06"
+                {{action "toggleCreateCase"}}
+              >
+                {{#unless isCreatingCase}}
                   <div>
+                    {{fa-icon icon="plus" fixedWidth=true}}
                     Create New Case
                   </div>
-                </h1>
-                <form {{action "createCase" indicatorId on="submit"}} class="case-form">
-                  <div class="form-group">
-                    <label for="case-name">Name</label>
-                    <input
-                      type="text"
-                      id="case-name"
-                      class="form-control-new-case"
-                      value={{newCaseName}}
-                      {{on "input" (action "updateNewCaseName")}}
-                      required
-                    />
-                  </div>
+                {{/unless}}
+              </h1>
+              {{#if isCreatingCase}}
+                <div>
+                  <form {{action "createCase" indicatorId on="submit"}} class="case-form">
+                    <div class="form-group">
+                      <label for="case-name">Name</label>
+                      <input
+                        type="text"
+                        id="case-name"
+                        class="form-control-new-case"
+                        value={{newCaseName}}
+                        {{on "input" (action "updateNewCaseName")}}
+                        required
+                      />
+                    </div>
 
-                  <div class="form-group">
-                    <label for="case-severity">Severity</label>
-                    <select
-                      id="case-severity"
-                      class="form-control-new-case"
-                      value={{newCaseSeverity}}
-                      {{on "change" (action "updateNewCaseSeverity")}}
-                    >
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Critical">Critical</option>
-                    </select>
-                  </div>
+                    <div class="form-group">
+                      <label for="case-severity">Severity</label>
+                      <select
+                        id="case-severity"
+                        class="form-control-new-case"
+                        value={{newCaseSeverity}}
+                        {{on "change" (action "updateNewCaseSeverity")}}
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                      </select>
+                    </div>
 
-                  <div class="form-group">
-                    <label for="case-status">Status</label>
-                    <select
-                      id="case-status"
-                      class="form-control-new-case"
-                      value={{newCaseStatus}}
-                      {{on "change" (action "updateNewCaseStatus")}}
-                    >
-                      <option value="Open">Open</option>
-                      <option value="Closed">Closed</option>
-                    </select>
-                  </div>
+                    <div class="form-group">
+                      <label for="case-status">Status</label>
+                      <select
+                        id="case-status"
+                        class="form-control-new-case"
+                        value={{newCaseStatus}}
+                        {{on "change" (action "updateNewCaseStatus")}}
+                      >
+                        <option value="Open">Open</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </div>
 
-                  <div class="checkbox-new-case">
-                    <input
-                      type="checkbox"
-                      id="associate-indicator"
-                      class="form-check-input-new-case"
-                      checked={{associateIndicator}}
-                      {{on "change" (action "toggleAssociateIndicator")}}
-                    />
-                    <label
-                      for="associate-indicator"
-                      class="form-check-label"
-                      style="margin-left: 20px; padding-top: 5px;"
-                    >
-                      Associate with current indicator
-                    </label>
-                  </div>
+                    <div class="checkbox-new-case">
+                      <input
+                        type="checkbox"
+                        id="associate-indicator"
+                        class="form-check-input-new-case"
+                        checked={{associateIndicator}}
+                        {{on "change" (action "toggleAssociateIndicator")}}
+                      />
+                      <label
+                        for="associate-indicator"
+                        class="form-check-label"
+                        style="margin-left: 20px; padding-top: 5px;"
+                      >
+                        Associate with current indicator
+                      </label>
+                    </div>
 
-                  <button type="submit" class="btn btn-primary btn-new-case" style="border-radius: 0px">Create Case</button>
-                </form>
-              </div>
+                    <div>
+                      <button type="submit" class="btn btn-primary btn-new-case" style="border-radius: 0px">
+                        Create Case
+                      </button>
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-new-case cancel"
+                        style="border-radius: 0px"
+                        {{action "toggleCreateCase"}}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              {{/if}}
             {{/if}}
 
             {{#if
