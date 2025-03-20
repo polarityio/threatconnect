@@ -81,6 +81,15 @@
       "type": "text",
       "userCanEdit": false,
       "adminOnly": true
+    },
+    {
+      "key": "enableEditingCases",
+      "name": "Enable Adding and Editing Cases",
+      "description": "If enabled, users will be able to add and edit cases. This option must be set to \"Lock and show option for all users\".",
+      "default": false,
+      "type": "boolean",
+      "userCanEdit": false,
+      "adminOnly": false
     }
   ]
 }

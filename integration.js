@@ -1,26 +1,26 @@
-'use strict';
+"use strict";
 
-const async = require('async');
+const async = require("async");
 
-const _ = require('lodash');
-const { setLogger } = require('./src/logger');
-const { createResultObjects } = require('./src/create-result-object');
-const { searchIndicator } = require('./src/queries/search-indicator');
-const { updateIndicator } = require('./src/queries/update-indicator');
-const { getIndicatorsById } = require('./src/queries/get-indicators-by-id');
-const { reportFalsePositive } = require('./src/queries/report-false-positive');
-const { updateTag } = require('./src/queries/update-tag');
-const { filterInvalidEntities } = require('./src/tc-request-utils');
-const { getTokenOwner } = require('./src/queries/get-token-owner');
-const { getCasesById } = require('./src/queries/get-cases-by-id');
-const { updateCaseTags } = require('./src/queries/update-cases');
-const { updateCase } = require('./src/queries/update-cases');
-const { getCaseAttributeTypes } = require('./src/queries/get-case-attribute-types');
-const { createCase } = require('./src/queries/create-case');
+const _ = require("lodash");
+const { setLogger } = require("./src/logger");
+const { createResultObjects } = require("./src/create-result-object");
+const { searchIndicator } = require("./src/queries/search-indicator");
+const { updateIndicator } = require("./src/queries/update-indicator");
+const { getIndicatorsById } = require("./src/queries/get-indicators-by-id");
+const { reportFalsePositive } = require("./src/queries/report-false-positive");
+const { updateTag } = require("./src/queries/update-tag");
+const { filterInvalidEntities } = require("./src/tc-request-utils");
+const { getTokenOwner } = require("./src/queries/get-token-owner");
+const { getCasesById } = require("./src/queries/get-cases-by-id");
+const { updateCaseTags } = require("./src/queries/update-cases");
+const { updateCase } = require("./src/queries/update-cases");
+const { getCaseAttributeTypes } = require("./src/queries/get-case-attribute-types");
+const { createCase } = require("./src/queries/create-case");
 
 const MAX_TASKS_AT_A_TIME = 2;
-const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
-const VALID_FETCH_FIELDS = ['associatedCases', 'associatedIndicators', 'associatedGroups', 'whois', 'dnsResolution'];
+const VALID_UPDATE_FIELDS = ["rating", "confidence", "tags"];
+const VALID_FETCH_FIELDS = ["associatedCases", "associatedIndicators", "associatedGroups", "whois", "dnsResolution"];
 
 const tokenOwners = {};
 
@@ -32,7 +32,7 @@ function startup(logger) {
 }
 
 async function doLookup(entities, options, cb) {
-  Logger.trace({ entities }, 'doLookup');
+  Logger.trace({ entities }, "doLookup");
 
   let lookupResults = [];
   const tasks = [];
@@ -53,11 +53,11 @@ async function doLookup(entities, options, cb) {
   try {
     await async.parallelLimit(tasks, MAX_TASKS_AT_A_TIME);
   } catch (error) {
-    Logger.error({ error }, 'Error in doLookup');
+    Logger.error({ error }, "Error in doLookup");
     return cb(error);
   }
 
-  Logger.trace({ lookupResults }, 'Lookup Results');
+  Logger.trace({ lookupResults }, "Lookup Results");
   cb(null, lookupResults);
 }
 
@@ -94,7 +94,7 @@ async function onDetails(resultObject, options, cb) {
 
     const caseAttributeTypes = await getCaseAttributeTypes(options);
     resultObject.data.details.caseAttributeTypes = caseAttributeTypes.body;
-    Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
+    Logger.trace({ resultObject, indicatorsById }, "onDetails Result");
 
     cb(null, resultObject.data);
   } catch (error) {
@@ -103,9 +103,9 @@ async function onDetails(resultObject, options, cb) {
 }
 
 async function onMessage(payload, options, cb) {
-  Logger.trace({ payload }, 'onMessage received');
+  Logger.trace({ payload }, "onMessage received");
   switch (payload.action) {
-    case 'GET_INDICATOR_FIELD':
+    case "GET_INDICATOR_FIELD":
       if (!VALID_FETCH_FIELDS.includes(payload.field)) {
         return cb(null, {
           error: {
@@ -118,11 +118,11 @@ async function onMessage(payload, options, cb) {
         const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
         // dnsResolution requires special handling because it includes "empty" records which we don't want to display
         // in the template.  We remove them server side so that local paging on the client works.
-        if (payload.field === 'dnsResolution') {
+        if (payload.field === "dnsResolution") {
           let dns = _.get(response, `${payload.indicatorId}.dnsResolution.data`, []);
           if (dns.length > 0) {
             response[payload.indicatorId].dnsResolution.data = dns.filter(
-              (dns) => typeof dns.addresses !== 'undefined'
+              (dns) => typeof dns.addresses !== "undefined"
             );
           }
         }
@@ -136,7 +136,7 @@ async function onMessage(payload, options, cb) {
       }
 
       break;
-    case 'UPDATE_INDICATOR':
+    case "UPDATE_INDICATOR":
       if (VALID_UPDATE_FIELDS.includes(payload.field)) {
         try {
           const updatedField = await updateIndicator(payload.indicatorId, payload.field, payload.value, options);
@@ -158,7 +158,7 @@ async function onMessage(payload, options, cb) {
       }
 
       break;
-    case 'REPORT_FALSE_POSITIVE':
+    case "REPORT_FALSE_POSITIVE":
       try {
         const response = await reportFalsePositive(payload.entity, payload.owner, options);
         cb(null, {
@@ -170,7 +170,7 @@ async function onMessage(payload, options, cb) {
         });
       }
       break;
-    case 'UPDATE_TAG':
+    case "UPDATE_TAG":
       try {
         const response = await updateTag(payload.indicatorId, payload.tag, payload.mode, options);
         cb(null, {
@@ -182,7 +182,7 @@ async function onMessage(payload, options, cb) {
         });
       }
       break;
-    case 'UPDATE_CASE_TAG':
+    case "UPDATE_CASE_TAG":
       try {
         const response = await updateCaseTags(payload.caseId, payload.tag, payload.mode, options);
         cb(null, {
@@ -194,11 +194,16 @@ async function onMessage(payload, options, cb) {
         });
       }
       break;
-    case 'UPDATE_CASE':
+    case "UPDATE_CASE":
       try {
+        if (!options.enableEditingCases) {
+          return cb(null, {
+            error: {
+              detail: "Editing cases is disabled."
+            }
+          });
+        }
         const response = await updateCase(payload, options);
-        Logger.trace({ response }, 'Update Case Response');
-
         cb(null, {
           data: response
         });
@@ -208,8 +213,15 @@ async function onMessage(payload, options, cb) {
         });
       }
       break;
-    case 'CREATE_CASE':
+    case "CREATE_CASE":
       try {
+        if (!options.enableEditingCases) {
+          return cb(null, {
+            error: {
+              detail: "Creating cases is disabled."
+            }
+          });
+        }
         const response = await createCase(payload, options);
         cb(null, {
           data: response
@@ -225,8 +237,8 @@ async function onMessage(payload, options, cb) {
 
 function isOptionMissing(userOptions, key) {
   if (
-    typeof userOptions[key].value !== 'string' ||
-    (typeof userOptions[key].value === 'string' && userOptions[key].value.length === 0)
+    typeof userOptions[key].value !== "string" ||
+    (typeof userOptions[key].value === "string" && userOptions[key].value.length === 0)
   ) {
     return true;
   }
@@ -236,39 +248,39 @@ function isOptionMissing(userOptions, key) {
 function validateOptions(userOptions, cb) {
   let errors = [];
 
-  if (isOptionMissing(userOptions, 'url')) {
+  if (isOptionMissing(userOptions, "url")) {
     errors.push({
-      key: 'url',
-      message: 'You must provide a valid ThreatConnect Instance URL'
+      key: "url",
+      message: "You must provide a valid ThreatConnect Instance URL"
     });
   }
 
-  if (isOptionMissing(userOptions, 'accessId')) {
+  if (isOptionMissing(userOptions, "accessId")) {
     errors.push({
-      key: 'accessId',
-      message: 'You must provide a valid Access ID'
+      key: "accessId",
+      message: "You must provide a valid Access ID"
     });
   }
 
-  if (isOptionMissing(userOptions, 'apiKey')) {
+  if (isOptionMissing(userOptions, "apiKey")) {
     errors.push({
-      key: 'apiKey',
-      message: 'You must provide a valid API Key'
+      key: "apiKey",
+      message: "You must provide a valid API Key"
     });
   }
 
   if (
-    typeof userOptions.searchAllowlist.value === 'string' &&
+    typeof userOptions.searchAllowlist.value === "string" &&
     userOptions.searchAllowlist.value.trim().length > 0 &&
-    typeof userOptions.searchBlocklist.value === 'string' &&
+    typeof userOptions.searchBlocklist.value === "string" &&
     userOptions.searchBlocklist.value.trim().length > 0
   ) {
     errors.push({
-      key: 'searchAllowlist',
+      key: "searchAllowlist",
       message: 'You cannot provide both an "Organization Search Allowlist", and an "Organization Search Blocklist".'
     });
     errors.push({
-      key: 'searchBlocklist',
+      key: "searchBlocklist",
       message: 'You cannot provide both an "Organization Search Blocklist", and an "Organization Search Allowlist".'
     });
   }
