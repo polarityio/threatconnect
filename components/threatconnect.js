@@ -35,10 +35,10 @@ polarity.export = PolarityComponent.extend({
   newCaseAttributeValues: {},
   caseAttributeTypes: Ember.computed.alias("details.caseAttributeTypes"),
   newCaseAttributes: {},
-  newCaseName: "",
-  newCaseStatus: "Open",
-  newCaseSeverity: "Low",
-  associateIndicator: false,
+  newCaseNameValues: {},
+  newCaseSeverityValues: {},
+  newCaseStatusValues: {},
+  associateIndicatorValues: {},
   isCreatingCase: {},
   _flashError: function (msg) {
     this.get("flashMessages").add({
@@ -146,6 +146,8 @@ polarity.export = PolarityComponent.extend({
         mode: "append"
       };
 
+      console.log("PAYLOAD", payload);
+
       Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
 
       if (Object.values(newValues).some((value) => value)) {
@@ -155,7 +157,14 @@ polarity.export = PolarityComponent.extend({
               console.error("Error", result.error);
               this._flashError(result.error.detail, "error");
             } else {
-              this.set("actionMessage", "Case updated successfully");
+              this.set("successCaseUpdateActionMessage", "Case updated successfully");
+              Ember.run.later(
+                this,
+                function () {
+                  this.set("successCaseUpdateActionMessage", null);
+                },
+                3000
+              );
 
               Object.entries(newValues).forEach(([key, value]) => {
                 if (value) {
@@ -237,21 +246,26 @@ polarity.export = PolarityComponent.extend({
         this.set("newCaseAttributes", updatedCaseAttributes);
       }
     },
+
     // Create New Case Functionality
-    updateNewCaseName(event) {
-      this.set("newCaseName", event.target.value);
+    updateNewCaseName(indicatorId, event) {
+      this.set(`newCaseNameValues.${indicatorId}`, event.target.value);
     },
-    updateNewCaseSeverity(event) {
-      this.set("newCaseSeverity", event.target.value);
+    updateNewCaseSeverity(indicatorId, event) {
+      this.set(`newCaseSeverityValues.${indicatorId}`, event.target.value);
     },
-    updateNewCaseStatus(event) {
-      this.set("newCaseStatus", event.target.value);
+    updateNewCaseStatus(indicatorId, event) {
+      this.set(`newCaseStatusValues.${indicatorId}`, event.target.value);
     },
-    toggleAssociateIndicator(event) {
-      this.set("associateIndicator", event.target.checked);
+    toggleAssociateIndicator(indicatorId, event) {
+      this.set(`associateIndicatorValues.${indicatorId}`, event.target.checked);
     },
     createCase(indicatorId) {
-      const name = this.get("newCaseName");
+      const name = this.get(`newCaseNameValues.${indicatorId}`);
+      const severity = this.get(`newCaseSeverityValues.${indicatorId}`) || "Low";
+      const status = this.get(`newCaseStatusValues.${indicatorId}`) || "Open";
+      const associate = this.get(`associateIndicatorValues.${indicatorId}`) || false;
+
       if (!name) {
         this._flashError("Name is required", "error");
         return;
@@ -259,11 +273,11 @@ polarity.export = PolarityComponent.extend({
 
       const payload = {
         action: "CREATE_CASE",
-        name: name,
-        severity: this.get("newCaseSeverity"),
-        status: this.get("newCaseStatus"),
-        associateIndicator: this.get("associateIndicator"),
-        indicatorId: indicatorId
+        name,
+        severity,
+        status,
+        associateIndicator: associate,
+        indicatorId
       };
 
       this.sendIntegrationMessage(payload)
@@ -272,15 +286,22 @@ polarity.export = PolarityComponent.extend({
             console.error("Result Error", result.error);
             this._flashError(result.error.detail, "error");
           } else {
-            this.set("actionMessage", "Case created successfully");
+            this.set("successCaseCreateActionMessage", "Case created successfully");
+            Ember.run.later(
+              this,
+              function () {
+                this.set("successCaseCreateActionMessage", null);
+              },
+              3000
+            );
           }
         })
         .finally(() => {
           this.setProperties({
-            ["newCaseName"]: "",
-            ["newCaseSeverity"]: "Low",
-            ["newCaseStatus"]: "Open",
-            ["associateIndicator"]: false
+            [`newCaseNameValues.${indicatorId}`]: "",
+            [`newCaseSeverityValues.${indicatorId}`]: "Low",
+            [`newCaseStatusValues.${indicatorId}`]: "Open",
+            [`associateIndicatorValues.${indicatorId}`]: false
           });
         });
     },

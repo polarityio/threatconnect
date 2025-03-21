@@ -965,8 +965,8 @@
                         type="text"
                         id="case-name"
                         class="form-control-new-case"
-                        value={{newCaseName}}
-                        {{on "input" (action "updateNewCaseName")}}
+                        value={{get newCaseNameValues indicatorId}}
+                        {{on "input" (action "updateNewCaseName" indicatorId)}}
                         required
                       />
                     </div>
@@ -976,8 +976,8 @@
                       <select
                         id="case-severity"
                         class="form-control-new-case"
-                        value={{newCaseSeverity}}
-                        {{on "change" (action "updateNewCaseSeverity")}}
+                        value={{get newCaseSeverityValues indicatorId}}
+                        {{on "change" (action "updateNewCaseSeverity" indicatorId)}}
                       >
                         <option value="Low">Low</option>
                         <option value="Medium">Medium</option>
@@ -991,8 +991,8 @@
                       <select
                         id="case-status"
                         class="form-control-new-case"
-                        value={{newCaseStatus}}
-                        {{on "change" (action "updateNewCaseStatus")}}
+                        value={{get newCaseStatusValues indicatorId}}
+                        {{on "change" (action "updateNewCaseStatus" indicatorId)}}
                       >
                         <option value="Open">Open</option>
                         <option value="Closed">Closed</option>
@@ -1004,8 +1004,8 @@
                         type="checkbox"
                         id="associate-indicator"
                         class="form-check-input-new-case"
-                        checked={{associateIndicator}}
-                        {{on "change" (action "toggleAssociateIndicator")}}
+                        checked={{get associateIndicatorValues indicatorId}}
+                        {{on "change" (action "toggleAssociateIndicator" indicatorId)}}
                       />
                       <label
                         for="associate-indicator"
@@ -1029,6 +1029,12 @@
                         Cancel
                       </button>
                     </div>
+
+                    {{#if successCaseCreateActionMessage}}
+                      <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
+                        {{successCaseCreateActionMessage}}
+                      </div>
+                    {{/if}}
                   </form>
                 </div>
               {{/if}}
@@ -1258,6 +1264,11 @@
                             </button>
                           {{/if}}
                         </div>
+                        {{#if successCaseUpdateActionMessage}}
+                          <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
+                            {{successCaseUpdateActionMessage}}
+                          </div>
+                        {{/if}}
                       {{/if}}
                     </div>
 
