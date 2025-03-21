@@ -13,9 +13,7 @@ polarity.export = PolarityComponent.extend({
   indicatorType: Ember.computed.alias("details.indicatorType"),
   entityValue: Ember.computed.alias("block.entity.value"),
   newCaseTagValues: {},
-  onDemand: Ember.computed("block.entity.requestContext.requestType", function () {
-    return this.block.entity.requestContext.requestType === "OnDemand";
-  }),
+  onDemand: Ember.computed("block.entity.requestContext.requestType", function () {}),
   firstIndicator: Ember.computed("indicators.[0]", function () {
     const indicatorOrderById = this.get("details.indicatorOrderById");
     return this.get("indicators")[indicatorOrderById[0]];
@@ -40,6 +38,8 @@ polarity.export = PolarityComponent.extend({
   newCaseStatusValues: {},
   associateIndicatorValues: {},
   isCreatingCase: {},
+  successCaseUpdateMessages: {},
+  successCaseCreateMessages: {},
   _flashError: function (msg) {
     this.get("flashMessages").add({
       message: "ThreatConnect: " + msg,
@@ -157,11 +157,12 @@ polarity.export = PolarityComponent.extend({
               console.error("Error", result.error);
               this._flashError(result.error.detail, "error");
             } else {
-              this.set("successCaseUpdateActionMessage", "Case updated successfully");
+              this.set(`successCaseUpdateMessages.${caseId}`, "Case updated successfully");
+
               Ember.run.later(
                 this,
                 function () {
-                  this.set("successCaseUpdateActionMessage", null);
+                  this.set(`successCaseUpdateMessages.${caseId}`, null);
                 },
                 3000
               );
@@ -286,11 +287,12 @@ polarity.export = PolarityComponent.extend({
             console.error("Result Error", result.error);
             this._flashError(result.error.detail, "error");
           } else {
-            this.set("successCaseCreateActionMessage", "Case created successfully");
+            this.set(`successCaseCreateMessages.${caseId}`, "Case created successfully");
+
             Ember.run.later(
               this,
               function () {
-                this.set("successCaseCreateActionMessage", null);
+                this.set(`successCaseCreateMessages.${caseId}`, null);
               },
               3000
             );

@@ -1030,9 +1030,9 @@
                       </button>
                     </div>
 
-                    {{#if successCaseCreateActionMessage}}
+                    {{#if (get successCaseCreateMessages case.id)}}
                       <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
-                        {{successCaseCreateActionMessage}}
+                        {{get successCaseCreateMessages case.id}}
                       </div>
                     {{/if}}
                   </form>
@@ -1083,10 +1083,10 @@
                   <div class="card-title">
                     <div class="d-flex align-items-start justify-content-between">
                       <div>
-                        <div>{{case.name}}</div>
                         <span class="p-footnote">
                           #{{case.id}}
                         </span>
+                        <div>{{case.name}}</div>
                       </div>
                       <div style="min-width: 40px;">
                         <a href="{{details.appUrl}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view
@@ -1255,18 +1255,14 @@
                             {{if (get isEditingCases case.id) "Save" "Edit"}}
                           </button>
                           {{#if (get isEditingCases case.id)}}
-                            <button
-                              class="btn btn-secondary btn-add-tag"
-                              style="border-radius: 0px;"
-                              {{action "cancelEdit" case.id}}
-                            >
+                            <button class="btn btn-secondary btn-add-tag cancel" {{action "cancelEdit" case.id}}>
                               Cancel
                             </button>
                           {{/if}}
                         </div>
-                        {{#if successCaseUpdateActionMessage}}
+                        {{#if (get successCaseUpdateMessages case.id)}}
                           <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
-                            {{successCaseUpdateActionMessage}}
+                            {{get successCaseUpdateMessages case.id}}
                           </div>
                         {{/if}}
                       {{/if}}
