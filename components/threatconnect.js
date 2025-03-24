@@ -40,6 +40,7 @@ polarity.export = PolarityComponent.extend({
   isCreatingCase: {},
   successCaseUpdateMessages: {},
   successCaseCreateMessages: {},
+  newCaseFields: {},
   _flashError: function (msg) {
     this.get("flashMessages").add({
       message: "ThreatConnect: " + msg,
@@ -53,6 +54,7 @@ polarity.export = PolarityComponent.extend({
     if (!this.get("block.detailsLoaded")) {
       this.set("isDetailsLoading", true);
     }
+    this.set("newCaseFields", {});
     this._super(...arguments);
   },
   onDetailsLoaded() {
@@ -121,6 +123,20 @@ polarity.export = PolarityComponent.extend({
     toggleCreateCase(indicatorId) {
       let isCreating = this.get(`isCreatingCase.${indicatorId}`) || false;
       this.set(`isCreatingCase.${indicatorId}`, !isCreating);
+
+      if (!isCreating) {
+        this.set(`newCaseFields.${indicatorId}`, [
+          {
+            key: "name",
+            name: "Name",
+            required: true,
+            __value: this.get(`newCaseNameValues.${indicatorId}`) || "",
+            __error: false
+          }
+        ]);
+      }
+
+      console.log("newCaseFields", this.get(`newCaseFields.${indicatorId}`));
     },
     saveCaseUpdates(caseId, indicatorId) {
       const newCaseAttributes = this.get("newCaseAttributes") || [];
@@ -262,12 +278,15 @@ polarity.export = PolarityComponent.extend({
       this.set(`associateIndicatorValues.${indicatorId}`, event.target.checked);
     },
     createCase(indicatorId) {
-      const name = this.get(`newCaseNameValues.${indicatorId}`);
+      const nameField = this.get(`newCaseFields.${indicatorId}`).findBy("key", "name");
+      const name = nameField.__value;
       const severity = this.get(`newCaseSeverityValues.${indicatorId}`) || "Low";
       const status = this.get(`newCaseStatusValues.${indicatorId}`) || "Open";
       const associate = this.get(`associateIndicatorValues.${indicatorId}`) || false;
 
       if (!name) {
+        nameField.__error = true;
+        this.notifyPropertyChange(`newCaseFields.${indicatorId}`);
         this._flashError("Name is required", "error");
         return;
       }
@@ -299,6 +318,8 @@ polarity.export = PolarityComponent.extend({
           }
         })
         .finally(() => {
+          this.set(`newCaseFields.${indicatorId}`, []);
+
           this.setProperties({
             [`newCaseNameValues.${indicatorId}`]: "",
             [`newCaseSeverityValues.${indicatorId}`]: "Low",

@@ -958,18 +958,26 @@
               </h1>
               {{#if (get isCreatingCase indicatorId)}}
                 <div>
+                  <p>Fields found: {{newCaseFields.[indicatorId]}}</p>
                   <form {{action "createCase" indicatorId on="submit"}} class="case-form">
-                    <div class="form-group">
-                      <label for="case-name">Name</label>
-                      <input
-                        type="text"
-                        id="case-name"
-                        class="form-control-new-case"
-                        value={{get newCaseNameValues indicatorId}}
-                        {{on "input" (action "updateNewCaseName" indicatorId)}}
-                        required
-                      />
-                    </div>
+                    {{#each newCaseFields.[indicatorId] as |field|}}
+                      {{#if (eq field.key "name")}}
+                        <div class="input-container" {{did-insert (set field "__isRendered" true)}}>
+                          <label class="small ifta-label">
+                            {{field.name}}
+                            {{#if field.required}}<span class="required">*</span>{{/if}}
+                          </label>
+                          {{input
+                            class=(concat "ifta-field" (if field.__error " error"))
+                            value=field.__value
+                            placeholder="Enter case name"
+                            required=(if field.required true false)
+                            disabled=isCreatingCase.[indicatorId]
+                            input=(action (mut field.__value))
+                          }}
+                        </div>
+                      {{/if}}
+                    {{/each}}
 
                     <div class="form-group">
                       <label for="case-severity">Severity</label>
