@@ -958,22 +958,20 @@
               </h1>
               {{#if (get isCreatingCase indicatorId)}}
                 <div>
-                  <p>Fields found: {{newCaseFields.[indicatorId]}}</p>
                   <form {{action "createCase" indicatorId on="submit"}} class="case-form">
-                    {{#each newCaseFields.[indicatorId] as |field|}}
+                    {{#each (get newCaseFields indicatorId) as |field|}}
                       {{#if (eq field.key "name")}}
-                        <div class="input-container" {{did-insert (set field "__isRendered" true)}}>
+                        <div class="form-group" {{did-insert (set field "__isRendered" true)}}>
                           <label class="small ifta-label">
                             {{field.name}}
                             {{#if field.required}}<span class="required">*</span>{{/if}}
                           </label>
                           {{input
-                            class=(concat "ifta-field" (if field.__error " error"))
-                            value=field.__value
-                            placeholder="Enter case name"
+                            class=(concat "form-control-new-case ifta-field" (if field.__error " error"))
+                            value=(or field.__value "")
                             required=(if field.required true false)
-                            disabled=isCreatingCase.[indicatorId]
-                            input=(action (mut field.__value))
+                            disabled=isCreatingCase.indicatorId
+                            input=(action "updateNewCaseName" indicatorId)
                           }}
                         </div>
                       {{/if}}
@@ -1029,7 +1027,7 @@
                         Create Case
                       </button>
                       <button
-                        type="submit"
+                        type="button"
                         class="btn btn-primary btn-new-case cancel"
                         style="border-radius: 0px"
                         {{action "toggleCreateCase" indicatorId}}
@@ -1038,11 +1036,11 @@
                       </button>
                     </div>
 
-                    {{#if (get successCaseCreateMessages case.id)}}
+                    {{!-- {{#if (get successCaseCreateMessages case.id)}}
                       <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
                         {{get successCaseCreateMessages case.id}}
                       </div>
-                    {{/if}}
+                    {{/if}} --}}
                   </form>
                 </div>
               {{/if}}

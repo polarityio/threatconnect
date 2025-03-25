@@ -468,6 +468,56 @@ a.tc-link-tag:hover {
   border: 1px solid #ced4da;
   border-radius: 0;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+  &.ifta-field {
+    height: auto;
+    padding: 0.375rem 0.75rem;
+    font-size: 12px;
+    font-weight: 500;
+    line-height: 1.5;
+    color: #000000;
+    background-color: #f7f7f7;
+    background-clip: padding-box;
+    border: 1px solid #ced4da;
+    border-radius: 0;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+    &::placeholder {
+      color: #dfdfdf;
+    }
+
+    &:focus {
+      outline: none;
+      color: #000000;
+      border-color: #7bc942; // @green
+      box-shadow: 0 0 0 0.2rem rgba(123, 201, 66, 0.25);
+      background-color: #fff;
+
+      &::placeholder {
+        color: transparent;
+      }
+    }
+
+    &.error {
+      border-color: #ff4559; // @red
+    }
+
+    &:disabled {
+      background-color: #f6f6f3 !important;
+      cursor: not-allowed;
+    }
+  }
+}
+
+.form-group {
+  .required {
+    color: #ff4559; // @red
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 400;
+  }
 }
 
 .form-check-input-new-case {

@@ -130,13 +130,11 @@ polarity.export = PolarityComponent.extend({
             key: "name",
             name: "Name",
             required: true,
-            __value: this.get(`newCaseNameValues.${indicatorId}`) || "",
+            __value: "",
             __error: false
           }
         ]);
       }
-
-      console.log("newCaseFields", this.get(`newCaseFields.${indicatorId}`));
     },
     saveCaseUpdates(caseId, indicatorId) {
       const newCaseAttributes = this.get("newCaseAttributes") || [];
@@ -161,8 +159,6 @@ polarity.export = PolarityComponent.extend({
         caseId,
         mode: "append"
       };
-
-      console.log("PAYLOAD", payload);
 
       Object.assign(payload, Object.fromEntries(Object.entries(newValues).filter(([_, value]) => value)));
 
@@ -266,7 +262,15 @@ polarity.export = PolarityComponent.extend({
 
     // Create New Case Functionality
     updateNewCaseName(indicatorId, event) {
-      this.set(`newCaseNameValues.${indicatorId}`, event.target.value);
+      const value = event.target.value || "";
+
+      this.set(`newCaseNameValues.${indicatorId}`, value);
+
+      const field = this.get(`newCaseFields.${indicatorId}`).findBy("key", "name");
+      if (field) {
+        Ember.set(field, "__value", value);
+        this.notifyPropertyChange(`newCaseFields.${indicatorId}`);
+      }
     },
     updateNewCaseSeverity(indicatorId, event) {
       this.set(`newCaseSeverityValues.${indicatorId}`, event.target.value);
@@ -305,16 +309,6 @@ polarity.export = PolarityComponent.extend({
           if (result.error) {
             console.error("Result Error", result.error);
             this._flashError(result.error.detail, "error");
-          } else {
-            this.set(`successCaseCreateMessages.${caseId}`, "Case created successfully");
-
-            Ember.run.later(
-              this,
-              function () {
-                this.set(`successCaseCreateMessages.${caseId}`, null);
-              },
-              3000
-            );
           }
         })
         .finally(() => {
@@ -326,6 +320,16 @@ polarity.export = PolarityComponent.extend({
             [`newCaseStatusValues.${indicatorId}`]: "Open",
             [`associateIndicatorValues.${indicatorId}`]: false
           });
+
+          this.set(`newCaseFields.${indicatorId}`, [
+            {
+              key: "name",
+              name: "Name",
+              required: true,
+              __value: "",
+              __error: false
+            }
+          ]);
         });
     },
     expandTags() {
