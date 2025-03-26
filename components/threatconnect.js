@@ -139,7 +139,6 @@ polarity.export = PolarityComponent.extend({
     },
     cancelEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
-      console.log("indicatorPath", indicatorId);
       const casesArray = this.get(indicatorPath);
       const caseToEdit = casesArray.find((c) => c.id === caseId);
 
