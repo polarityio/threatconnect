@@ -958,7 +958,7 @@
               </h1>
               {{#if (get isCreatingCase indicatorId)}}
                 <div>
-                  <form {{action "createCase" indicatorId on="submit"}} class="case-form">
+                  <form {{on "submit" (action "createCase" indicatorId)}} class='case-form'>
                     {{#each (get newCaseFields indicatorId) as |field|}}
                       {{#if (eq field.key "name")}}
                         <div class="form-group" {{did-insert (set field "__isRendered" true)}}>
@@ -1023,8 +1023,17 @@
                     </div>
 
                     <div>
-                      <button type="submit" class="btn btn-primary btn-new-case" style="border-radius: 0px">
-                        Create Case
+                      <button 
+                      type="submit" 
+                      class="btn btn-primary btn-new-case" 
+                      style="border-radius: 0px"
+                      disabled={{orgData.__isCreatingCase}}
+                      >
+                        {{#if orgData.__isCreatingCase}}
+                          {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
+                        {{else}}
+                          Create Case  
+                        {{/if}}  
                       </button>
                       <button
                         type="button"
@@ -1035,12 +1044,6 @@
                         Cancel
                       </button>
                     </div>
-
-                    {{!-- {{#if (get successCaseCreateMessages case.id)}}
-                      <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
-                        {{get successCaseCreateMessages case.id}}
-                      </div>
-                    {{/if}} --}}
                   </form>
                 </div>
               {{/if}}

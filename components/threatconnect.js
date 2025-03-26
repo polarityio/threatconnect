@@ -281,7 +281,8 @@ polarity.export = PolarityComponent.extend({
     toggleAssociateIndicator(indicatorId, event) {
       this.set(`associateIndicatorValues.${indicatorId}`, event.target.checked);
     },
-    createCase(indicatorId) {
+    createCase(indicatorId, event) {
+      event.preventDefault();
       const nameField = this.get(`newCaseFields.${indicatorId}`).findBy("key", "name");
       const name = nameField.__value;
       const severity = this.get(`newCaseSeverityValues.${indicatorId}`) || "Low";
@@ -304,6 +305,8 @@ polarity.export = PolarityComponent.extend({
         indicatorId
       };
 
+      this.set(`indicators.${indicatorId}.__isCreatingCase`, true);
+
       this.sendIntegrationMessage(payload)
         .then((result) => {
           if (result.error) {
@@ -320,7 +323,7 @@ polarity.export = PolarityComponent.extend({
             [`newCaseStatusValues.${indicatorId}`]: "Open",
             [`associateIndicatorValues.${indicatorId}`]: false
           });
-
+          this.set(`indicators.${indicatorId}.__isCreatingCase`, false);
           this.set(`newCaseFields.${indicatorId}`, [
             {
               key: "name",
