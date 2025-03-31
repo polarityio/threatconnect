@@ -958,14 +958,15 @@
               </h1>
               {{#if (get isCreatingCase indicatorId)}}
                 <div>
-                  <form {{on "submit" (action "createCase" indicatorId)}} class='case-form'>
+                  <form {{on "submit" (action "createCase" indicatorId)}} class="case-form">
                     <div class="form-group">
                       <label class="small ifta-label">
-                        Name <span class="required">*</span>
+                        Name
+                        <span class="required">*</span>
                       </label>
                       <input
                         type="text"
-                        class="form-control-new-case ifta-field {{if orgData.indicator.__newCase.__error "error"}}"
+                        class="form-control-new-case ifta-field {{if orgData.indicator.__newCase.__error 'error'}}"
                         value={{orgData.indicator.__newCase.name}}
                         required
                         disabled={{orgData.indicator.__isCreatingCase}}
@@ -1009,18 +1010,18 @@
                         checked={{orgData.indicator.__newCase.associateIndicator}}
                         {{on "change" (action "updateNewCaseField" indicatorId "associateIndicator")}}
                       />
-                      <label 
-                      for="associate-indicator"
-                      class="form-check-label"
-                      style="margin-left: 20px; padding-top: 5px;"
+                      <label
+                        for="associate-indicator"
+                        class="form-check-label"
+                        style="margin-left: 20px; padding-top: 5px;"
                       >
                         Associate with current indicator
                       </label>
                     </div>
 
                     <div>
-                      <button 
-                        type="submit" 
+                      <button
+                        type="submit"
                         class="btn btn-primary btn-new-case"
                         disabled={{orgData.indicator.__isCreatingCase}}
                         style="border-radius: 0px"
@@ -1029,7 +1030,7 @@
                           {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
                         {{else}}
                           Create Case
-                        {{/if}}  
+                        {{/if}}
                       </button>
                       <button
                         type="button"
@@ -1113,13 +1114,7 @@
                       <div class="info-bar-pill full-width">
                         <span class="info-bar-key">Description</span>
                         {{#if case.__isEditing}}
-                          <textarea
-                            class="info-bar-value"
-                            rows="3"
-                            {{on "input" (fn (action "updateDescription" case.id))}}
-                          >
-                            {{or case.__newDescription case.description}}
-                          </textarea>
+                          <textarea disabled={{case.__isSaving}} class="info-bar-value" rows="3" {{on "input" (pick "target.value" (set case "__newDescription"))}}>{{or case.__newDescription case.description}}</textarea>
                         {{else}}
                           <span class="info-bar-value">{{case.description}}</span>
                         {{/if}}
@@ -1129,9 +1124,10 @@
                           <span class="info-bar-key">Status</span>
                           {{#if case.__isEditing}}
                             <select
+                              disabled={{case.__isSaving}}
                               class="info-bar-value"
                               value={{or case.__newStatus case.status}}
-                              {{on "change" (fn (action "updateStatus" case.id))}}
+                              {{on "change" (pick "target.value" (set case "__newStatus"))}}
                             >
                               <option value="Open">Open</option>
                               <option value="Closed">Closed</option>
@@ -1145,9 +1141,10 @@
                           <span class="info-bar-key">Severity</span>
                           {{#if case.__isEditing}}
                             <select
+                              disabled={{case.__isSaving}}
                               class="info-bar-value"
                               value={{or case.__newSeverity case.severity}}
-                              {{on "change" (fn (action "updateSeverity" case.id))}}
+                              {{on "change" (pick "target.value" (set case "__newSeverity"))}}
                             >
                               <option value="Critical">Critical</option>
                               <option value="High">High</option>
@@ -1163,9 +1160,10 @@
                           <span class="info-bar-key">Resolution</span>
                           {{#if case.__isEditing}}
                             <select
+                              disabled={{case.__isSaving}}
                               class="info-bar-value"
                               value={{or case.__newResolution case.resolution}}
-                              {{on "change" (fn (action "updateResolution" case.id))}}
+                              {{on "change" (pick "target.value" (set case "__newResolution"))}}
                             >
                               <option value="Containment Achieved">Containment Achieved</option>
                               <option value="Deferred / Delayed">Deferred / Delayed</option>
@@ -1179,24 +1177,24 @@
                             <span class="info-bar-value">{{case.resolution}}</span>
                           {{/if}}
                         </div>
-
-                        {{#if case.__isEditing}}
-                          <div class="info-bar-pill">
-                            <span class="info-bar-key">Attribute Types</span>
-                            <select
-                              class="info-bar-value"
-                              value={{or case.__newAttributes case.selectedAttribute}}
-                              {{on "change" (fn (mut case.__newAttributes))}}
-                            >
-                              {{#each caseAttributeTypes.data as |attribute|}}
-                                <option value="{{json-stringify attribute}}">
-                                  {{attribute.name}}
-                                </option>
-                              {{/each}}
-                            </select>
-                          </div>
-                        {{/if}}
                       </div>
+
+                      {{#if case.__isEditing}}
+                        <div class="info-bar-pill full-width">
+                          <span class="info-bar-key">Attribute Types</span>
+                          <select
+                            disabled={{case.__isSaving}}
+                            class="info-bar-value"
+                            {{on "change" (action "updateAttributes" case.id orgData.indicator.id)}}
+                          >
+                            {{#each caseAttributeTypes.data as |attribute|}}
+                              <option value="{{json-stringify attribute}}">
+                                {{attribute.name}}
+                              </option>
+                            {{/each}}
+                          </select>
+                        </div>
+                      {{/if}}
 
                       {{#if case.attributes.data.length}}
                         <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
@@ -1242,10 +1240,19 @@
                             style="border-radius: 0px;"
                             {{action "toggleEdit" case.id orgData.indicator.id}}
                           >
-                            {{if case.__isEditing "Save" "Edit"}}
+                            {{#if case.__isSaving}}
+                              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
+                            {{else if case.__isEditing}}
+                              Save
+                            {{else}}
+                              Edit
+                            {{/if}}
                           </button>
                           {{#if case.__isEditing}}
-                            <button class="btn btn-secondary btn-add-tag cancel" {{action "cancelEdit" case.id orgData.indicator.id}}>
+                            <button
+                              class="btn btn-secondary btn-add-tag cancel"
+                              {{action "cancelEdit" case.id orgData.indicator.id}}
+                            >
                               Cancel
                             </button>
                           {{/if}}
