@@ -18,6 +18,19 @@ polarity.export = PolarityComponent.extend({
     const indicatorOrderById = this.get('details.indicatorOrderById');
     return this.get('indicators')[indicatorOrderById[0]];
   }),
+  tagsCount: Ember.computed('indicators.@each.tags', function () {
+    let indicators = this.get('indicators');
+    let totalTags = 0;
+
+    Object.keys(indicators).forEach((indicatorId) => {
+      let tags = this.get(`indicators.${indicatorId}.indicator.tags.data`);
+      if (Array.isArray(tags)) {
+        totalTags += tags.length;
+      }
+    });
+
+    return totalTags;
+  }),
   newTagValues: Ember.computed(() => ({})),
   isExpanded: false,
   pageSize: 10,
@@ -28,13 +41,6 @@ polarity.export = PolarityComponent.extend({
   caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
   isCreatingCase: {},
   newCaseFields: {},
-  _flashError: function (msg) {
-    this.get('flashMessages').add({
-      message: 'ThreatConnect: ' + msg,
-      type: 'unv-danger',
-      timeout: 3000
-    });
-  },
   flashMessage(message, type = 'info') {
     this.flashMessages.add({
       message: `${this.block.acronym}: ${message}`,
@@ -51,7 +57,6 @@ polarity.export = PolarityComponent.extend({
     }
     this.set('newCaseFields', {});
     this._super(...arguments);
-    this.send('getTotalTagCount');
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
@@ -115,22 +120,6 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
-    getTotalTagCount() {
-      let indicators = this.get('indicators');
-      let totalTags = 0;
-      Object.keys(indicators).forEach((indicatorId) => {
-        let tags = this.get(`details.indicators.${indicatorId}.indicator.tags.data`);
-        console.log('Tags for indicator', indicatorId, tags);
-        if (Array.isArray(tags)) {
-          totalTags += tags.length;
-        }
-      });
-
-      console.log('Total Tags:', totalTags);
-      Ember.set(indicators, '__tagsCount', totalTags);
-      this.notifyPropertyChange('indicators.__tagsCount');
-      console.log(this.get('indicators.__tagsCount'));
-    },
     toggleEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
@@ -201,17 +190,12 @@ polarity.export = PolarityComponent.extend({
           .then((result) => {
             if (result.error) {
               console.error('Error', result.error);
-              this._flashError(result.error.detail, 'error');
+              this.flashMessage(`${result.error.detail}`, 'error');
             } else {
+              this.flashMessage(`Case with ID ${result.data.id} updated successfully`, 'success');
+
               this.set(`${indicatorPath}.${caseIndex}.__successMessage`, 'Case updated successfully');
 
-              Ember.run.later(
-                this,
-                function () {
-                  this.set(`${indicatorPath}.${caseIndex}.__successMessage`, null);
-                },
-                3000
-              );
               Object.entries(newValues).forEach(([key, value]) => {
                 if (value) {
                   this.set(`${indicatorPath}.${caseIndex}.${key}`, value);
@@ -343,7 +327,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error('Result Error', result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
 
@@ -425,7 +409,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
 
             let originalValue = this.get(`indicators.${indicatorId}.indicator.confidence`);
             // Note: this is a trick to get the property observers to fire so we can reset the
@@ -464,10 +448,12 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             this.set('actionMessage', 'Added Tag');
             this.set(`indicators.${indicatorId}.indicator.tags`, result.data);
+            this.notifyPropertyChange(`indicators.${indicatorId}.indicator.tags`);
+            this.notifyPropertyChange('tagsCount');
           }
         })
         .finally(() => {
@@ -506,7 +492,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error('Result Error', result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             this.set('actionMessage', 'Added Tag');
             this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.tags`, result.data.tags);
@@ -531,12 +517,13 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             const updatedTags = this.get(`indicators.${indicatorId}.indicator.tags.data`).filter(
               (tag) => tag.name !== tagToRemove
             );
             this.set(`indicators.${indicatorId}.indicator.tags.data`, updatedTags);
+            this.notifyPropertyChange('tagsCount');
           }
         })
         .finally(() => {
@@ -557,7 +544,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             if (this.get(`indicators.${indicatorId}.indicator.falsePositives`) === result.data.count) {
               this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, true);
@@ -585,7 +572,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             this.set('actionMessage', 'Set rating to : ' + result.data.rating);
             this.set(`details.indicators.${indicatorId}.indicator.rating`, result.data.rating);
@@ -697,7 +684,7 @@ polarity.export = PolarityComponent.extend({
       .then((result) => {
         if (result.error) {
           console.error(result.error);
-          this._flashError(result.error.detail, 'error');
+          this.flashMessage(`${result.error.detail}`, 'error');
         } else if (result.data && typeof result.data[field] !== 'undefined') {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
           if (result.data[field].data) {

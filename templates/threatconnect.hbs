@@ -121,10 +121,9 @@
       <span class="p-footnote">False positive already reported today</span>
     </div>
 
-    <div {{action "expandTags"}} class="header-container">
+    <div {{action "expandTags"}} class="header-container" style="margin-top: 8px">
       <div class="emphasize-text">
-        All Tags
-        {{get indicators "__tagsCount"}}
+        All Tags ({{tagsCount}})
       </div>
       <div>
         <button class="btn toggle-btn p-action" title="View indicator details">
@@ -179,14 +178,10 @@
               <button
                 class="btn btn-secondary btn-add-tag"
                 type="button"
-                disabled={{if
-                  (or organizationData.indicator.__updatingTags (eq (get newTagValues indicatorId) ""))
-                  true
-                  false
-                }}
+                disabled={{or organizationData.indicatorId.__updatingTags (not (get newTagValues indicatorId))}}
                 {{action "addTag" indicatorId}}
               >
-                {{#if organizationData.indicator.__updatingTags}}
+                {{#if organizationData.indicatorId.__updatingTags}}
                   {{fa-icon "spinner-third" spin=true}}
                 {{else}}
                   Add Tag
@@ -1047,11 +1042,7 @@
                       >
                         Cancel
                       </button>
-                      {{#if orgData.indicator.__newCase.__successMessage}}
-                        <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
-                          {{orgData.indicator.__newCase.__successMessage}}
-                        </div>
-                      {{/if}}
+
                     </div>
                   </form>
                 </div>
@@ -1207,6 +1198,10 @@
                       {{#if case.__isEditing}}
                         <div class="info-bar-pill full-width">
                           <span class="info-bar-key">Attribute Types</span>
+                          <div class="p-footnote" style="color:rgb(200, 200, 200)">
+                            Select many attributes from the dropdown. The attributes will be applied to the case when
+                            you click the "Save" button.
+                          </div>
                           <select
                             disabled={{case.__isSaving}}
                             class="info-bar-value"
@@ -1280,11 +1275,6 @@
                       {{else}}
                         <span class="info-bar-key" style="margin-top: 10px; margin-bottom: 10px;">No Attributes
                           Associated</span>
-                      {{/if}}
-                      {{#if case.__successMessage}}
-                        <div class="alert alert-success" style="margin-bottom: 10px; margin-top: 10px;">
-                          {{case.__successMessage}}
-                        </div>
                       {{/if}}
                     </div>
 
