@@ -26,13 +26,20 @@ polarity.export = PolarityComponent.extend({
   indicatorPlaybookId: null,
   isRunning: false,
   caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
-  associateIndicatorValues: {},
   isCreatingCase: {},
   newCaseFields: {},
   _flashError: function (msg) {
     this.get('flashMessages').add({
       message: 'ThreatConnect: ' + msg,
       type: 'unv-danger',
+      timeout: 3000
+    });
+  },
+  flashMessage(message, type = 'info') {
+    this.flashMessages.add({
+      message: `${this.block.acronym}: ${message}`,
+      type: `unv-${type}`,
+      icon: type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle',
       timeout: 3000
     });
   },
@@ -44,6 +51,7 @@ polarity.export = PolarityComponent.extend({
     }
     this.set('newCaseFields', {});
     this._super(...arguments);
+    this.send('getTotalTagCount');
   },
   onDetailsLoaded() {
     if (!this.isDestroyed) {
@@ -90,12 +98,39 @@ polarity.export = PolarityComponent.extend({
               default:
                 caseObj.__severityColor = '';
             }
+
+            switch (caseObj.status) {
+              case 'Open':
+                caseObj.__statusColor = 'green-text';
+                break;
+              case 'Closed':
+                caseObj.__statusColor = 'red-text';
+                break;
+              default:
+                caseObj.__statusColor = '';
+            }
           });
         }
       }
     }
   },
   actions: {
+    getTotalTagCount() {
+      let indicators = this.get('indicators');
+      let totalTags = 0;
+      Object.keys(indicators).forEach((indicatorId) => {
+        let tags = this.get(`details.indicators.${indicatorId}.indicator.tags.data`);
+        console.log('Tags for indicator', indicatorId, tags);
+        if (Array.isArray(tags)) {
+          totalTags += tags.length;
+        }
+      });
+
+      console.log('Total Tags:', totalTags);
+      Ember.set(indicators, '__tagsCount', totalTags);
+      this.notifyPropertyChange('indicators.__tagsCount');
+      console.log(this.get('indicators.__tagsCount'));
+    },
     toggleEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
@@ -234,53 +269,62 @@ polarity.export = PolarityComponent.extend({
     },
     updateNewCaseField(indicatorId, field, event) {
       const value = field === 'associateIndicator' ? event.target.checked : event.target.value;
-
       const path = `indicators.${indicatorId}.indicator.__newCase`;
 
-      this.set(
-        path,
-        this.get(path) || {
-          name: '',
-          status: 'Open',
-          severity: 'Low',
-          associateIndicator: false,
-          __error: false,
-          __required: ['name']
-        }
-      );
-
       this.set(`${path}.${field}`, value);
+      this.notifyPropertyChange(path);
     },
     toggleCreateCase(indicatorId) {
       let isCreating = this.get(`isCreatingCase.${indicatorId}`) || false;
       this.set(`isCreatingCase.${indicatorId}`, !isCreating);
 
       if (!isCreating) {
+        const path = `indicators.${indicatorId}.indicator.__newCase`;
+
+        this.set(path, {
+          name: '',
+          status: 'Open',
+          severity: 'Low',
+          associateIndicator: true,
+          __error: false,
+          __errorMessage: '',
+          __required: ['name']
+        });
+
         this.set(`newCaseFields.${indicatorId}`, [
           {
             key: 'name',
             name: 'Name',
             required: true,
             __value: '',
-            __error: false
+            __error: false,
+            __errorMessage: ''
           }
         ]);
+
+        this.notifyPropertyChange(path);
       }
     },
     createCase(indicatorId, event) {
       event.preventDefault();
 
       const indicatorPath = `indicators.${indicatorId}.indicator`;
-      const newCase = this.get(`${indicatorPath}.__newCase`) || {};
+      const newCasePath = `${indicatorPath}.__newCase`;
+      let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
       const severity = newCase.severity || 'Low';
       const status = newCase.status || 'Open';
-      const associate = newCase.associateIndicator || false;
+      const associate = newCase.associateIndicator;
 
       if (!name) {
-        Ember.set(newCase, '__error', true);
-        this._flashError('Name is required', 'error');
+        this.set(newCasePath, {
+          newCase,
+          __error: true,
+          __errorMessage: 'Name is required'
+        });
+
+        this.notifyPropertyChange(newCasePath);
         return;
       }
 
@@ -301,38 +345,33 @@ polarity.export = PolarityComponent.extend({
             console.error('Result Error', result.error);
             this._flashError(result.error.detail, 'error');
           } else {
+            this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
+
             if (associate) {
               let cases = this.get(`${indicatorPath}.associatedCases.data`);
-              cases.push(result.data);
+              cases.pushObject(result.data);
               this.notifyPropertyChange(`${indicatorPath}.associatedCases.data`);
             }
 
             this.set(`${indicatorPath}.__newCase.__successMessage`, 'Case created successfully');
-            Ember.run.later(
-              this,
-              function () {
-                this.set(`${indicatorPath}.__newCase.__successMessage`, null);
-              },
-              3000
-            );
 
             this.send('toggleCreateCase', indicatorId);
           }
         })
         .finally(() => {
-          const newCaseReset = this.get(`${indicatorPath}.__newCase`);
+          const newCaseReset = this.get(newCasePath);
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
             Ember.set(newCaseReset, 'severity', 'Low');
             Ember.set(newCaseReset, 'status', 'Open');
             Ember.set(newCaseReset, 'associateIndicator', false);
             Ember.set(newCaseReset, '__error', false);
+            Ember.set(newCaseReset, '__errorMessage', null);
             Ember.set(newCaseReset, '__required', ['name']);
           }
 
           this.set(`${indicatorPath}.__isCreatingCase`, false);
-
-          this.notifyPropertyChange(`${indicatorPath}.__newCase`);
+          this.notifyPropertyChange(newCasePath);
         });
     },
     expandTags() {
