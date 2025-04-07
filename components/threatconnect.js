@@ -49,6 +49,33 @@ polarity.export = PolarityComponent.extend({
       timeout: 3000
     });
   },
+  applyStatusColorToCase(caseObj) {
+    switch (caseObj.status) {
+      case 'Open':
+        Ember.set(caseObj, '__statusColor', 'green-text');
+        break;
+      case 'Closed':
+        Ember.set(caseObj, '__statusColor', 'red-text');
+        break;
+      default:
+        Ember.set(caseObj, '__statusColor', '');
+    }
+  },
+  applySeverityColorToCase(caseObj) {
+    switch (caseObj.severity) {
+      case 'Critical':
+        Ember.set(caseObj, '__severityColor', 'maroon-text');
+        break;
+      case 'High':
+        Ember.set(caseObj, '__severityColor', 'red-text');
+        break;
+      case 'Medium':
+        Ember.set(caseObj, '__severityColor', 'orange-text');
+        break;
+      default:
+        Ember.set(caseObj, '__severityColor', '');
+    }
+  },
   init() {
     let array = new Uint32Array(5);
     this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
@@ -90,42 +117,14 @@ polarity.export = PolarityComponent.extend({
 
         if (indicator.associatedCases && indicator.associatedCases.data) {
           indicator.associatedCases.data.forEach((caseObj) => {
-            this.send('applySeverityColorToCase', caseObj);
-            this.send('applyStatusColorToCase', caseObj);
+            this.applySeverityColorToCase(caseObj);
+            this.applyStatusColorToCase(caseObj);
           });
         }
       }
     }
   },
   actions: {
-    applyStatusColorToCase(caseObj) {
-      switch (caseObj.status) {
-        case 'Open':
-          Ember.set(caseObj, '__statusColor', 'green-text');
-          break;
-        case 'Closed':
-          Ember.set(caseObj, '__statusColor', 'red-text');
-          break;
-        default:
-          Ember.set(caseObj, '__statusColor', '');
-      }
-    },
-
-    applySeverityColorToCase(caseObj) {
-      switch (caseObj.severity) {
-        case 'Critical':
-          Ember.set(caseObj, '__severityColor', 'maroon-text');
-          break;
-        case 'High':
-          Ember.set(caseObj, '__severityColor', 'red-text');
-          break;
-        case 'Medium':
-          Ember.set(caseObj, '__severityColor', 'orange-text');
-          break;
-        default:
-          Ember.set(caseObj, '__severityColor', '');
-      }
-    },
     toggleEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
@@ -213,8 +212,8 @@ polarity.export = PolarityComponent.extend({
               }
 
               const caseUpdated = this.get(`${indicatorPath}.${caseIndex}`);
-              this.send('applySeverityColorToCase', caseUpdated);
-              this.send('applyStatusColorToCase', caseUpdated);
+              this.applySeverityColorToCase(caseUpdated);
+              this.applyStatusColorToCase(caseUpdated);
             }
           })
           .finally(() => {
@@ -349,8 +348,8 @@ polarity.export = PolarityComponent.extend({
             const createdCase = cases.find((caseObj) => caseObj.id === result.data.id);
 
             if (createdCase) {
-              this.send('applySeverityColorToCase', createdCase);
-              this.send('applyStatusColorToCase', createdCase);
+              this.applySeverityColorToCase(createdCase);
+              this.applyStatusColorToCase(createdCase);
             }
 
             this.set(`${indicatorPath}.__newCase.__successMessage`, 'Case created successfully');
