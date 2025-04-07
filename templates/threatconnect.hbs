@@ -1145,8 +1145,8 @@
                               value={{or case.__newStatus case.status}}
                               {{on "change" (pick "target.value" (set case "__newStatus"))}}
                             >
-                              <option value="Open">Open</option>
-                              <option value="Closed">Closed</option>
+                              <option selected={{eq case.status "Open"}} value="Open">Open</option>
+                              <option selected={{eq case.status "Closed"}} value="Closed">Closed</option>
                             </select>
                           {{else}}
                             <span class="info-bar-value {{case.__statusColor}}">{{case.status}}</span>
@@ -1162,10 +1162,10 @@
                               value={{or case.__newSeverity case.severity}}
                               {{on "change" (pick "target.value" (set case "__newSeverity"))}}
                             >
-                              <option value="Critical">Critical</option>
-                              <option value="High">High</option>
-                              <option value="Medium">Medium</option>
-                              <option value="Low">Low</option>
+                              <option selected={{eq case.severity "Critical"}} value="Critical">Critical</option>
+                              <option selected={{eq case.severity "High"}} value="High">High</option>
+                              <option selected={{eq case.severity "Medium"}} value="Medium">Medium</option>
+                              <option selected={{eq case.severity "Low"}} value="Low">Low</option>
                             </select>
                           {{else}}
                             <span class="info-bar-value {{case.__severityColor}}">{{case.severity}}</span>
@@ -1181,13 +1181,28 @@
                               value={{or case.__newResolution case.resolution}}
                               {{on "change" (pick "target.value" (set case "__newResolution"))}}
                             >
-                              <option value="Containment Achieved">Containment Achieved</option>
-                              <option value="Deferred / Delayed">Deferred / Delayed</option>
-                              <option value="Escalated">Escalated</option>
-                              <option value="False Positive">False Positive</option>
-                              <option value="In Progress / Investigating">In Progress / Investigating</option>
-                              <option value="Rejected">Rejected</option>
-                              <option value="Restoration Achieved">Restoration Achieved</option>
+                              <option selected={{eq case.resolution "Not Specified"}} value="Not Specified" disabled>Not
+                                Specified</option>
+                              <option
+                                selected={{eq case.resolution "Containment Achieved"}}
+                                value="Containment Achieved"
+                              >Containment Achieved</option>
+                              <option
+                                selected={{eq case.resolution "Deferred / Delayed"}}
+                                value="Deferred / Delayed"
+                              >Deferred / Delayed</option>
+                              <option selected={{eq case.resolution "Escalated"}} value="Escalated">Escalated</option>
+                              <option selected={{eq case.resolution "False Positive"}} value="False Positive">False
+                                Positive</option>
+                              <option
+                                selected={{eq case.resolution "In Progress / Investigating"}}
+                                value="In Progress / Investigating"
+                              >In Progress / Investigating</option>
+                              <option selected={{eq case.resolution "Rejected"}} value="Rejected">Rejected</option>
+                              <option
+                                selected={{eq case.resolution "Restoration Achieved"}}
+                                value="Restoration Achieved"
+                              >Restoration Achieved</option>
                             </select>
                           {{else}}
                             <span class="info-bar-value">{{case.resolution}}</span>

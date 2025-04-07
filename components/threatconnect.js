@@ -90,36 +90,42 @@ polarity.export = PolarityComponent.extend({
 
         if (indicator.associatedCases && indicator.associatedCases.data) {
           indicator.associatedCases.data.forEach((caseObj) => {
-            switch (caseObj.severity) {
-              case 'Critical':
-                caseObj.__severityColor = 'maroon-text';
-                break;
-              case 'High':
-                caseObj.__severityColor = 'red-text';
-                break;
-              case 'Medium':
-                caseObj.__severityColor = 'orange-text';
-                break;
-              default:
-                caseObj.__severityColor = '';
-            }
-
-            switch (caseObj.status) {
-              case 'Open':
-                caseObj.__statusColor = 'green-text';
-                break;
-              case 'Closed':
-                caseObj.__statusColor = 'red-text';
-                break;
-              default:
-                caseObj.__statusColor = '';
-            }
+            this.send('applySeverityColorToCase', caseObj);
+            this.send('applyStatusColorToCase', caseObj);
           });
         }
       }
     }
   },
   actions: {
+    applyStatusColorToCase(caseObj) {
+      switch (caseObj.status) {
+        case 'Open':
+          Ember.set(caseObj, '__statusColor', 'green-text');
+          break;
+        case 'Closed':
+          Ember.set(caseObj, '__statusColor', 'red-text');
+          break;
+        default:
+          Ember.set(caseObj, '__statusColor', '');
+      }
+    },
+
+    applySeverityColorToCase(caseObj) {
+      switch (caseObj.severity) {
+        case 'Critical':
+          Ember.set(caseObj, '__severityColor', 'maroon-text');
+          break;
+        case 'High':
+          Ember.set(caseObj, '__severityColor', 'red-text');
+          break;
+        case 'Medium':
+          Ember.set(caseObj, '__severityColor', 'orange-text');
+          break;
+        default:
+          Ember.set(caseObj, '__severityColor', '');
+      }
+    },
     toggleEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
@@ -205,6 +211,10 @@ polarity.export = PolarityComponent.extend({
               if (result.data.attributes.data) {
                 this.set(`${indicatorPath}.${caseIndex}.attributes.data`, result.data.attributes.data);
               }
+
+              const caseUpdated = this.get(`${indicatorPath}.${caseIndex}`);
+              this.send('applySeverityColorToCase', caseUpdated);
+              this.send('applyStatusColorToCase', caseUpdated);
             }
           })
           .finally(() => {
@@ -331,10 +341,16 @@ polarity.export = PolarityComponent.extend({
           } else {
             this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
 
+            let cases = this.get(`${indicatorPath}.associatedCases.data`);
             if (associate) {
-              let cases = this.get(`${indicatorPath}.associatedCases.data`);
-              cases.pushObject(result.data);
+              cases.unshiftObject(result.data);
               this.notifyPropertyChange(`${indicatorPath}.associatedCases.data`);
+            }
+            const createdCase = cases.find((caseObj) => caseObj.id === result.data.id);
+
+            if (createdCase) {
+              this.send('applySeverityColorToCase', createdCase);
+              this.send('applyStatusColorToCase', createdCase);
             }
 
             this.set(`${indicatorPath}.__newCase.__successMessage`, 'Case created successfully');

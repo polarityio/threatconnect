@@ -23,7 +23,8 @@ async function getCasesById(indicatorIdList, options) {
     uri: `${options.url}/v3/cases`,
     qs: {
       tql: `id in (${casesIds.join(',')})`,
-      fields
+      fields,
+      sorting: 'dateAdded DESC'
     },
     useQuerystring: true,
     method: 'GET'
