@@ -1,5 +1,4 @@
 'use strict';
-
 polarity.export = PolarityComponent.extend({
   newTagValue: '',
   showFalsePositiveAlreadyReported: false,
@@ -13,12 +12,24 @@ polarity.export = PolarityComponent.extend({
   playbooks: Ember.computed.alias('details.playbooks'),
   indicatorType: Ember.computed.alias('details.indicatorType'),
   entityValue: Ember.computed.alias('block.entity.value'),
-  onDemand: Ember.computed('block.entity.requestContext.requestType', function () {
-    return this.block.entity.requestContext.requestType === 'OnDemand';
-  }),
+  newCaseTagValues: {},
+  onDemand: Ember.computed('block.entity.requestContext.requestType', function () {}),
   firstIndicator: Ember.computed('indicators.[0]', function () {
     const indicatorOrderById = this.get('details.indicatorOrderById');
     return this.get('indicators')[indicatorOrderById[0]];
+  }),
+  tagsCount: Ember.computed('indicators.@each.tags', function () {
+    let indicators = this.get('indicators');
+    let totalTags = 0;
+
+    Object.keys(indicators).forEach((indicatorId) => {
+      let tags = this.get(`indicators.${indicatorId}.indicator.tags.data`);
+      if (Array.isArray(tags)) {
+        totalTags += tags.length;
+      }
+    });
+
+    return totalTags;
   }),
   newTagValues: Ember.computed(() => ({})),
   isExpanded: false,
@@ -27,12 +38,43 @@ polarity.export = PolarityComponent.extend({
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
   isRunning: false,
-  _flashError: function (msg) {
-    this.get('flashMessages').add({
-      message: 'ThreatConnect: ' + msg,
-      type: 'unv-danger',
+  caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
+  isCreatingCase: {},
+  newCaseFields: {},
+  flashMessage(message, type = 'info') {
+    this.flashMessages.add({
+      message: `${this.block.acronym}: ${message}`,
+      type: `unv-${type}`,
+      icon: type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : 'info-circle',
       timeout: 3000
     });
+  },
+  applyStatusColorToCase(caseObj) {
+    switch (caseObj.status) {
+      case 'Open':
+        Ember.set(caseObj, '__statusColor', 'green-text');
+        break;
+      case 'Closed':
+        Ember.set(caseObj, '__statusColor', 'red-text');
+        break;
+      default:
+        Ember.set(caseObj, '__statusColor', '');
+    }
+  },
+  applySeverityColorToCase(caseObj) {
+    switch (caseObj.severity) {
+      case 'Critical':
+        Ember.set(caseObj, '__severityColor', 'maroon-text');
+        break;
+      case 'High':
+        Ember.set(caseObj, '__severityColor', 'red-text');
+        break;
+      case 'Medium':
+        Ember.set(caseObj, '__severityColor', 'orange-text');
+        break;
+      default:
+        Ember.set(caseObj, '__severityColor', '');
+    }
   },
   init() {
     let array = new Uint32Array(5);
@@ -40,6 +82,7 @@ polarity.export = PolarityComponent.extend({
     if (!this.get('block.detailsLoaded')) {
       this.set('isDetailsLoading', true);
     }
+    this.set('newCaseFields', {});
     this._super(...arguments);
   },
   onDetailsLoaded() {
@@ -61,7 +104,7 @@ polarity.export = PolarityComponent.extend({
         indicator.__threatAssessScoreHuman = this.getScoreHuman(indicator.threatAssessScore);
         indicator.__threatAssesConfidenceHuman = this.getConfidenceHuman(indicator.threatAssessConfidence);
         indicator.__threatAssessRatingHuman = this.getRatingHuman(indicator.threatAssessRating);
-        
+
         let totalAssociations = 0;
         if (indicator.associatedGroups && indicator.associatedGroups.data) {
           totalAssociations += indicator.associatedGroups.data.length;
@@ -74,25 +117,262 @@ polarity.export = PolarityComponent.extend({
 
         if (indicator.associatedCases && indicator.associatedCases.data) {
           indicator.associatedCases.data.forEach((caseObj) => {
-            switch (caseObj.severity) {
-              case 'Critical':
-                caseObj.__severityColor = 'maroon-text';
-                break;
-              case 'High':
-                caseObj.__severityColor = 'red-text';
-                break;
-              case 'Medium':
-                caseObj.__severityColor = 'orange-text';
-                break;
-              default:
-                caseObj.__severityColor = '';
-            }
+            this.applySeverityColorToCase(caseObj);
+            this.applyStatusColorToCase(caseObj);
           });
         }
       }
     }
   },
   actions: {
+    toggleEdit(caseId, indicatorId) {
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseToEdit = casesArray.find((c) => c.id === caseId);
+
+      if (!caseToEdit) return;
+
+      const caseIndex = casesArray.indexOf(caseToEdit);
+
+      const isEditing = this.get(`${indicatorPath}.${caseIndex}.__isEditing`) || false;
+
+      if (isEditing) {
+        this.send('saveCaseUpdates', caseId, indicatorId);
+      } else {
+        this.set(`${indicatorPath}.${caseIndex}.__isEditing`, true);
+      }
+    },
+    cancelEdit(caseId, indicatorId) {
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseToEdit = casesArray.find((c) => c.id === caseId);
+
+      if (!caseToEdit) return;
+
+      const caseIndex = casesArray.indexOf(caseToEdit);
+
+      this.set(`${indicatorPath}.${caseIndex}.__isEditing`, false);
+    },
+    saveCaseUpdates(caseId, indicatorId) {
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseToUpdate = casesArray.find((c) => c.id === caseId);
+
+      if (!caseToUpdate) return;
+
+      const caseIndex = casesArray.indexOf(caseToUpdate);
+
+      this.set(`${indicatorPath}.${caseIndex}.__updating`, true);
+      this.set(`${indicatorPath}.${caseIndex}.__isSaving`, true);
+
+      const newValues = {
+        status: caseToUpdate.__newStatus,
+        severity: caseToUpdate.__newSeverity,
+        resolution: caseToUpdate.__newResolution,
+        description: caseToUpdate.__newDescription,
+        attributes: { data: caseToUpdate.__newAttributes }
+      };
+
+      const filteredValues = {};
+      Object.entries(newValues).forEach(([key, value]) => {
+        if (value) {
+          filteredValues[key] = value;
+        }
+      });
+
+      const payload = {
+        action: 'UPDATE_CASE',
+        caseId,
+        mode: 'append'
+      };
+
+      Object.assign(payload, filteredValues);
+
+      const shouldUpdate = Object.values(newValues).some((value) => value);
+
+      if (shouldUpdate) {
+        this.sendIntegrationMessage(payload)
+          .then((result) => {
+            if (result.error) {
+              console.error('Error', result.error);
+              this.flashMessage(`${result.error.detail}`, 'error');
+            } else {
+              this.flashMessage(`Case with ID ${result.data.id} updated successfully`, 'success');
+
+              this.set(`${indicatorPath}.${caseIndex}.__successMessage`, 'Case updated successfully');
+
+              Object.entries(newValues).forEach(([key, value]) => {
+                if (value) {
+                  this.set(`${indicatorPath}.${caseIndex}.${key}`, value);
+                }
+              });
+
+              if (result.data.attributes.data) {
+                this.set(`${indicatorPath}.${caseIndex}.attributes.data`, result.data.attributes.data);
+              }
+
+              const caseUpdated = this.get(`${indicatorPath}.${caseIndex}`);
+              this.applySeverityColorToCase(caseUpdated);
+              this.applyStatusColorToCase(caseUpdated);
+            }
+          })
+          .finally(() => {
+            this.setProperties({
+              [`${indicatorPath}.${caseIndex}.__newStatus`]: null,
+              [`${indicatorPath}.${caseIndex}.__newSeverity`]: null,
+              [`${indicatorPath}.${caseIndex}.__newResolution`]: null,
+              [`${indicatorPath}.${caseIndex}.__newDescription`]: null,
+              [`${indicatorPath}.${caseIndex}.__newAttributes`]: null,
+              [`${indicatorPath}.${caseIndex}.__isEditing`]: false,
+              [`${indicatorPath}.${caseIndex}.__updating`]: false,
+              [`${indicatorPath}.${caseIndex}.__isSaving`]: false
+            });
+          });
+      } else {
+        this.set(`${indicatorPath}.${caseIndex}.__isEditing`, false);
+        this.set(`${indicatorPath}.${caseIndex}.__updating`, false);
+      }
+    },
+    updateAttributes(caseId, indicatorId, event) {
+      const parsedValue = JSON.parse(event.target.value);
+      const newValue = { type: parsedValue.name, value: parsedValue.description };
+
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseToUpdate = casesArray.find((c) => c.id === caseId);
+
+      if (!caseToUpdate) return;
+
+      if (!this.get(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__newAttributes`)) {
+        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__newAttributes`, Ember.A([]));
+      }
+
+      this.get(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__newAttributes`).pushObject(newValue);
+    },
+    removeAttribute(caseId, indicatorId, index) {
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseToUpdate = casesArray.find((c) => c.id === caseId);
+
+      if (!caseToUpdate || !caseToUpdate.__newAttributes) return;
+
+      const updatedAttributes = caseToUpdate.__newAttributes.filter((_, i) => i !== index);
+
+      Ember.set(caseToUpdate, '__newAttributes', updatedAttributes);
+    },
+    updateNewCaseField(indicatorId, field, event) {
+      const value = field === 'associateIndicator' ? event.target.checked : event.target.value;
+      const path = `indicators.${indicatorId}.indicator.__newCase`;
+
+      this.set(`${path}.${field}`, value);
+      this.notifyPropertyChange(path);
+    },
+    toggleCreateCase(indicatorId) {
+      let isCreating = this.get(`isCreatingCase.${indicatorId}`) || false;
+      this.set(`isCreatingCase.${indicatorId}`, !isCreating);
+
+      if (!isCreating) {
+        const path = `indicators.${indicatorId}.indicator.__newCase`;
+
+        this.set(path, {
+          name: '',
+          status: 'Open',
+          severity: 'Low',
+          associateIndicator: true,
+          __error: false,
+          __errorMessage: '',
+          __required: ['name']
+        });
+
+        this.set(`newCaseFields.${indicatorId}`, [
+          {
+            key: 'name',
+            name: 'Name',
+            required: true,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
+          }
+        ]);
+
+        this.notifyPropertyChange(path);
+      }
+    },
+    createCase(indicatorId, event) {
+      event.preventDefault();
+
+      const indicatorPath = `indicators.${indicatorId}.indicator`;
+      const newCasePath = `${indicatorPath}.__newCase`;
+      let newCase = this.get(newCasePath) || {};
+
+      const name = newCase.name ? newCase.name.trim() : '';
+      const severity = newCase.severity || 'Low';
+      const status = newCase.status || 'Open';
+      const associate = newCase.associateIndicator;
+
+      if (!name) {
+        this.set(newCasePath, {
+          newCase,
+          __error: true,
+          __errorMessage: 'Name is required'
+        });
+
+        this.notifyPropertyChange(newCasePath);
+        return;
+      }
+
+      const payload = {
+        action: 'CREATE_CASE',
+        name,
+        severity,
+        status,
+        associateIndicator: associate,
+        indicatorId
+      };
+
+      this.set(`${indicatorPath}.__isCreatingCase`, true);
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this.flashMessage(`${result.error.detail}`, 'error');
+          } else {
+            this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
+
+            let cases = this.get(`${indicatorPath}.associatedCases.data`);
+            if (associate) {
+              cases.unshiftObject(result.data);
+              this.notifyPropertyChange(`${indicatorPath}.associatedCases.data`);
+            }
+            const createdCase = cases.find((caseObj) => caseObj.id === result.data.id);
+
+            if (createdCase) {
+              this.applySeverityColorToCase(createdCase);
+              this.applyStatusColorToCase(createdCase);
+            }
+
+            this.set(`${indicatorPath}.__newCase.__successMessage`, 'Case created successfully');
+
+            this.send('toggleCreateCase', indicatorId);
+          }
+        })
+        .finally(() => {
+          const newCaseReset = this.get(newCasePath);
+          if (newCaseReset) {
+            Ember.set(newCaseReset, 'name', '');
+            Ember.set(newCaseReset, 'severity', 'Low');
+            Ember.set(newCaseReset, 'status', 'Open');
+            Ember.set(newCaseReset, 'associateIndicator', false);
+            Ember.set(newCaseReset, '__error', false);
+            Ember.set(newCaseReset, '__errorMessage', null);
+            Ember.set(newCaseReset, '__required', ['name']);
+          }
+
+          this.set(`${indicatorPath}.__isCreatingCase`, false);
+          this.notifyPropertyChange(newCasePath);
+        });
+    },
     expandTags() {
       this.toggleProperty('isExpanded');
     },
@@ -144,7 +424,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
 
             let originalValue = this.get(`indicators.${indicatorId}.indicator.confidence`);
             // Note: this is a trick to get the property observers to fire so we can reset the
@@ -183,10 +463,12 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             this.set('actionMessage', 'Added Tag');
             this.set(`indicators.${indicatorId}.indicator.tags`, result.data);
+            this.notifyPropertyChange(`indicators.${indicatorId}.indicator.tags`);
+            this.notifyPropertyChange('tagsCount');
           }
         })
         .finally(() => {
@@ -195,6 +477,45 @@ polarity.export = PolarityComponent.extend({
             newTagValue: ''
           });
           this.set(`indicators.${indicatorId}.__updatingTags`, false);
+        });
+    },
+    updateCaseTagValue(caseId, event) {
+      this.set(`newCaseTagValues.${caseId}`, event.target.value);
+    },
+    addCaseTag(caseId, indicatorId) {
+      const newTag = this.get(`newCaseTagValues.${caseId}`).trim();
+      if (!newTag) {
+        this.set('actionMessage', 'You must enter a tag');
+        return;
+      }
+      let indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+
+      const caseToUpdate = casesArray.find((c) => c.id === caseId);
+      if (caseToUpdate) {
+        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, true);
+      }
+
+      const payload = {
+        action: 'UPDATE_CASE_TAG',
+        caseId,
+        tag: newTag,
+        mode: 'append'
+      };
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this.flashMessage(`${result.error.detail}`, 'error');
+          } else {
+            this.set('actionMessage', 'Added Tag');
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.tags`, result.data.tags);
+          }
+        })
+        .finally(() => {
+          this.set(`newCaseTagValues.${caseId}`, '');
+          this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__updatingTags`, false);
         });
     },
     deleteTag(indicatorId, tagToRemove) {
@@ -211,12 +532,13 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             const updatedTags = this.get(`indicators.${indicatorId}.indicator.tags.data`).filter(
               (tag) => tag.name !== tagToRemove
             );
             this.set(`indicators.${indicatorId}.indicator.tags.data`, updatedTags);
+            this.notifyPropertyChange('tagsCount');
           }
         })
         .finally(() => {
@@ -237,7 +559,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             if (this.get(`indicators.${indicatorId}.indicator.falsePositives`) === result.data.count) {
               this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, true);
@@ -265,7 +587,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this._flashError(result.error.detail, 'error');
+            this.flashMessage(`${result.error.detail}`, 'error');
           } else {
             this.set('actionMessage', 'Set rating to : ' + result.data.rating);
             this.set(`details.indicators.${indicatorId}.indicator.rating`, result.data.rating);
@@ -377,7 +699,7 @@ polarity.export = PolarityComponent.extend({
       .then((result) => {
         if (result.error) {
           console.error(result.error);
-          this._flashError(result.error.detail, 'error');
+          this.flashMessage(`${result.error.detail}`, 'error');
         } else if (result.data && typeof result.data[field] !== 'undefined') {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
           if (result.data[field].data) {

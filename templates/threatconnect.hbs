@@ -1,22 +1,22 @@
 {{! Global ThreatAssess Data }}
-<div class='org-container global-details-container {{if isDetailsLoading "loading"}}'>
+<div class="org-container global-details-container {{if isDetailsLoading 'loading'}}">
   {{#if isDetailsLoading}}
-    <div class='loading-overlay'>
-      {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+    <div class="loading-overlay">
+      {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
     </div>
   {{/if}}
-  <div class='content-container'>
-    <div class='d-flex align-item-center justify-content-between'>
-      <div class='emphaize-text'>
+  <div class="content-container">
+    <div class="d-flex align-item-center justify-content-between">
+      <div class="emphasize-text">
         Global Details
       </div>
       {{#unless (is-empty firstIndicator.indicator.active)}}
-        <div class='d-inline-block'>
+        <div class="d-inline-block">
           {{#if (eq firstIndicator.indicator.active true)}}
-            {{fa-icon icon='check-circle' fixedWidth=true class='active-icon'}}
+            {{fa-icon icon="check-circle" fixedWidth=true class="active-icon"}}
             Active
           {{else if (eq firstIndicator.indicator.active false)}}
-            {{fa-icon icon='minus-circle' fixedWidth=true class='inactive-icon'}}
+            {{fa-icon icon="minus-circle" fixedWidth=true class="inactive-icon"}}
             Inactive
           {{/if}}
           {{bs-tooltip
@@ -25,43 +25,45 @@
         </div>
       {{/unless}}
     </div>
-    <div class='d-flex align-items-center justify-content-between'>
-      <div class='p-title'>ThreatAssess</div>
+    <div class="d-flex align-items-center justify-content-between">
+      <div class="p-title">ThreatAssess</div>
       <div>
-        {{fa-icon icon='info' fixedWidth=true class='info-icon'}}
+        {{fa-icon icon="info" fixedWidth=true class="info-icon"}}
         {{bs-tooltip
-          title='ThreatAssess gives a basic risk assessment of an Indicator through a single, actionable score.  The score represents the overall potential impact that an Indicator might have to a security organization.'
+          title="ThreatAssess gives a basic risk assessment of an Indicator through a single, actionable score.  The score represents the overall potential impact that an Indicator might have to a security organization."
         }}
       </div>
     </div>
     <div>
-      <span class='p-key'>Score:
-        <span class='score {{firstIndicator.indicator.__threatAssessScoreHuman}}'>
-          <span class='score-readable'>{{firstIndicator.indicator.__threatAssessScoreHuman}}</span>
+      <span class="p-key">Score:
+        <span class="score {{firstIndicator.indicator.__threatAssessScoreHuman}}">
+          <span class="score-readable">{{firstIndicator.indicator.__threatAssessScoreHuman}}</span>
         </span>
       </span>
       {{#if (or firstIndicator.indicator.threatAssessScore isDetailsLoading)}}
-        <span class='p-value'>{{firstIndicator.indicator.threatAssessScore}}</span>/1000
-        <div class='progress threat-assess-bar'>
+        <span class="p-value">{{firstIndicator.indicator.threatAssessScore}}</span>/1000
+        <div class="progress threat-assess-bar">
           <div
-            class='progress-bar {{firstIndicator.indicator.__threatAssessScoreHuman}}'
-            role='progressbar'
-            style='width: {{firstIndicator.indicator.__threatAssessScorePercentage}}%'
-            aria-valuenow='{{firstIndicator.indicator.__threatAssessScorePercentage}}'
-            aria-valuemin='0'
-            aria-valuemax='100'
+            class="progress-bar {{firstIndicator.indicator.__threatAssessScoreHuman}}"
+            role="progressbar"
+            style="width: {{firstIndicator.indicator.__threatAssessScorePercentage}}%"
+            aria-valuenow="{{firstIndicator.indicator.__threatAssessScorePercentage}}"
+            aria-valuemin="0"
+            aria-valuemax="100"
           >
           </div>
         </div>
       {{else}}
-        <span class='p-value'>No Threat Assess Score</span>
+        <span class="p-value">No Threat Assess Score</span>
       {{/if}}
     </div>
-    
+
     <div>
       <span class="p-key">Threat Assess Rating: </span>
       {{#if firstIndicator.indicator.threatAssessRating}}
-        <span class="p-value">{{firstIndicator.indicator.threatAssessRating}} - {{firstIndicator.indicator.__threatAssessRatingHuman}}</span>
+        <span class="p-value">{{firstIndicator.indicator.threatAssessRating}}
+          -
+          {{firstIndicator.indicator.__threatAssessRatingHuman}}</span>
       {{else}}
         <span class="p-value">No Threat Assess Rating</span>
       {{/if}}
@@ -69,67 +71,68 @@
     <div>
       <span class="p-key">Threat Assess Confidence: </span>
       {{#if firstIndicator.indicator.threatAssessConfidence}}
-        <span class="p-value">{{firstIndicator.indicator.threatAssessConfidence}} - {{firstIndicator.indicator.__threatAssesConfidenceHuman}}</span>
+        <span class="p-value">{{firstIndicator.indicator.threatAssessConfidence}}
+          -
+          {{firstIndicator.indicator.__threatAssesConfidenceHuman}}</span>
       {{else}}
         <span class="p-value">No Threat Assess Confidence</span>
       {{/if}}
     </div>
-    
-    <div class='d-flex justify-content-between align-items-center'>
-      <div class='p-title'>Observations/False Positives</div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="p-title">Observations/False Positives</div>
       <div>
-        {{fa-icon icon='info' fixedWidth=true class='info-icon'}}
+        {{fa-icon icon="info" fixedWidth=true class="info-icon"}}
         {{bs-tooltip
-          title='These observations and false positives come from this instance and may include metrics from other organizations with access to this instance.'
+          title="These observations and false positives come from this instance and may include metrics from other organizations with access to this instance."
         }}
       </div>
     </div>
     <div>
-      <span class='p-key'>Observation Count: </span>
-      <span class='p-value'>{{if firstIndicator.indicator.observations orgData.observations '0'}}</span>
+      <span class="p-key">Observation Count: </span>
+      <span class="p-value">{{if firstIndicator.indicator.observations orgData.observations "0"}}</span>
     </div>
     <div>
-      <span class='p-key'>False Positive Count: </span>
-      <span class='p-value'>{{if
+      <span class="p-key">False Positive Count: </span>
+      <span class="p-value">{{if
           firstIndicator.indicator.falsePositives
           firstIndicator.indicator.falsePositives
-          '0'
+          "0"
         }}</span>
     </div>
     <div>
-      <span class='p-key'>False Positive Last Reported: </span>
-      <span class='p-value'> {{moment-format firstIndicator.indicator.lastFalsePositive 'MM/DD/YYYY'}}</span>
+      <span class="p-key">False Positive Last Reported: </span>
+      <span class="p-value"> {{moment-format firstIndicator.indicator.lastFalsePositive "MM/DD/YYYY"}}</span>
     </div>
-    <div class='d-flex align-items-center mt-1'>
+    <div class="d-flex align-items-center mt-1">
       <button
-        class='btn btn-secondary btn-sm action-btn'
-        style='margin-bottom: 10px;'
-        {{action 'reportFalsePositive' firstIndicator.indicator.id}}
+        class="btn btn-secondary btn-sm action-btn"
+        {{action "reportFalsePositive" firstIndicator.indicator.id}}
       >Report False Positive
       </button>
       {{#if firstIndicator.__savingFalsePositive}}
-        <div class='p-footnote ml-2'>
-          {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+        <div class="p-footnote ml-2">
+          {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
           saving
         </div>
       {{/if}}
     </div>
-    <div class='{{if firstIndicator.indicator.__showFalsePositiveAlreadyReported "elementToFadeIn" "d-none"}}'>
-      <span class='p-footnote'>False positive already reported today</span>
+    <div class="{{if firstIndicator.indicator.__showFalsePositiveAlreadyReported 'elementToFadeIn' 'd-none'}}">
+      <span class="p-footnote">False positive already reported today</span>
     </div>
 
-    <div {{action 'expandTags'}} class='header-container'>
-      <div class='emphasize-text'>
-        All Tags
+    <div {{action "expandTags"}} class="header-container" style="margin-top: 8px">
+      <div class="emphasize-text">
+        All Tags ({{tagsCount}})
       </div>
       <div>
-        <button class='btn toggle-btn p-action' title='View indicator details'>
+        <button class="btn toggle-btn p-action" title="View indicator details">
           {{#if isDetailsLoading}}
-            {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+            {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
           {{else if isExpanded}}
-            {{fa-icon icon='chevron-up' fixedWidth=true}}
+            {{fa-icon icon="chevron-up" fixedWidth=true}}
           {{else}}
-            {{fa-icon icon='chevron-down' fixedWidth=true}}
+            {{fa-icon icon="chevron-down" fixedWidth=true}}
           {{/if}}
         </button>
       </div>
@@ -137,14 +140,12 @@
     {{#let false as |hasDisplayedInput|}}
       {{#each details.indicatorOrderById as |indicatorId|}}
         {{#let (get indicators indicatorId) as |organizationData|}}
-
-          {{! Conditionally display the tag container if expanded }}
           {{#if isExpanded}}
-            <div class='tag-container'>
+            <div class="tag-container">
               {{#each organizationData.indicator.tags.data as |tag|}}
                 {{#if tag}}
-                  <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
-                    <span class='threatconnect-summary-tag'>
+                  <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
+                    <span class="threatconnect-summary-tag">
                       {{#if tag.techniqueId}}
                         &#38;
                         {{tag.techniqueId}}
@@ -152,8 +153,8 @@
                       {{/if}}
                       {{tag.name}}
                       {{#if (eq details.defaultOwnerName organizationData.indicator.ownerName)}}
-                        <span {{action 'deleteTag' indicatorId tag.name}}>
-                          {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
+                        <span {{action "deleteTag" indicatorId tag.name}}>
+                          {{fa-icon icon="times" class="tag-close-icon" fixedWidth=true}}
                         </span>
                       {{/if}}
                     </span>
@@ -166,26 +167,22 @@
             (and isExpanded (eq details.defaultOwnerName organizationData.indicator.ownerName) (not hasDisplayedInput))
           }}
             <span hidden>{{assign hasDisplayedInput true}}</span>
-            <div style='clear:both'></div>
-            <div class='input-group-append' style='margin-bottom: 10px;'>
+            <div style="clear:both"></div>
+            <div class="input-group-append" style="margin-bottom: 10px;">
               <input
-                type='text'
-                class='form-control add-tag-input'
+                type="text"
+                class="form-control add-tag-input"
                 value={{newTagValues.indicatorId}}
-                oninput={{action (mut (get newTagValues indicatorId)) value='target.value'}}
+                oninput={{action (mut (get newTagValues indicatorId)) value="target.value"}}
               />
               <button
-                class='btn btn-secondary btn-add-tag'
-                type='button'
-                disabled={{if
-                  (or organizationData.indicator.__updatingTags (eq (get newTagValues indicatorId) ''))
-                  true
-                  false
-                }}
-                {{action 'addTag' indicatorId}}
+                class="btn btn-secondary btn-add-tag"
+                type="button"
+                disabled={{or organizationData.indicatorId.__updatingTags (not (get newTagValues indicatorId))}}
+                {{action "addTag" indicatorId}}
               >
-                {{#if organizationData.indicator.__updatingTags}}
-                  {{fa-icon 'spinner-third' spin=true}}
+                {{#if organizationData.indicatorId.__updatingTags}}
+                  {{fa-icon "spinner-third" spin=true}}
                 {{else}}
                   Add Tag
                 {{/if}}
@@ -201,75 +198,75 @@
 
 {{#each details.indicatorOrderById as |indicatorId|}}
   {{#let (get indicators indicatorId) as |orgData|}}
-    <div class='org-container'>
-      <div {{action (toggle '__show' orgData)}} class='header-container {{unless orgData.__show "expanded"}}'>
-        <div class='emphasize-text'>
+    <div class="org-container">
+      <div {{action (toggle "__show" orgData)}} class="header-container {{unless orgData.__show 'expanded'}}">
+        <div class="emphasize-text">
           {{#if (eq details.defaultOwnerName orgData.indicator.ownerName)}}
             <span>
-              {{fa-icon icon='house' fixedWidth=true}}
-              {{bs-tooltip title='This indicator is from your organization'}}
+              {{fa-icon icon="house" fixedWidth=true}}
+              {{bs-tooltip title="This indicator is from your organization"}}
             </span>
           {{/if}}
           {{orgData.indicator.ownerName}}
         </div>
         <div>
-          <button class='btn toggle-btn p-action' title='View indicator details'>
+          <button class="btn toggle-btn p-action" title="View indicator details">
             {{#if isDetailsLoading}}
-              {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
             {{else if orgData.__show}}
-              {{fa-icon icon='chevron-up' fixedWidth=true}}
+              {{fa-icon icon="chevron-up" fixedWidth=true}}
             {{else}}
-              {{fa-icon icon='chevron-down' fixedWidth=true}}
+              {{fa-icon icon="chevron-down" fixedWidth=true}}
             {{/if}}
           </button>
         </div>
       </div>
       {{#if (and orgData.__show block.detailsLoaded)}}
-        <div class='content-container'>
-          <ul class='nav nav-tabs mb-2'>
-            <li class='nav-item'>
+        <div class="content-container">
+          <ul class="nav nav-tabs mb-2">
+            <li class="nav-item">
               <a
-                {{action 'changeTab' 'info' indicatorId}}
-                class='nav-link {{if (or (eq orgData.__activeTab "info") (not orgData.__activeTab)) "active"}}'
-                href='#'
+                {{action "changeTab" "info" indicatorId}}
+                class="nav-link {{if (or (eq orgData.__activeTab 'info') (not orgData.__activeTab)) 'active'}}"
+                href="#"
               >Info</a>
             </li>
-            <li class='nav-item'>
+            <li class="nav-item">
               <a
-                {{action 'changeTab' 'groups' indicatorId}}
-                class='nav-link {{if (eq orgData.__activeTab "groups") "active"}}'
-                href='#'
+                {{action "changeTab" "groups" indicatorId}}
+                class="nav-link {{if (eq orgData.__activeTab 'groups') 'active'}}"
+                href="#"
               >Groups
                 {{#unless
                   (is-empty orgData.indicator.__associatedGroupsCount)
                 }}({{orgData.indicator.__associatedGroupsCount}}){{/unless}}</a>
             </li>
-            <li class='nav-item'>
+            <li class="nav-item">
               <a
-                {{action 'changeTab' 'indicators' indicatorId}}
-                class='nav-link {{if (eq orgData.__activeTab "indicators") "active"}}'
-                href='#'
+                {{action "changeTab" "indicators" indicatorId}}
+                class="nav-link {{if (eq orgData.__activeTab 'indicators') 'active'}}"
+                href="#"
               >Indicators
                 {{#unless
                   (is-empty orgData.indicator.__associatedIndicatorsCount)
                 }}({{orgData.indicator.__associatedIndicatorsCount}}){{/unless}}</a>
             </li>
-            <li class='nav-item'>
+            <li class="nav-item">
               <a
-                {{action 'changeTab' 'cases' indicatorId}}
-                class='nav-link {{if (eq orgData.__activeTab "cases") "active"}}'
-                href='#'
+                {{action "changeTab" "cases" indicatorId}}
+                class="nav-link {{if (eq orgData.__activeTab 'cases') 'active'}}"
+                href="#"
               >Cases
                 {{#unless
                   (is-empty orgData.indicator.__associatedCasesCount)
                 }}({{orgData.indicator.__associatedCasesCount}}){{/unless}}</a>
             </li>
             {{#if orgData.indicator.whoisActive}}
-              <li class='nav-item'>
+              <li class="nav-item">
                 <a
-                  {{action 'changeTab' 'whois' indicatorId}}
-                  class='nav-link {{if (eq orgData.__activeTab "whois") "active"}}'
-                  href='#'
+                  {{action "changeTab" "whois" indicatorId}}
+                  class="nav-link {{if (eq orgData.__activeTab 'whois') 'active'}}"
+                  href="#"
                 >Whois
                   {{#unless
                     (is-empty orgData.indicator.__whoisCount)
@@ -277,11 +274,11 @@
               </li>
             {{/if}}
             {{#if orgData.indicator.dnsActive}}
-              <li class='nav-item'>
+              <li class="nav-item">
                 <a
-                  {{action 'changeTab' 'dnsResolution' indicatorId}}
-                  class='nav-link {{if (eq orgData.__activeTab "dnsResolution") "active"}}'
-                  href='#'
+                  {{action "changeTab" "dnsResolution" indicatorId}}
+                  class="nav-link {{if (eq orgData.__activeTab 'dnsResolution') 'active'}}"
+                  href="#"
                 >DNS
                   {{#unless
                     (is-empty orgData.indicator.__dnsResolutionCount)
@@ -291,202 +288,198 @@
           </ul>
 
           {{! Indicator Info Tab }}
-          {{#if (or (eq orgData.__activeTab 'info') (not orgData.__activeTab))}}
-            <div class='mb-1'>
-              <a class='p-link emphasize-text' href='{{orgData.indicator.webLink}}'>
+          {{#if (or (eq orgData.__activeTab "info") (not orgData.__activeTab))}}
+            <div class="mb-1">
+              <a class="p-link emphasize-text" href="{{orgData.indicator.webLink}}">
                 View indicator in ThreatConnect
-                {{fa-icon icon='external-link' class='p-link external-icon'}}
+                {{fa-icon icon="external-link" class="p-link external-icon"}}
               </a>
             </div>
-            <div class='d-flex align-items-center justify-content-between'>
-              <div class='p-title'>Details</div>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="p-title">Details</div>
             </div>
 
             {{#if (gt orgData.indicator.securityLabels.data.length 0)}}
               {{#each orgData.indicator.securityLabels.data as |label|}}
-                <span class='security-label'>
-                  <div class='d-flex align-items-center'>
-                    <span class='label-color' style='background-color: {{concat "#" label.color}}'></span>
+                <span class="security-label">
+                  <div class="d-flex align-items-center">
+                    <span class="label-color" style="background-color: {{concat '#' label.color}}"></span>
                     {{label.name}}
                   </div>
                 </span>
               {{/each}}
             {{/if}}
             <div>
-              <span class='p-key'>Date Added:</span>
-              <span class='p-value'>{{moment-time orgData.indicator.dateAdded}}</span>
+              <span class="p-key">Date Added:</span>
+              <span class="p-value">{{moment-time orgData.indicator.dateAdded}}</span>
             </div>
             <div>
-              <span class='p-key'>Last Modified:</span>
-              <span class='p-value'>{{moment-time orgData.indicator.lastModified}}</span>
+              <span class="p-key">Last Modified:</span>
+              <span class="p-value">{{moment-time orgData.indicator.lastModified}}</span>
             </div>
             <div>
-              <span class='p-key'>Threat Rating: </span>
+              <span class="p-key">Threat Rating: </span>
               <span>
-                {{fa-icon icon='ban' click=(action 'setRating' indicatorId 0) class='rating-icon'}}
+                {{fa-icon icon="ban" click=(action "setRating" indicatorId 0) class="rating-icon"}}
                 {{#each (repeat 5) as |empty ratingIndex|}}
                   {{fa-icon
-                    icon='skull'
+                    icon="skull"
                     class=(if
                       (lt ratingIndex orgData.indicator.rating)
-                      'rating-icon rating-icon-filled'
-                      'rating-icon rating-icon-empty'
+                      "rating-icon rating-icon-filled"
+                      "rating-icon rating-icon-empty"
                     )
-                    click=(action 'setRating' indicatorId (inc ratingIndex))
+                    click=(action "setRating" indicatorId (inc ratingIndex))
                   }}
                 {{/each}}
                 {{orgData.indicator.__ratingHuman}}
                 {{#if orgData.__savingRating}}
-                  <span class='p-footnote ml-2'>
-                    {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+                  <span class="p-footnote ml-2">
+                    {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
                     saving
                   </span>
                 {{/if}}
               </span>
             </div>
             <div>
-              <span class='p-key'>Confidence Rating: </span>
-              <span class='p-value'>{{orgData.indicator.confidence}} - {{orgData.indicator.__confidenceHuman}}</span>
-              <div class='d-flex align-items-start'>
+              <span class="p-key">Confidence Rating: </span>
+              <span class="p-value">{{orgData.indicator.confidence}} - {{orgData.indicator.__confidenceHuman}}</span>
+              <div class="d-flex align-items-start">
                 <input
-                  type='range'
-                  onchange={{action 'saveConfidence' indicatorId}}
-                  oninput={{action (mut orgData.indicator.__shadowConfidence) value='target.value'}}
-                  min='0'
-                  max='100'
+                  type="range"
+                  onchange={{action "saveConfidence" indicatorId}}
+                  oninput={{action (mut orgData.indicator.__shadowConfidence) value="target.value"}}
+                  min="0"
+                  max="100"
                   value={{orgData.indicator.confidence}}
-                  steps='1'
+                  steps="1"
                 />
                 {{#if orgData.__savingConfidence}}
-                  <div class='p-footnote ml-2'>
-                    {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+                  <div class="p-footnote ml-2">
+                    {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
                     saving
                   </div>
                 {{/if}}
               </div>
             </div>
             {{#if orgData.indicator.description}}
-              <h1 class='p-title'>Description</h1>
+              <h1 class="p-title">Description</h1>
               <pre>{{orgData.indicator.description}}</pre>
             {{/if}}
             {{#if orgData.indicator.source}}
-              <h1 class='p-title'>Source</h1>
+              <h1 class="p-title">Source</h1>
               <pre>{{orgData.indicator.source}}</pre>
             {{/if}}
             {{#let orgData.indicator.geoLocation as |geo|}}
               {{#if geo}}
-                <h1 class='p-title'>Geolocation Data & Network</h1>
+                <h1 class="p-title">Geolocation Data & Network</h1>
                 {{#if geo.country}}
                   <div>
-                    <span class='p-key'>Country:</span>
-                    <span class='p-value'>{{geo.country}} ({{geo.countryCode}})</span>
+                    <span class="p-key">Country:</span>
+                    <span class="p-value">{{geo.country}} ({{geo.countryCode}})</span>
                   </div>
                 {{/if}}
                 {{#if geo.state}}
                   <div>
-                    <span class='p-key'>State:</span>
-                    <span class='p-value'>{{geo.state}}</span>
+                    <span class="p-key">State:</span>
+                    <span class="p-value">{{geo.state}}</span>
                   </div>
                 {{/if}}
                 {{#if geo.city}}
                   <div>
-                    <span class='p-key'>City:</span>
-                    <span class='p-value'>{{geo.city}}</span>
+                    <span class="p-key">City:</span>
+                    <span class="p-value">{{geo.city}}</span>
                   </div>
                 {{/if}}
                 {{#if geo.registeringOrg}}
                   <div>
-                    <span class='p-key'>Registering Org:</span>
-                    <span class='p-value'>{{geo.registeringOrg}}</span>
+                    <span class="p-key">Registering Org:</span>
+                    <span class="p-value">{{geo.registeringOrg}}</span>
                   </div>
                 {{/if}}
                 {{#if geo.asn}}
                   <div>
-                    <span class='p-key'>ASN:</span>
-                    <span class='p-value'>AS{{geo.asn}}</span>
+                    <span class="p-key">ASN:</span>
+                    <span class="p-value">AS{{geo.asn}}</span>
                   </div>
                 {{/if}}
               {{/if}}
             {{/let}}
-
-            <div class='d-flex align-items-center justify-content-between'>
-              <div class='p-title'>
+            <div class="d-flex align-items-center justify-content-between">
+              <div class="p-title">
                 Tags
               </div>
-              <div class='p-footnote'>
+              <div class="p-footnote">
                 {{#if orgData.__updatingTags}}
-                  {{fa-icon icon='spinner-third' spin=true}}
+                  {{fa-icon icon="spinner-third" spin=true}}
                   updating tags
                 {{/if}}
               </div>
             </div>
+
             {{#unless orgData.indicator.tags.data.length}}
-              <div class='p-footnote mb-2'>
+              <div class="p-footnote mb-2">
                 <span>No Tags</span>
               </div>
             {{else}}
-              <div class='tag-container'>
+              <div class="tag-container">
                 {{#each orgData.indicator.tags.data as |tag tagIndex|}}
                   {{#if tag}}
-                    <a href='{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}' class='tc-link-tag'>
-                      <span class='threatconnect-summary-tag'>
+                    <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
+                      <span class="threatconnect-summary-tag">
                         {{#if tag.techniqueId}}
                           &#38;
                           {{tag.techniqueId}}
                           -
                         {{/if}}
                         {{tag.name}}
-                        {{#if (eq details.defaultOwnerName orgData.indicator.ownerName)}}
-                          <span {{action 'deleteTag' indicatorId tag.name}}>
-                            {{fa-icon icon='times' class='tag-close-icon' fixedWidth=true}}
-                          </span>
-                        {{/if}}
+                        <span {{action "deleteTag" indicatorId tag.name}}>
+                          {{fa-icon icon="times" class="tag-close-icon" fixedWidth=true}}
+                        </span>
                       </span>
                     </a>
                   {{/if}}
                 {{/each}}
               </div>
-              <div style='clear:both'></div>
+              <div style="clear:both"></div>
             {{/unless}}
 
-            {{#if (eq details.defaultOwnerName orgData.indicator.ownerName)}}
-              <div class='input-group input-group-sm'>
-                {{input
-                  type='text'
-                  placeholder='Add Tag'
-                  enter=(action 'addTag' orgData orgDataIndex)
-                  class='form-control add-tag-input'
-                  value=newTagValue
-                }}
-                <div class='input-group-append'>
-                  <button
-                    class='btn btn-secondary btn-add-tag'
-                    type='button'
-                    disabled={{if (or orgData.indicator.__addingTag (eq newTagValue.length 0)) true false}}
-                    {{action 'addTag' indicatorId}}
-                  >{{#if orgData.indicator.__addingTag}}{{fa-icon 'spinner-third' spin=true}}{{else}}Add Tag{{/if}}</button>
-                </div>
+            <div class="input-group input-group-sm">
+              {{input
+                type="text"
+                placeholder="Add Tag"
+                enter=(action "addTag" orgData orgDataIndex)
+                class="form-control add-tag-input"
+                value=newTagValue
+              }}
+              <div class="input-group-append">
+                <button
+                  class="btn btn-secondary btn-add-tag"
+                  style="border-radius: 4px"
+                  type="button"
+                  disabled={{if (or orgData.indicator.__addingTags (eq newTagValue.length 0)) true false}}
+                  {{action "addTag" indicatorId}}
+                >{{#if orgData.indicator.__addingTag}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
               </div>
-            {{/if}}
-
+            </div>
             {{#if orgData.indicator.playbooks.length}}
-              <div class='d-flex flex-row justify-content-between align-items-center playbook-title mb-1'>
-                <h1 class='p-title m-0'>{{fa-icon icon='book' fixedWidth=true}} Available Playbooks</h1>
+              <div class="d-flex flex-row justify-content-between align-items-center playbook-title mb-1">
+                <h1 class="p-title m-0">{{fa-icon icon="book" fixedWidth=true}} Available Playbooks</h1>
                 <div>
-                  <a class='p-link' href='{{orgData.webLink}}'>Run In Dashboard
-                    {{fa-icon icon='external-link' class='p-link external-icon'}}</a>
+                  <a class="p-link" href="{{orgData.webLink}}">Run In Dashboard
+                    {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
                 </div>
               </div>
-              <ul class='pl-3'>
+              <ul class="pl-3">
                 {{#each orgData.playbooks as |playbook|}}
-                  <li><span class='p-value'>{{playbook.name}}</span></li>
+                  <li><span class="p-value">{{playbook.name}}</span></li>
                 {{/each}}
               </ul>
             {{/if}}
           {{/if}}
 
           {{! Whois Tab }}
-          {{#if (eq orgData.__activeTab 'whois')}}
+          {{#if (eq orgData.__activeTab "whois")}}
             {{#if
               (and
                 (is-empty orgData.indicator.whois.data)
@@ -496,19 +489,19 @@
             }}
               <h2>No Whois Information</h2>
             {{else if orgData.__whoisLoading}}
-              {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
               Loading Whois
             {{else if orgData.indicator.__whoisTimeout}}
               <h2>Unable to fetch WHOIS.</h2>
-              <div class='p-footnote'>
+              <div class="p-footnote">
                 We were unable to fetch WHOIS due to a request timeout. You can retry the search by clicking the "Retry"
                 button below.
               </div>
-              <button class='btn btn-secondary btn-sm action-btn' {{action 'getField' indicatorId 'whois'}}>Retry
+              <button class="btn btn-secondary btn-sm action-btn" {{action "getField" indicatorId "whois"}}>Retry
               </button>
             {{/if}}
             {{#if (gt orgData.indicator.whois.data.length 0)}}
-              <h1 class='p-title d-flex align-items-center justify-content-between'>
+              <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   Whois
                 </div>
@@ -523,44 +516,44 @@
                 {{/if}}
               </h1>
               {{#each orgData.indicator.__whoisFiltered as |whois|}}
-                <div class='card'>
-                  <div class='card-title d-flex align-items-center justify-content-between'>
+                <div class="card">
+                  <div class="card-title d-flex align-items-center justify-content-between">
                     {{whois.registrant}}
                   </div>
-                  <div class='card-item'>
-                    <div class='preserve-whitespace'>{{whois.fullRecord}}</div>
-                    <div class='mt-1'>
-                      <span class='p-key'>Created: </span>
-                      <span class='p-value'>
-                        {{moment-format whois.created 'MM/DD/YYYY HH:mm:ss' timeZone=timezone}}
+                  <div class="card-item">
+                    <div class="preserve-whitespace">{{whois.fullRecord}}</div>
+                    <div class="mt-1">
+                      <span class="p-key">Created: </span>
+                      <span class="p-value">
+                        {{moment-format whois.created "MM/DD/YYYY HH:mm:ss" timeZone=timezone}}
                       </span>
                     </div>
                     <div>
-                      <span class='p-key'>Expires: </span>
-                      <span class='p-value'>
-                        {{moment-format whois.expires 'MM/DD/YYYY HH:mm:ss' timeZone=timezone}}
+                      <span class="p-key">Expires: </span>
+                      <span class="p-value">
+                        {{moment-format whois.expires "MM/DD/YYYY HH:mm:ss" timeZone=timezone}}
                       </span>
                     </div>
                   </div>
                 </div>
               {{/each}}
               {{#if (gt orgData.indicator.__whoisCount pageSize)}}
-                <div class='paging-bar'>
+                <div class="paging-bar">
                   <button
-                    class='btn paging-btn'
-                    {{action 'firstPage' indicatorId 'whois'}}
+                    class="btn paging-btn"
+                    {{action "firstPage" indicatorId "whois"}}
                     disabled={{orgData.indicator.__whoisPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-left" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'prevPage' indicatorId 'whois'}}
+                    class="btn paging-btn"
+                    {{action "prevPage" indicatorId "whois"}}
                     disabled={{orgData.indicator.__whoisPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-left" fixedWidth=false}}
                   </button>
-                  <div class='paging-info'>
+                  <div class="paging-info">
                     {{orgData.indicator.__whoisStartItem}}
                     -
                     {{orgData.indicator.__whoisEndItem}}
@@ -568,18 +561,18 @@
                     {{orgData.indicator.__whoisCount}}
                   </div>
                   <button
-                    class='btn paging-btn'
-                    {{action 'nextPage' indicatorId 'whois'}}
+                    class="btn paging-btn"
+                    {{action "nextPage" indicatorId "whois"}}
                     disabled={{orgData.indicator.__whoisNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-right" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'lastPage' indicatorId 'whois'}}
+                    class="btn paging-btn"
+                    {{action "lastPage" indicatorId "whois"}}
                     disabled={{orgData.indicator.__whoisNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-right" fixedWidth=false}}
                   </button>
                 </div>
               {{/if}}
@@ -587,7 +580,7 @@
           {{/if}}
 
           {{! DNS Resolutions Tab }}
-          {{#if (eq orgData.__activeTab 'dnsResolution')}}
+          {{#if (eq orgData.__activeTab "dnsResolution")}}
             {{#if
               (and
                 (is-empty orgData.indicator.dnsResolution.data)
@@ -597,22 +590,22 @@
             }}
               <h2>No DNS Resolution Information</h2>
             {{else if orgData.__dnsResolutionLoading}}
-              {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
               Loading DNS Resolutions
             {{else if orgData.indicator.__dnsResolutionTimeout}}
               <h2>Unable to fetch DNS Resolutions.</h2>
-              <div class='p-footnote'>
+              <div class="p-footnote">
                 We were unable to fetch DNS Resolutions due to a request timeout. You can retry the search by clicking
                 the "Retry" button below.
               </div>
               <button
-                class='btn btn-secondary btn-sm action-btn'
-                {{action 'getField' indicatorId 'dnsResolution'}}
+                class="btn btn-secondary btn-sm action-btn"
+                {{action "getField" indicatorId "dnsResolution"}}
               >Retry
               </button>
             {{/if}}
             {{#if (gt orgData.indicator.dnsResolution.data.length 0)}}
-              <h1 class='p-title d-flex align-items-center justify-content-between'>
+              <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   DNS Resolutions
                 </div>
@@ -627,21 +620,21 @@
                 {{/if}}
               </h1>
               {{#each orgData.indicator.__dnsResolutionFiltered as |dns|}}
-                <div class='card'>
-                  <div class='card-title d-flex align-items-center justify-content-between'>
-                    {{moment-format dns.dateOccurred 'MM/DD/YYYY HH:mm:ss' timeZone=timezone}}
+                <div class="card">
+                  <div class="card-title d-flex align-items-center justify-content-between">
+                    {{moment-format dns.dateOccurred "MM/DD/YYYY HH:mm:ss" timeZone=timezone}}
                   </div>
-                  <div class='card-item'>
-                    <table class='dns-table'>
+                  <div class="card-item">
+                    <table class="dns-table">
                       {{#each dns.addresses.data as |address|}}
-                        <tr class='align-top'>
-                          <td class='dns-table-ip'>{{address.ip}}</td>
+                        <tr class="align-top">
+                          <td class="dns-table-ip">{{address.ip}}</td>
                           <td>{{address.geoLocation.country}}</td>
-                          <td class='dns-table-asn'>AS{{address.geoLocation.asn}}</td>
+                          <td class="dns-table-asn">AS{{address.geoLocation.asn}}</td>
                         </tr>
                         <tr>
                           <td></td>
-                          <td class='dns-table-org"' colspan='2'>{{address.geoLocation.registeringOrg}}</td>
+                          <td class='dns-table-org"' colspan="2">{{address.geoLocation.registeringOrg}}</td>
                         </tr>
                       {{/each}}
                     </table>
@@ -649,22 +642,22 @@
                 </div>
               {{/each}}
               {{#if (gt orgData.indicator.__dnsResolutionCount pageSize)}}
-                <div class='paging-bar'>
+                <div class="paging-bar">
                   <button
-                    class='btn paging-btn'
-                    {{action 'firstPage' indicatorId 'dnsResolution'}}
+                    class="btn paging-btn"
+                    {{action "firstPage" indicatorId "dnsResolution"}}
                     disabled={{orgData.indicator.__dnsResolutionPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-left" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'prevPage' indicatorId 'dnsResolution'}}
+                    class="btn paging-btn"
+                    {{action "prevPage" indicatorId "dnsResolution"}}
                     disabled={{orgData.indicator.__dnsResolutionPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-left" fixedWidth=false}}
                   </button>
-                  <div class='paging-info'>
+                  <div class="paging-info">
                     {{orgData.indicator.__dnsResolutionStartItem}}
                     -
                     {{orgData.indicator.__dnsResolutionEndItem}}
@@ -672,18 +665,18 @@
                     {{orgData.indicator.__dnsResolutionCount}}
                   </div>
                   <button
-                    class='btn paging-btn'
-                    {{action 'nextPage' indicatorId 'dnsResolution'}}
+                    class="btn paging-btn"
+                    {{action "nextPage" indicatorId "dnsResolution"}}
                     disabled={{orgData.indicator.__dnsResolutionNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-right" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'lastPage' indicatorId 'dnsResolution'}}
+                    class="btn paging-btn"
+                    {{action "lastPage" indicatorId "dnsResolution"}}
                     disabled={{orgData.indicator.__dnsResolutionNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-right" fixedWidth=false}}
                   </button>
                 </div>
               {{/if}}
@@ -691,7 +684,7 @@
           {{/if}}
 
           {{! Groups Tab }}
-          {{#if (eq orgData.__activeTab 'groups')}}
+          {{#if (eq orgData.__activeTab "groups")}}
             {{#if
               (and
                 (is-empty orgData.indicator.associatedGroups.data)
@@ -701,22 +694,22 @@
             }}
               <h2>No Associated Groups</h2>
             {{else if orgData.__associatedGroupsLoading}}
-              {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
               Loading Associated Groups
             {{else if orgData.indicator.__associatedGroupsTimeout}}
               <h2>Unable to fetch Associated Groups.</h2>
-              <div class='p-footnote'>
+              <div class="p-footnote">
                 We were unable to fetch the associated groups due to a request timeout. You can retry the search by
                 clicking the "Retry" button below.
               </div>
               <button
-                class='btn btn-secondary btn-sm action-btn'
-                {{action 'getField' indicatorId 'associatedGroups'}}
+                class="btn btn-secondary btn-sm action-btn"
+                {{action "getField" indicatorId "associatedGroups"}}
               >Retry
               </button>
             {{/if}}
             {{#if (gt orgData.indicator.associatedGroups.data.length 0)}}
-              <h1 class='p-title d-flex align-items-center justify-content-between'>
+              <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   Associated Groups
                 </div>
@@ -731,50 +724,50 @@
                 {{/if}}
               </h1>
               {{#each orgData.indicator.__associatedGroupsFiltered as |group|}}
-                <div class='card'>
-                  <div class='card-title d-flex align-items-center justify-content-between'>
+                <div class="card">
+                  <div class="card-title d-flex align-items-center justify-content-between">
                     <div>
-                      <span class='p-footnote'>
+                      <span class="p-footnote">
                         {{group.type}}
                       </span>
                       {{group.name}}
                     </div>
                     <div>
-                      <a class='p-link' href='{{group.webLink}}'>
+                      <a class="p-link" href="{{group.webLink}}">
                         view
-                        {{fa-icon icon='external-link' class='p-link external-icon'}}
+                        {{fa-icon icon="external-link" class="p-link external-icon"}}
                       </a>
                     </div>
                   </div>
-                  <div class='card-item'>
+                  <div class="card-item">
                     <div>
-                      <span class='p-key'>Owner: </span>
-                      <span class='p-value'>{{group.ownerName}}</span>
+                      <span class="p-key">Owner: </span>
+                      <span class="p-value">{{group.ownerName}}</span>
                     </div>
                     <div>
-                      <span class='p-key'>Date Added: </span>
-                      <span class='p-value'>{{moment-time group.dateAdded}}</span>
+                      <span class="p-key">Date Added: </span>
+                      <span class="p-value">{{moment-time group.dateAdded}}</span>
                     </div>
                   </div>
                 </div>
               {{/each}}
               {{#if (gt orgData.indicator.__associatedGroupsCount pageSize)}}
-                <div class='paging-bar'>
+                <div class="paging-bar">
                   <button
-                    class='btn paging-btn'
-                    {{action 'firstPage' indicatorId 'associatedGroups'}}
+                    class="btn paging-btn"
+                    {{action "firstPage" indicatorId "associatedGroups"}}
                     disabled={{orgData.indicator.__associatedGroupPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-left" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'prevPage' indicatorId 'associatedGroups'}}
+                    class="btn paging-btn"
+                    {{action "prevPage" indicatorId "associatedGroups"}}
                     disabled={{orgData.indicator.__associatedGroupPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-left" fixedWidth=false}}
                   </button>
-                  <div class='paging-info'>
+                  <div class="paging-info">
                     {{orgData.indicator.__associatedGroupsStartItem}}
                     -
                     {{orgData.indicator.__associatedGroupsEndItem}}
@@ -782,18 +775,18 @@
                     {{orgData.indicator.__associatedGroupsCount}}
                   </div>
                   <button
-                    class='btn paging-btn'
-                    {{action 'nextPage' indicatorId 'associatedGroups'}}
+                    class="btn paging-btn"
+                    {{action "nextPage" indicatorId "associatedGroups"}}
                     disabled={{orgData.indicator.__associatedGroupNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-right" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'lastPage' indicatorId 'associatedGroups'}}
+                    class="btn paging-btn"
+                    {{action "lastPage" indicatorId "associatedGroups"}}
                     disabled={{orgData.indicator.__associatedGroupNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-right" fixedWidth=false}}
                   </button>
                 </div>
               {{/if}}
@@ -801,7 +794,7 @@
           {{/if}}
 
           {{! Indicators Tab }}
-          {{#if (eq orgData.__activeTab 'indicators')}}
+          {{#if (eq orgData.__activeTab "indicators")}}
             {{#if
               (and
                 (is-empty orgData.indicator.associatedIndicators.data)
@@ -811,22 +804,22 @@
             }}
               <h2>No Associated Indicators</h2>
             {{else if orgData.__associatedIndicatorsLoading}}
-              {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
               Loading Associated Indicators
             {{else if orgData.indicator.__associatedIndicatorsTimeout}}
               <h2>Unable to fetch Associated Indicators.</h2>
-              <div class='p-footnote'>
+              <div class="p-footnote">
                 We were unable to fetch Associated Indicators due to a request timeout. You can retry the search by
                 clicking the "Retry" button below.
               </div>
               <button
-                class='btn btn-secondary btn-sm action-btn'
-                {{action 'getField' indicatorId 'associatedIndicators'}}
+                class="btn btn-secondary btn-sm action-btn"
+                {{action "getField" indicatorId "associatedIndicators"}}
               >Retry
               </button>
             {{/if}}
             {{#if (gt orgData.indicator.associatedIndicators.data.length 0)}}
-              <h1 class='p-title d-flex align-items-center justify-content-between'>
+              <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   Associated Indicators
                 </div>
@@ -841,44 +834,44 @@
                 {{/if}}
               </h1>
               {{#each orgData.indicator.__associatedIndicatorsFiltered as |indicator|}}
-                <div class='card'>
-                  <div class='card-title'>
-                    <div class='d-flex align-items-center justify-content-between'>
-                      <div class='p-block'>
-                        <span class='p-footnote'>{{indicator.type}}</span>
+                <div class="card">
+                  <div class="card-title">
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="p-block">
+                        <span class="p-footnote">{{indicator.type}}</span>
                         {{indicator.summary}}
                       </div>
-                      <div class='ml-1'>
-                        <a class='p-link' href='{{indicator.webLink}}'>
+                      <div class="ml-1">
+                        <a class="p-link" href="{{indicator.webLink}}">
                           view
-                          {{fa-icon icon='external-link' class='p-link external-icon'}}
+                          {{fa-icon icon="external-link" class="p-link external-icon"}}
                         </a>
                       </div>
                     </div>
                   </div>
 
-                  <div class='card-item'>
+                  <div class="card-item">
                     {{#if
                       (or indicator.threatAssessScore indicator.threatAssessConfidence indicator.threatAssesRating)
                     }}
-                      <div class='p-value'>Threat Assess</div>
-                      <div class='info-bar mb-1 no-border'>
-                        <div class='info-bar-row'>
-                          <div class='info-bar-pill'>
-                            <span class='info-bar-key'>Score</span>
-                            <span class='info-bar-value'>
+                      <div class="p-value">Threat Assess</div>
+                      <div class="info-bar mb-1 no-border">
+                        <div class="info-bar-row">
+                          <div class="info-bar-pill">
+                            <span class="info-bar-key">Score</span>
+                            <span class="info-bar-value">
                               {{indicator.threatAssessScore}}
                             </span>
                           </div>
-                          <div class='info-bar-pill'>
-                            <span class='info-bar-key'>Rating</span>
-                            <span class='info-bar-value'>
+                          <div class="info-bar-pill">
+                            <span class="info-bar-key">Rating</span>
+                            <span class="info-bar-value">
                               {{indicator.threatAssessRating}}
                             </span>
                           </div>
-                          <div class='info-bar-pill'>
-                            <span class='info-bar-key'>Confidence</span>
-                            <span class='info-bar-value'>
+                          <div class="info-bar-pill">
+                            <span class="info-bar-key">Confidence</span>
+                            <span class="info-bar-value">
                               {{indicator.threatAssessConfidence}}
                             </span>
                           </div>
@@ -886,37 +879,37 @@
                       </div>
                     {{/if}}
                     <div>
-                      <span class='p-key'>Owner: </span>
-                      <span class='p-value'>{{indicator.ownerName}}</span>
+                      <span class="p-key">Owner: </span>
+                      <span class="p-value">{{indicator.ownerName}}</span>
                     </div>
                     <div>
-                      <span class='p-key'>Date Added: </span>
-                      <span class='p-value'>{{moment-time indicator.dateAdded}}</span>
+                      <span class="p-key">Date Added: </span>
+                      <span class="p-value">{{moment-time indicator.dateAdded}}</span>
                     </div>
                     <div>
-                      <span class='p-key'>Last Modified: </span>
-                      <span class='p-value'>{{moment-time indicator.lastModified}}</span>
+                      <span class="p-key">Last Modified: </span>
+                      <span class="p-value">{{moment-time indicator.lastModified}}</span>
                     </div>
                   </div>
                 </div>
               {{/each}}
               {{#if (gt orgData.indicator.__associatedIndicatorsCount pageSize)}}
-                <div class='paging-bar'>
+                <div class="paging-bar">
                   <button
-                    class='btn paging-btn'
-                    {{action 'firstPage' indicatorId 'associatedIndicators'}}
+                    class="btn paging-btn"
+                    {{action "firstPage" indicatorId "associatedIndicators"}}
                     disabled={{orgData.indicator.__associatedIndicatorsPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-left" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'prevPage' indicatorId 'associatedIndicators'}}
+                    class="btn paging-btn"
+                    {{action "prevPage" indicatorId "associatedIndicators"}}
                     disabled={{orgData.indicator.__associatedIndicatorsPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-left" fixedWidth=false}}
                   </button>
-                  <div class='paging-info'>
+                  <div class="paging-info">
                     {{orgData.indicator.__associatedIndicatorsStartItem}}
                     -
                     {{orgData.indicator.__associatedIndicatorsEndItem}}
@@ -924,18 +917,18 @@
                     {{orgData.indicator.__associatedIndicatorsCount}}
                   </div>
                   <button
-                    class='btn paging-btn'
-                    {{action 'nextPage' indicatorId 'associatedIndicators'}}
+                    class="btn paging-btn"
+                    {{action "nextPage" indicatorId "associatedIndicators"}}
                     disabled={{orgData.indicator.__associatedIndicatorsNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-right" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'lastPage' indicatorId 'associatedIndicators'}}
+                    class="btn paging-btn"
+                    {{action "lastPage" indicatorId "associatedIndicators"}}
                     disabled={{orgData.indicator.__associatedIndicatorsNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-right" fixedWidth=false}}
                   </button>
                 </div>
               {{/if}}
@@ -943,7 +936,119 @@
           {{/if}}
 
           {{! Cases Tab }}
-          {{#if (eq orgData.__activeTab 'cases')}}
+
+          {{#if (eq orgData.__activeTab "cases")}}
+            {{#if block.userOptions.enableEditingCases}}
+              <h1
+                class="p-title d-flex align-items-center justify-content-between"
+                style="color:#f97b06"
+                {{action "toggleCreateCase" indicatorId}}
+              >
+                {{#unless (get isCreatingCase indicatorId)}}
+                  <div>
+                    {{fa-icon icon="plus" fixedWidth=true}}
+                    Create New Case
+                  </div>
+                {{/unless}}
+              </h1>
+              {{#if (get isCreatingCase indicatorId)}}
+                <div>
+                  <form {{on "submit" (action "createCase" indicatorId)}} class="case-form">
+                    <div class="form-group">
+                      <label class="small ifta-label">
+                        Name
+                        <span class="required">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        class={{concat
+                          "form-control-new-case ifta-field"
+                          (if orgData.indicator.__newCase.__error " error" "")
+                        }}
+                        value={{orgData.indicator.__newCase.name}}
+                        required
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        {{on "input" (action "updateNewCaseField" indicatorId "name")}}
+                      />
+                      {{#if orgData.indicator.__newCase.__error}}
+                        <div class="ifta-error-message">{{orgData.indicator.__newCase.__errorMessage}}</div>
+                      {{/if}}
+                    </div>
+
+                    <div class="form-group">
+                      <label for="case-severity">Severity</label>
+                      <select
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        id="case-severity"
+                        class="form-control-new-case"
+                        value={{orgData.indicator.__newCase.severity}}
+                        {{on "change" (action "updateNewCaseField" indicatorId "severity")}}
+                      >
+                        <option value="Low">Low</option>
+                        <option value="Medium">Medium</option>
+                        <option value="High">High</option>
+                        <option value="Critical">Critical</option>
+                      </select>
+                    </div>
+
+                    <div class="form-group">
+                      <label for="case-status">Status</label>
+                      <select
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        id="case-status"
+                        class="form-control-new-case"
+                        value={{orgData.indicator.__newCase.status}}
+                        {{on "change" (action "updateNewCaseField" indicatorId "status")}}
+                      >
+                        <option value="Open">Open</option>
+                        <option value="Closed">Closed</option>
+                      </select>
+                    </div>
+
+                    <div class="checkbox-new-case">
+                      <input
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        type="checkbox"
+                        id="associate-indicator"
+                        class="form-check-input-new-case"
+                        checked={{orgData.indicator.__newCase.associateIndicator}}
+                        {{on "change" (action "updateNewCaseField" indicatorId "associateIndicator")}}
+                      />
+                      <label
+                        for="associate-indicator"
+                        class="form-check-label"
+                        style="margin-left: 20px; padding-top: 5px;"
+                      >
+                        Associate with current indicator
+                      </label>
+                    </div>
+
+                    <div>
+                      <button
+                        type="submit"
+                        class="btn btn-primary btn-new-case"
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                      >
+                        {{#if orgData.indicator.__isCreatingCase}}
+                          {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                        {{else}}
+                          Create Case
+                        {{/if}}
+                      </button>
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-new-case cancel"
+                        {{action "toggleCreateCase" indicatorId}}
+                      >
+                        Cancel
+                      </button>
+
+                    </div>
+                  </form>
+                </div>
+              {{/if}}
+            {{/if}}
+
             {{#if
               (and
                 (is-empty orgData.indicator.associatedCases.data)
@@ -953,22 +1058,22 @@
             }}
               <h2>No Associated Cases</h2>
             {{else if orgData.__associatedCasesLoading}}
-              {{fa-icon icon='spinner-third' fixedWidth=true spin=true}}
+              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
               Loading Associated Cases
             {{else if orgData.indicator.__associatedCasesTimeout}}
               <h2>Unable to fetch Associated Cases.</h2>
-              <div class='p-footnote'>
+              <div class="p-footnote">
                 We were unable to fetch Associated Cases due to a request timeout. You can retry the search by clicking
                 the "Retry" button below.
               </div>
               <button
-                class='btn btn-secondary btn-sm action-btn'
-                {{action 'getField' indicatorId 'associatedCases'}}
+                class="btn btn-secondary btn-sm action-btn"
+                {{action "getField" indicatorId "associatedCases"}}
               >Retry
               </button>
             {{/if}}
-            {{#if (gt orgData.indicator.__associatedCasesCount 0)}}
-              <h1 class='p-title d-flex align-items-center justify-content-between'>
+            {{#if orgData.indicator.associatedCases.data.length}}
+              <h1 class="p-title d-flex align-items-center justify-content-between">
                 <div>
                   Associated Cases
                 </div>
@@ -982,56 +1087,219 @@
                   </div>
                 {{/if}}
               </h1>
-              {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
-                <div class='card'>
-                  <div class='card-title'>
-                    <div class='d-flex align-items-center justify-content-between'>
+              {{#each orgData.indicator.associatedCases.data as |case|}}
+                <div class="card">
+                  <div class="card-title">
+                    <div class="d-flex align-items-start justify-content-between">
                       <div>
-                        <span class='p-footnote'>
+                        <span class="p-footnote">
                           #{{case.id}}
                         </span>
-                        {{case.name}}
+                        <div>{{case.name}}</div>
                       </div>
-                      <div>
-                        <a href='{{details.appUrl}}/#/workflow/cases/{{case.id}}' class='p-link p-footnote'>view
-                          {{fa-icon icon='external-link' class='p-link external-icon'}}</a>
+                      <div style="min-width: 40px;">
+                        <a href="{{details.appUrl}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view
+                          {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
                       </div>
                     </div>
 
                   </div>
-                  <div class='card-item'>
-                    <div class='p-block mb-1'>
-                      {{case.description}}
-                    </div>
-                    <div class='info-bar mb-1 no-border'>
-                      <div class='info-bar-row'>
-                        <div class='info-bar-pill'>
-                          <span class='info-bar-key'>Status</span>
-                          <span class='info-bar-value {{if (eq case.status "Closed") "red-text" "green-text"}}'>
-                            {{case.status}}
-                          </span>
+                  <div class="card-item">
+                    <div
+                      class="info-bar mb-1 no-border"
+                      style="padding-bottom: 5px; border-bottom: 1px solid #eeee; border-radius: 0px;"
+                    >
+                      {{#if block.userOptions.enableEditingCases}}
+                        {{#unless case.__isEditing}}
+                          <div>
+                            <span
+                              class="p-action edit-button-right"
+                              {{action "toggleEdit" case.id orgData.indicator.id}}
+                            >
+                              edit
+                              {{fa-icon icon="pen"}}
+                            </span>
+                          </div>
+                        {{/unless}}
+                      {{/if}}
+                      <div class="info-bar-pill full-width">
+                        <span class="info-bar-key">Description</span>
+                        {{#if case.__isEditing}}
+                          <textarea
+                            disabled={{case.__isSaving}}
+                            class="info-bar-value"
+                            rows="3"
+                            {{on "input" (pick "target.value" (set case "__newDescription"))}}
+                          >{{or case.__newDescription case.description}}</textarea>
+                        {{else}}
+                          <span class="info-bar-value">{{case.description}}</span>
+                        {{/if}}
+                      </div>
+                      <div class="info-bar-row">
+                        <div class="info-bar-pill">
+                          <span class="info-bar-key">Status</span>
+                          {{#if case.__isEditing}}
+                            <select
+                              disabled={{case.__isSaving}}
+                              class="info-bar-value"
+                              value={{or case.__newStatus case.status}}
+                              {{on "change" (pick "target.value" (set case "__newStatus"))}}
+                            >
+                              <option selected={{eq case.status "Open"}} value="Open">Open</option>
+                              <option selected={{eq case.status "Closed"}} value="Closed">Closed</option>
+                            </select>
+                          {{else}}
+                            <span class="info-bar-value {{case.__statusColor}}">{{case.status}}</span>
+                          {{/if}}
                         </div>
-                        <div class='info-bar-pill'>
-                          <span class='info-bar-key'>Severity</span>
-                          <span class='info-bar-value {{case.__severityColor}}'>
-                            {{case.severity}}
-                          </span>
+
+                        <div class="info-bar-pill">
+                          <span class="info-bar-key">Severity</span>
+                          {{#if case.__isEditing}}
+                            <select
+                              disabled={{case.__isSaving}}
+                              class="info-bar-value"
+                              value={{or case.__newSeverity case.severity}}
+                              {{on "change" (pick "target.value" (set case "__newSeverity"))}}
+                            >
+                              <option selected={{eq case.severity "Critical"}} value="Critical">Critical</option>
+                              <option selected={{eq case.severity "High"}} value="High">High</option>
+                              <option selected={{eq case.severity "Medium"}} value="Medium">Medium</option>
+                              <option selected={{eq case.severity "Low"}} value="Low">Low</option>
+                            </select>
+                          {{else}}
+                            <span class="info-bar-value {{case.__severityColor}}">{{case.severity}}</span>
+                          {{/if}}
                         </div>
-                        <div class='info-bar-pill'>
-                          <span class='info-bar-key'>Resolution</span>
-                          <span class='info-bar-value'>
-                            {{case.resolution}}
-                          </span>
+
+                        <div class="info-bar-pill">
+                          <span class="info-bar-key">Resolution</span>
+                          {{#if case.__isEditing}}
+                            <select
+                              disabled={{case.__isSaving}}
+                              class="info-bar-value"
+                              value={{or case.__newResolution case.resolution}}
+                              {{on "change" (pick "target.value" (set case "__newResolution"))}}
+                            >
+                              <option selected={{eq case.resolution "Not Specified"}} value="Not Specified" disabled>Not
+                                Specified</option>
+                              <option
+                                selected={{eq case.resolution "Containment Achieved"}}
+                                value="Containment Achieved"
+                              >Containment Achieved</option>
+                              <option
+                                selected={{eq case.resolution "Deferred / Delayed"}}
+                                value="Deferred / Delayed"
+                              >Deferred / Delayed</option>
+                              <option selected={{eq case.resolution "Escalated"}} value="Escalated">Escalated</option>
+                              <option selected={{eq case.resolution "False Positive"}} value="False Positive">False
+                                Positive</option>
+                              <option
+                                selected={{eq case.resolution "In Progress / Investigating"}}
+                                value="In Progress / Investigating"
+                              >In Progress / Investigating</option>
+                              <option selected={{eq case.resolution "Rejected"}} value="Rejected">Rejected</option>
+                              <option
+                                selected={{eq case.resolution "Restoration Achieved"}}
+                                value="Restoration Achieved"
+                              >Restoration Achieved</option>
+                            </select>
+                          {{else}}
+                            <span class="info-bar-value">{{case.resolution}}</span>
+                          {{/if}}
                         </div>
                       </div>
+
+                      {{#if case.__isEditing}}
+                        <div class="info-bar-pill full-width">
+                          <span class="info-bar-key">Attribute Types</span>
+                          <div class="p-footnote" style="color:rgb(200, 200, 200)">
+                            Select many attributes from the dropdown. The attributes will be applied to the case when
+                            you click the "Save" button.
+                          </div>
+                          <select
+                            disabled={{case.__isSaving}}
+                            class="info-bar-value"
+                            {{on "change" (action "updateAttributes" case.id orgData.indicator.id)}}
+                          >
+                            {{#each caseAttributeTypes.data as |attribute|}}
+                              <option value="{{json-stringify attribute}}">
+                                {{attribute.name}}
+                              </option>
+                            {{/each}}
+                          </select>
+                        </div>
+                      {{/if}}
+
+                      {{#if case.__isEditing}}
+                        {{#if case.__newAttributes}}
+                          <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
+                            <span class="info-bar-key">New Case Attributes</span>
+                            {{#each case.__newAttributes as |caseAttr index|}}
+                              <div style="display: flex; justify-content: space-between;">
+                                <div class="info-bar-value">
+                                  <div><strong>{{caseAttr.type}}</strong></div>
+                                  <div>{{caseAttr.value}}</div>
+                                </div>
+                                <button
+                                  class="remove-attribute"
+                                  {{on "click" (fn (action "removeAttribute" case.id orgData.indicator.id index))}}
+                                >
+                                  {{fa-icon icon="times"}}
+                                </button>
+                              </div>
+                            {{/each}}
+                          </div>
+                        {{/if}}
+                      {{/if}}
+
+                      {{#if case.__isEditing}}
+                        <div class="space-button">
+                          <button
+                            class="btn btn-secondary btn-add-tag"
+                            {{action "toggleEdit" case.id orgData.indicator.id}}
+                            disabled={{case.__isSaving}}
+                          >
+                            {{#if case.__isSaving}}
+                              {{fa-icon icon="spinner-third" fixedWidth=true spin=true}}
+                            {{else if case.__isEditing}}
+                              Save
+                            {{/if}}
+                          </button>
+                          {{#if case.__isEditing}}
+                            <button
+                              class="btn btn-secondary btn-add-tag cancel"
+                              {{action "cancelEdit" case.id orgData.indicator.id}}
+                              disabled={{case.__isSaving}}
+                            >
+                              Cancel
+                            </button>
+                          {{/if}}
+                        </div>
+                      {{/if}}
+                      {{#if case.attributes.data.length}}
+                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
+                          <span class="info-bar-key">Case Attributes</span>
+                          {{#each case.attributes.data as |caseAttr|}}
+                            <div class="info-bar-value attributes">
+                              <div class="attribute-type">{{caseAttr.type}}</div>
+                              <div>{{caseAttr.value}}</div>
+                            </div>
+                          {{/each}}
+                        </div>
+                      {{else}}
+                        <span class="info-bar-key" style="margin-top: 10px; margin-bottom: 10px;">No Attributes
+                          Associated</span>
+                      {{/if}}
+                    </div>
+
+                    <div>
+                      <span class="p-key">Owner:</span>
+                      <span class="p-value">{{case.owner}}</span>
                     </div>
                     <div>
-                      <span class='p-key'>Owner:</span>
-                      <span class='p-value'>{{case.owner}}</span>
-                    </div>
-                    <div>
-                      <span class='p-key'>Assignee:</span>
-                      <span class='p-value'>
+                      <span class="p-key">Assignee:</span>
+                      <span class="p-value">
                         {{#if case.assignee.data}}
                           {{case.assignee.data.firstName}}
                           {{case.assignee.data.lastName}}
@@ -1041,41 +1309,97 @@
                       </span>
                     </div>
                     <div>
-                      <span class='p-key'>Cased Opened:</span>
-                      <span class='p-value'>{{moment-format
+                      <span class="p-key">Cased Opened:</span>
+                      <span class="p-value">{{moment-format
                           case.caseOpenTime
-                          'MM/DD/YYYY HH:mm:ss'
+                          "MM/DD/YYYY HH:mm:ss"
                           timeZone=timezone
                         }}</span>
                     </div>
                     <div>
-                      <span class='p-key'>Last Updated:</span>
-                      <span class='p-value'>{{moment-format
+                      <span class="p-key">Last Updated:</span>
+                      <span class="p-value">{{moment-format
                           case.lastUpdated
-                          'MM/DD/YYYY HH:mm:ss'
+                          "MM/DD/YYYY HH:mm:ss"
                           timeZone=timezone
                         }}</span>
                     </div>
+                    <div class="d-flex align-items-center justify-content-between">
+                      <div class="p-title">
+                        Tags
+                      </div>
+                      <div class="p-footnote">
+                        {{#if case.__updatingTags}}
+                          {{fa-icon icon="spinner-third" spin=true}}
+                          updating tags
+                        {{/if}}
+                      </div>
+                    </div>
+
+                    {{#unless case.tags.data.length}}
+                      <div class="p-footnote mb-2">
+                        <span>No Tags</span>
+                      </div>
+                    {{else}}
+                      <div class="tag-container">
+                        {{#each case.tags.data as |tag tagIndex|}}
+                          {{#if tag}}
+                            <a href="{{details.appUrl}}/auth/tags/tag.xhtml?tag={{tag.id}}" class="tc-link-tag">
+                              <span class="threatconnect-summary-tag">
+                                {{#if tag.techniqueId}}
+                                  &#38;
+                                  {{tag.techniqueId}}
+                                  -
+                                {{/if}}
+                                {{tag.name}}
+                              </span>
+                            </a>
+                          {{/if}}
+                        {{/each}}
+                      </div>
+                      <div style="clear:both"></div>
+                    {{/unless}}
+                    <div class="input-group input-group-sm">
+                      {{input
+                        type="text"
+                        placeholder="Add Tag"
+                        enter=(action "addCaseTag" case.id orgData.indicator.id)
+                        class="form-control add-tag-input"
+                        value=(get newCaseTagValues case.id)
+                        input=(action "updateCaseTagValue" case.id)
+                      }}
+                      <div class="input-group-append">
+                        <button
+                          class="btn btn-secondary btn-add-tag"
+                          style="border-radius: 4px"
+                          type="button"
+                          disabled={{or case.__updatingTags (not (get newCaseTagValues case.id))}}
+                          {{action "addCaseTag" case.id orgData.indicator.id}}
+                        >{{#if case.__updatingTags}}{{fa-icon "spinner-third" spin=true}}{{else}}Add Tag{{/if}}</button>
+                      </div>
+                    </div>
                   </div>
+
                 </div>
+
               {{/each}}
               {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
-                <div class='paging-bar'>
+                <div class="paging-bar">
                   <button
-                    class='btn paging-btn'
-                    {{action 'firstPage' indicatorId 'associatedCases'}}
+                    class="btn paging-btn"
+                    {{action "firstPage" indicatorId "associatedCases"}}
                     disabled={{orgData.indicator.__associatedCasesPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-left" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'prevPage' indicatorId 'associatedCases'}}
+                    class="btn paging-btn"
+                    {{action "prevPage" indicatorId "associatedCases"}}
                     disabled={{orgData.indicator.__associatedCasesPrevButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-left' fixedWidth=false}}
+                    {{fa-icon icon="angle-left" fixedWidth=false}}
                   </button>
-                  <div class='paging-info'>
+                  <div class="paging-info">
                     {{orgData.indicator.__associatedCasesStartItem}}
                     -
                     {{orgData.indicator.__associatedCasesEndItem}}
@@ -1083,23 +1407,24 @@
                     {{orgData.indicator.__associatedCasesCount}}
                   </div>
                   <button
-                    class='btn paging-btn'
-                    {{action 'nextPage' indicatorId 'associatedCases'}}
+                    class="btn paging-btn"
+                    {{action "nextPage" indicatorId "associatedCases"}}
                     disabled={{orgData.indicator.__associatedCasesNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-right" fixedWidth=false}}
                   </button>
                   <button
-                    class='btn paging-btn'
-                    {{action 'lastPage' indicatorId 'associatedCases'}}
+                    class="btn paging-btn"
+                    {{action "lastPage" indicatorId "associatedCases"}}
                     disabled={{orgData.indicator.__associatedCasesNextButtonDisabled}}
                   >
-                    {{fa-icon icon='angle-double-right' fixedWidth=false}}
+                    {{fa-icon icon="angle-double-right" fixedWidth=false}}
                   </button>
                 </div>
               {{/if}}
             {{/if}}
           {{/if}}
+
         </div>
       {{/if}}
     </div>
