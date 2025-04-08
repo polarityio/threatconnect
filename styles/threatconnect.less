@@ -161,19 +161,19 @@ a.tc-link-tag {
 }
 
 .red-text {
-  color: #ff4559;
+  color: #fb450e;
 }
 
 .green-text {
-  color: #7bc942;
+  color: #339434;
 }
 
 .orange-text {
-  color: #ff8f00;
+  color: #e06c00;
 }
 
 .maroon-text {
-  color: darken(#ff4559, 40%);
+  color: #7d1616;
 }
 
 .data-block-container {
@@ -220,16 +220,23 @@ a.tc-link-tag {
       width: 33%;
     }
 
+    &.full-width {
+      width: 100%;
+    }
+
     .info-bar-key {
       width: 100%;
       display: inline-block;
-      font-size: 10px;
+      font-size: 12px;
+      color: #9a9a9a;
     }
 
     .info-bar-value {
       display: inline-block;
       width: 100%;
       font-weight: 500;
+      margin-top: 2px;
+      font-size: 11px;
     }
   }
 }
@@ -378,7 +385,7 @@ pre {
   cursor: text;
   height: 27px;
   margin-right: 5px;
-  border-radius: 4px;
+  border-radius: 4px !important;
 }
 
 .threat-assess-bar {
@@ -408,6 +415,13 @@ pre {
   height: 27px !important;
   width: 85px;
   font-size: 0.775rem !important;
+  border-radius: 4px;
+
+  &.cancel {
+    background: white;
+    color: #6c757d;
+    border-radius: 4px;
+  }
 }
 
 a.tc-link-tag:hover {
@@ -438,4 +452,189 @@ a.tc-link-tag:hover {
 
 .playbook-title {
   margin-top: 10px;
+}
+
+.form-control-new-case {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 0.375rem 0.75rem;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #000000;
+  background-color: #f7f7f7;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: 0;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+  /* .ifta-label is a sibling, not a child */
+  &.ifta-label {
+    margin-bottom: -15px;
+    z-index: 1;
+    position: relative;
+    padding: 0px 10px 0 10px;
+    pointer-events: none;
+  }
+}
+
+/* .ifta-field is a separate class, not a child */
+.ifta-field {
+  height: auto;
+  padding: 0.375rem 0.75rem;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  color: #000000;
+  background-color: #f7f7f7;
+  background-clip: padding-box;
+  border: 1px solid #ced4da;
+  border-radius: 0;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+
+  &.error {
+    border-color: #ff4559;
+  }
+
+  &::placeholder {
+    color: #dfdfdf;
+  }
+
+  &:focus {
+    outline: none;
+    color: #000000;
+    border-color: #7bc942;
+    box-shadow: 0 0 0 0.2rem rgba(123, 201, 66, 0.25);
+    background-color: #fff;
+
+    &::placeholder {
+      color: transparent;
+    }
+  }
+
+  &:disabled {
+    background-color: #f6f6f3 !important;
+    cursor: not-allowed;
+  }
+}
+
+.ifta-error-message {
+  padding: 0;
+  color: red;
+  margin-top: 3px;
+  font-size: 10px;
+  margin-left: 5px;
+}
+
+.error-message {
+  padding: 10px;
+
+  .error-message-title {
+    font-weight: 500;
+  }
+
+  .close-icon {
+    cursor: pointer;
+  }
+
+  .error-scrolling-container {
+    overflow-y: scroll;
+    overflow-x: auto;
+    max-height: 200px;
+
+    pre {
+      margin: 0px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  }
+}
+
+.form-group {
+  .required {
+    color: #ff4559;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 400;
+  }
+}
+
+.form-check-input-new-case {
+  position: absolute;
+  margin-top: 0.3rem;
+  margin-left: 0px;
+}
+
+.checkbox-new-case {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.btn-new-case {
+  height: 27px !important;
+  width: 91px;
+  font-size: 0.775rem !important;
+  color: #ffffff;
+  background-color: #f97b06;
+  border-color: #f97b06;
+
+  &:hover {
+    background-color: #ec7200;
+    border-color: #ec7200;
+  }
+
+  &.cancel {
+    background-color: #ffffff;
+    color: #f97b06;
+  }
+
+  &.cancel:active {
+    background-color: #ec7200;
+    color: #ffffff;
+    border-color: #ec7200;
+  }
+}
+
+.remove-attribute {
+  font-size: 9px;
+  background-color: white;
+  border-radius: 11px;
+  width: 11px;
+  height: 11px;
+  color: #f97b06;
+  border: 1px solid #f97b06;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  cursor: pointer;
+}
+
+.remove-attribute:hover {
+  background-color: #f97b06;
+  color: white;
+}
+
+.remove-attribute svg {
+  width: 10px;
+  height: 10px;
+}
+
+.attribute-type {
+  padding-bottom: 2px;
+  font-weight: 600;
+}
+
+.edit-button-right {
+  position: absolute;
+  right: 0;
+  margin-right: 7px;
+}
+
+.space-button {
+  padding: 7px 0px 7px 0px;
 }

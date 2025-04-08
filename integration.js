@@ -12,6 +12,11 @@ const { reportFalsePositive } = require('./src/queries/report-false-positive');
 const { updateTag } = require('./src/queries/update-tag');
 const { filterInvalidEntities } = require('./src/tc-request-utils');
 const { getTokenOwner } = require('./src/queries/get-token-owner');
+const { getCasesById } = require('./src/queries/get-cases-by-id');
+const { updateCaseTags } = require('./src/queries/update-cases');
+const { updateCase } = require('./src/queries/update-cases');
+const { getCaseAttributeTypes } = require('./src/queries/get-case-attribute-types');
+const { createCase } = require('./src/queries/create-case');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -75,7 +80,22 @@ async function onDetails(resultObject, options, cb) {
       const indicatorDetails = indicatorsById[indicatorId];
       resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
     }
+    const casesList = await getCasesById(indicatorIdList, options);
+    // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
+    Object.keys(resultObject.data.details.indicators).forEach((indicatorId) => {
+      const numericIndicatorId = Number(indicatorId);
+      if (casesList[numericIndicatorId] && casesList[numericIndicatorId].associatedCases) {
+        const associatedCases = casesList[numericIndicatorId].associatedCases;
+        resultObject.data.details.indicators[indicatorId].indicator.associatedCases = {
+          data: Object.values(associatedCases)
+        };
+      }
+    });
+
+    const caseAttributeTypes = await getCaseAttributeTypes(options);
+    resultObject.data.details.caseAttributeTypes = caseAttributeTypes.body;
     Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
+
     cb(null, resultObject.data);
   } catch (error) {
     cb(error);
@@ -153,6 +173,56 @@ async function onMessage(payload, options, cb) {
     case 'UPDATE_TAG':
       try {
         const response = await updateTag(payload.indicatorId, payload.tag, payload.mode, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+      break;
+    case 'UPDATE_CASE_TAG':
+      try {
+        const response = await updateCaseTags(payload.caseId, payload.tag, payload.mode, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+      break;
+    case 'UPDATE_CASE':
+      try {
+        if (!options.enableEditingCases) {
+          return cb(null, {
+            error: {
+              detail: 'Editing cases is disabled.'
+            }
+          });
+        }
+        const response = await updateCase(payload, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+      break;
+    case 'CREATE_CASE':
+      try {
+        if (!options.enableEditingCases) {
+          return cb(null, {
+            error: {
+              detail: 'Creating cases is disabled.'
+            }
+          });
+        }
+        const response = await createCase(payload, options);
         cb(null, {
           data: response
         });
