@@ -195,7 +195,7 @@ polarity.export = PolarityComponent.extend({
           .then((result) => {
             if (result.error) {
               console.error('Error', result.error);
-              this.flashMessage(`${result.error.detail}`, 'error');
+              this.flashMessage(`${result.error.detail}`, 'danger');
             } else {
               this.flashMessage(`Case with ID ${result.data.id} updated successfully`, 'success');
 
@@ -336,7 +336,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error('Result Error', result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
 
@@ -424,7 +424,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
 
             let originalValue = this.get(`indicators.${indicatorId}.indicator.confidence`);
             // Note: this is a trick to get the property observers to fire so we can reset the
@@ -463,7 +463,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             this.set('actionMessage', 'Added Tag');
             this.set(`indicators.${indicatorId}.indicator.tags`, result.data);
@@ -507,7 +507,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error('Result Error', result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             this.set('actionMessage', 'Added Tag');
             this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.tags`, result.data.tags);
@@ -532,7 +532,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             const updatedTags = this.get(`indicators.${indicatorId}.indicator.tags.data`).filter(
               (tag) => tag.name !== tagToRemove
@@ -559,7 +559,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             if (this.get(`indicators.${indicatorId}.indicator.falsePositives`) === result.data.count) {
               this.set(`indicators.${indicatorId}.indicator.__showFalsePositiveAlreadyReported`, true);
@@ -587,7 +587,7 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           if (result.error) {
             console.error(result.error);
-            this.flashMessage(`${result.error.detail}`, 'error');
+            this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             this.set('actionMessage', 'Set rating to : ' + result.data.rating);
             this.set(`details.indicators.${indicatorId}.indicator.rating`, result.data.rating);
@@ -699,7 +699,7 @@ polarity.export = PolarityComponent.extend({
       .then((result) => {
         if (result.error) {
           console.error(result.error);
-          this.flashMessage(`${result.error.detail}`, 'error');
+          this.flashMessage(`${result.error.detail}`, 'danger');
         } else if (result.data && typeof result.data[field] !== 'undefined') {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
           if (result.data[field].data) {
