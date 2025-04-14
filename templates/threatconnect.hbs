@@ -1210,49 +1210,6 @@
                         </div>
                       </div>
 
-                      {{!-- {{#if case.__isEditing}}
-                        <div class="info-bar-pill full-width">
-                          <span class="info-bar-key">Attribute Types</span>
-                          <div class="p-footnote" style="color:rgb(200, 200, 200)">
-                            Select many attributes from the dropdown. The attributes will be applied to the case when
-                            you click the "Save" button.
-                          </div>
-                          <select
-                            disabled={{case.__isSaving}}
-                            class="info-bar-value"
-                            {{on "change" (action "updateAttributes" case.id orgData.indicator.id)}}
-                          >
-                            {{#each caseAttributeTypes.data as |attribute|}}
-                              <option value="{{json-stringify attribute}}">
-                                {{attribute.name}}
-                              </option>
-                            {{/each}}
-                          </select>
-                        </div>
-                      {{/if}}
-
-                      {{#if case.__isEditing}}
-                        {{#if case.__newAttributes}}
-                          <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
-                            <span class="info-bar-key">New Case Attributes</span>
-                            {{#each case.__newAttributes as |caseAttr index|}}
-                              <div style="display: flex; justify-content: space-between;">
-                                <div class="info-bar-value">
-                                  <div><strong>{{caseAttr.type}}</strong></div>
-                                  <div>{{caseAttr.value}}</div>
-                                </div>
-                                <button
-                                  class="remove-attribute"
-                                  {{on "click" (fn (action "removeAttribute" case.id orgData.indicator.id index))}}
-                                >
-                                  {{fa-icon icon="times"}}
-                                </button>
-                              </div>
-                            {{/each}}
-                          </div>
-                        {{/if}}
-                      {{/if}} --}}
-
                       {{#if case.__isEditing}}
                         <div class="space-button">
                           <button
