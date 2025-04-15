@@ -1,15 +1,13 @@
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
-const { getIndicatorsById } = require('./get-indicators-by-id');
 const SUCCESS_CODES = [200];
 
 async function getCasesById(indicatorIdList, options) {
   const Logger = getLogger();
   const casesByIndicator = {};
-  const indicatorsListResponse = await getIndicatorsById(indicatorIdList, options);
 
-  const casesIds = Object.values(indicatorsListResponse)
+  const casesIds = Object.values(indicatorIdList)
     .flatMap((indicator) => (indicator.associatedCases?.data || []).map((caseObj) => caseObj.id))
     .filter((id) => id !== undefined);
 
@@ -50,7 +48,7 @@ async function getCasesById(indicatorIdList, options) {
 
   Logger.trace({ apiResponse }, 'getCasesById API Response');
 
-  Object.entries(indicatorsListResponse).forEach(([indicatorId, indicator]) => {
+  Object.entries(indicatorIdList).forEach(([indicatorId, indicator]) => {
     casesByIndicator[indicatorId] = {
       indicatorId: parseInt(indicatorId, 10),
       ownerName: indicator.ownerName,
@@ -59,7 +57,7 @@ async function getCasesById(indicatorIdList, options) {
   });
 
   apiResponse.body.data.forEach((caseObj) => {
-    Object.entries(indicatorsListResponse).forEach(([indicatorId, indicator]) => {
+    Object.entries(indicatorIdList).forEach(([indicatorId, indicator]) => {
       const associatedCases = indicator.associatedCases?.data || [];
 
       // If the case ID is listed under the indicator, add it

@@ -42,7 +42,7 @@ function startup(logger) {
  * is deployed.
  * @param entities - array of entity objects
  */
-function fixEntityType(entities){
+function fixEntityType(entities) {
   const validTypes = ['hash', 'IPv4', 'IPv6', 'email', 'domain', 'url'];
 
   entities.forEach((entity) => {
@@ -57,7 +57,7 @@ function fixEntityType(entities){
 
 async function doLookup(entities, options, cb) {
   fixEntityType(entities);
-  
+
   Logger.trace({ entities }, 'doLookup');
 
   let lookupResults = [];
@@ -106,20 +106,7 @@ async function onDetails(resultObject, options, cb) {
       const indicatorDetails = indicatorsById[indicatorId];
       resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
     }
-    const casesList = await getCasesById(indicatorIdList, options);
-    // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
-    Object.keys(resultObject.data.details.indicators).forEach((indicatorId) => {
-      const numericIndicatorId = Number(indicatorId);
-      if (casesList[numericIndicatorId] && casesList[numericIndicatorId].associatedCases) {
-        const associatedCases = casesList[numericIndicatorId].associatedCases;
-        resultObject.data.details.indicators[indicatorId].indicator.associatedCases = {
-          data: Object.values(associatedCases)
-        };
-      }
-    });
 
-    const caseAttributeTypes = await getCaseAttributeTypes(options);
-    resultObject.data.details.caseAttributeTypes = caseAttributeTypes.body;
     Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
 
     cb(null, resultObject.data);
@@ -139,7 +126,7 @@ async function onMessage(payload, options, cb) {
           }
         });
       }
-
+      Logger.trace({ payload }, 'onMessage GET_INDICATOR_FIELD');
       try {
         const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
         // dnsResolution requires special handling because it includes "empty" records which we don't want to display
@@ -152,6 +139,18 @@ async function onMessage(payload, options, cb) {
             );
           }
         }
+        if (payload.field === 'associatedCases') {
+          Logger.trace('ENtered this');
+          const casesList = await getCasesById(response, options);
+          // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
+          response[payload.indicatorId].associatedCases = {
+            ...response[payload.indicatorId].associatedCases,
+            ...casesList[payload.indicatorId].associatedCases
+          };
+        }
+
+        Logger.trace({ response }, 'Response received');
+
         cb(null, {
           data: response[payload.indicatorId]
         });

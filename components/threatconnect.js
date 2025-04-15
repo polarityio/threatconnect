@@ -38,7 +38,6 @@ polarity.export = PolarityComponent.extend({
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
   isRunning: false,
-  caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
   isCreatingCase: {},
   newCaseFields: {},
   flashMessage(message, type = 'info') {
@@ -385,7 +384,7 @@ polarity.export = PolarityComponent.extend({
     },
     changeTab: function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
-
+      console.log('Got in changeTab');
       if (
         tabName === 'cases' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
@@ -694,11 +693,11 @@ polarity.export = PolarityComponent.extend({
       field,
       indicatorId
     };
-
+    console.log('Got in getField', payload);
     this.sendIntegrationMessage(payload)
       .then((result) => {
         if (result.error) {
-          console.error(result.error);
+          console.error('Err', result.error);
           this.flashMessage(`${result.error.detail}`, 'danger');
         } else if (result.data && typeof result.data[field] !== 'undefined') {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
