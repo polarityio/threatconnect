@@ -126,7 +126,7 @@ async function onMessage(payload, options, cb) {
           }
         });
       }
-      Logger.trace({ payload }, 'onMessage GET_INDICATOR_FIELD');
+
       try {
         const response = await getIndicatorsById([payload.indicatorId], options, [payload.field]);
         // dnsResolution requires special handling because it includes "empty" records which we don't want to display
@@ -140,16 +140,10 @@ async function onMessage(payload, options, cb) {
           }
         }
         if (payload.field === 'associatedCases') {
-          Logger.trace('ENtered this');
           const casesList = await getCasesById(response, options);
           // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
-          response[payload.indicatorId].associatedCases = {
-            ...response[payload.indicatorId].associatedCases,
-            ...casesList[payload.indicatorId].associatedCases
-          };
+          response[payload.indicatorId].associatedCases = casesList[payload.indicatorId].associatedCases;
         }
-
-        Logger.trace({ response }, 'Response received');
 
         cb(null, {
           data: response[payload.indicatorId]

@@ -52,7 +52,9 @@ async function getCasesById(indicatorIdList, options) {
     casesByIndicator[indicatorId] = {
       indicatorId: parseInt(indicatorId, 10),
       ownerName: indicator.ownerName,
-      associatedCases: {}
+      associatedCases: {
+        data: []
+      }
     };
   });
 
@@ -60,13 +62,12 @@ async function getCasesById(indicatorIdList, options) {
     Object.entries(indicatorIdList).forEach(([indicatorId, indicator]) => {
       const associatedCases = indicator.associatedCases?.data || [];
 
-      // If the case ID is listed under the indicator, add it
       if (associatedCases.some((c) => c.id === caseObj.id)) {
-        casesByIndicator[indicatorId].associatedCases[caseObj.id] = {
+        casesByIndicator[indicatorId].associatedCases.data.push({
           ...caseObj,
           indicatorId: parseInt(indicatorId, 10),
           ownerName: indicator.ownerName
-        };
+        });
       }
     });
   });

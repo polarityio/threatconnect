@@ -34,6 +34,7 @@ polarity.export = PolarityComponent.extend({
   newTagValues: Ember.computed(() => ({})),
   isExpanded: false,
   pageSize: 10,
+  associatedCasesPageSize: 3,
   indicatorMessage: '',
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
@@ -113,13 +114,6 @@ polarity.export = PolarityComponent.extend({
         }
 
         indicator.__totalAssociations = totalAssociations;
-
-        if (indicator.associatedCases && indicator.associatedCases.data) {
-          indicator.associatedCases.data.forEach((caseObj) => {
-            this.applySeverityColorToCase(caseObj);
-            this.applyStatusColorToCase(caseObj);
-          });
-        }
       }
     }
   },
@@ -384,7 +378,6 @@ polarity.export = PolarityComponent.extend({
     },
     changeTab: function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
-      console.log('Got in changeTab');
       if (
         tabName === 'cases' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
@@ -609,7 +602,8 @@ polarity.export = PolarityComponent.extend({
     },
     nextPage(indicatorId, field) {
       const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-      const totalPages = Math.ceil(totalFieldResults / this.pageSize);
+      const pageSize = this.get(`${field}PageSize`) || this.pageSize;
+      const totalPages = Math.ceil(totalFieldResults / pageSize);
       let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
       if (currentPage < totalPages) {
         this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, currentPage + 1);
@@ -621,7 +615,8 @@ polarity.export = PolarityComponent.extend({
     },
     lastPage(indicatorId, field) {
       const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-      const totalPages = Math.ceil(totalFieldResults / this.pageSize);
+      const pageSize = this.get(`${field}PageSize`) || this.pageSize;
+      const totalPages = Math.ceil(totalFieldResults / pageSize);
       this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, totalPages);
     },
     getField(indicatorId, field) {
@@ -693,7 +688,6 @@ polarity.export = PolarityComponent.extend({
       field,
       indicatorId
     };
-    console.log('Got in getField', payload);
     this.sendIntegrationMessage(payload)
       .then((result) => {
         if (result.error) {
@@ -701,6 +695,12 @@ polarity.export = PolarityComponent.extend({
           this.flashMessage(`${result.error.detail}`, 'danger');
         } else if (result.data && typeof result.data[field] !== 'undefined') {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
+
+          result.data[field].data.forEach((caseObj) => {
+            this.applySeverityColorToCase(caseObj);
+            this.applyStatusColorToCase(caseObj);
+          });
+
           if (result.data[field].data) {
             this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
 
@@ -715,13 +715,18 @@ polarity.export = PolarityComponent.extend({
               })
             );
 
+            delete `indicators.${indicatorId}.indicator__${field}PrevButtonDisabled`;
+            delete `indicators.${indicatorId}.indicator__${field}NextButtonDisabled`;
+            delete `indicators.${indicatorId}.indicator__${field}Filtered`;
+
             Ember.defineProperty(
               this.get(`indicators.${indicatorId}.indicator`),
               `__${field}NextButtonDisabled`,
               Ember.computed(`__${field}CurrentPage`, `${field}.data.length`, () => {
+                let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
                 const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
                 const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                const totalPages = Math.ceil(totalItems / this.pageSize);
+                const totalPages = Math.ceil(totalItems / fieldPageSize);
                 return currentPage === totalPages;
               })
             );
@@ -730,10 +735,11 @@ polarity.export = PolarityComponent.extend({
               this.get(`indicators.${indicatorId}.indicator`),
               `__${field}Filtered`,
               Ember.computed(`${field}.data.length`, `__${field}CurrentPage`, () => {
+                let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
                 let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
                 let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                const startIndex = (currentPage - 1) * this.pageSize;
-                const endIndex = startIndex + this.pageSize > totalItems ? totalItems : startIndex + this.pageSize;
+                const startIndex = (currentPage - 1) * fieldPageSize;
+                const endIndex = startIndex + fieldPageSize > totalItems ? totalItems : startIndex + fieldPageSize;
 
                 // Can't use set in a computed unless we ensure it only happens once per render
                 Ember.run.scheduleOnce(
@@ -745,7 +751,6 @@ polarity.export = PolarityComponent.extend({
                   startIndex + 1,
                   endIndex
                 );
-
                 return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
               })
             );
