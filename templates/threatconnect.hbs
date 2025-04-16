@@ -1087,7 +1087,7 @@
                   </div>
                 {{/if}}
               </h1>
-              {{#each orgData.indicator.associatedCases.data as |case|}}
+              {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
                 <div class="card">
                   <div class="card-title">
                     <div class="d-flex align-items-start justify-content-between">
