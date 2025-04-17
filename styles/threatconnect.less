@@ -200,7 +200,7 @@ a.tc-link-tag {
 
   .info-bar-row {
     display: flex;
-    border-bottom: 1px dashed #eee;
+    border-bottom: 1px solid #eee;
 
     &:last-child {
       border-bottom: none;
@@ -599,6 +599,10 @@ a.tc-link-tag:hover {
   }
 }
 
+.attributes:not(:last-child) {
+  margin-bottom: 10px;
+}
+
 .remove-attribute {
   font-size: 9px;
   background-color: white;
@@ -626,7 +630,7 @@ a.tc-link-tag:hover {
 
 .attribute-type {
   padding-bottom: 2px;
-  font-weight: 600;
+  font-size: 12px;
 }
 
 .edit-button-right {

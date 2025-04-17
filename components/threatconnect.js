@@ -276,8 +276,10 @@ polarity.export = PolarityComponent.extend({
 
         this.set(path, {
           name: '',
+          description: '',
           status: 'Open',
           severity: 'Low',
+          notes: '',
           associateIndicator: true,
           __error: false,
           __errorMessage: '',
@@ -289,6 +291,22 @@ polarity.export = PolarityComponent.extend({
             key: 'name',
             name: 'Name',
             required: true,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
+          },
+          {
+            key: 'description',
+            name: 'Description',
+            required: false,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
+          },
+          {
+            key: 'notes',
+            name: 'Notes',
+            required: false,
             __value: '',
             __error: false,
             __errorMessage: ''
@@ -306,8 +324,10 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
+      const description = newCase.desscription || '';
       const severity = newCase.severity || 'Low';
       const status = newCase.status || 'Open';
+      const notes = newCase.notes || '';
       const associate = newCase.associateIndicator;
 
       if (!name) {
@@ -324,8 +344,10 @@ polarity.export = PolarityComponent.extend({
       const payload = {
         action: 'CREATE_CASE',
         name,
+        description,
         severity,
         status,
+        notes,
         associateIndicator: associate,
         indicatorId
       };
@@ -361,8 +383,10 @@ polarity.export = PolarityComponent.extend({
           const newCaseReset = this.get(newCasePath);
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
+            Ember.set(newCaseReset, 'description', '');
             Ember.set(newCaseReset, 'severity', 'Low');
             Ember.set(newCaseReset, 'status', 'Open');
+            Ember.set(newCaseReset, 'notes', '');
             Ember.set(newCaseReset, 'associateIndicator', false);
             Ember.set(newCaseReset, '__error', false);
             Ember.set(newCaseReset, '__errorMessage', null);
