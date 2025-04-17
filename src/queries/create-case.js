@@ -13,9 +13,13 @@ async function createCase(payload, options) {
   };
 
   const name = payload.name;
-  Logger.trace('CASE NAME', name);
   if (name && name !== 'undefined') {
     requestOptions.body.name = name;
+  }
+
+  const description = payload.description;
+  if (description && description !== 'undefined') {
+    requestOptions.body.description = description;
   }
 
   const severity = payload.severity;
@@ -26,6 +30,11 @@ async function createCase(payload, options) {
   const status = payload.status;
   if (status && status !== 'undefined') {
     requestOptions.body.status = status;
+  }
+
+  const notes = payload.notes;
+  if (notes && notes !== 'undefined') {
+    requestOptions.body.notes = { data: [{ text: notes }] };
   }
 
   const associateIndicator = payload.associateIndicator;
