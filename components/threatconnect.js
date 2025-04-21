@@ -691,7 +691,7 @@ polarity.export = PolarityComponent.extend({
     this.sendIntegrationMessage(payload)
       .then((result) => {
         if (result.error) {
-          console.error('Err', result.error);
+          console.error('Error', result);
           this.flashMessage(`${result.error.detail}`, 'danger');
         } else if (result.data && typeof result.data[field] !== 'undefined') {
           this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
@@ -714,10 +714,6 @@ polarity.export = PolarityComponent.extend({
                 return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
               })
             );
-
-            delete `indicators.${indicatorId}.indicator__${field}PrevButtonDisabled`;
-            delete `indicators.${indicatorId}.indicator__${field}NextButtonDisabled`;
-            delete `indicators.${indicatorId}.indicator__${field}Filtered`;
 
             Ember.defineProperty(
               this.get(`indicators.${indicatorId}.indicator`),
@@ -754,7 +750,6 @@ polarity.export = PolarityComponent.extend({
                 return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
               })
             );
-
             // This notify property change is required as the computed will not be flagged as dirty
             // for the template until one of the dependent properties changes.
             this.notifyPropertyChange(`${field}${indicatorId}Filtered`);

@@ -140,9 +140,39 @@ async function onMessage(payload, options, cb) {
           }
         }
         if (payload.field === 'associatedCases') {
-          const casesList = await getCasesById(response, options);
-          // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
-          response[payload.indicatorId].associatedCases = casesList[payload.indicatorId].associatedCases;
+          const casesIds = Object.values(response)
+            .flatMap((indicator) => (indicator.associatedCases?.data || []).map((caseObj) => caseObj.id))
+            .filter(Boolean);
+
+          const apiResponse = await getCasesById(casesIds, options);
+
+          const casesByIndicator = {};
+
+          Object.entries(response).forEach(([indicatorId, indicator]) => {
+            casesByIndicator[indicatorId] = {
+              indicatorId: parseInt(indicatorId, 10),
+              ownerName: indicator.ownerName,
+              associatedCases: {
+                data: []
+              }
+            };
+          });
+
+          apiResponse.data.forEach((caseObj) => {
+            Object.entries(response).forEach(([indicatorId, indicator]) => {
+              const associatedCases = indicator.associatedCases?.data || [];
+
+              if (associatedCases.some((c) => c.id === caseObj.id)) {
+                casesByIndicator[indicatorId].associatedCases.data.push({
+                  ...caseObj,
+                  indicatorId: parseInt(indicatorId, 10),
+                  ownerName: indicator.ownerName
+                });
+              }
+            });
+          });
+
+          response[payload.indicatorId].associatedCases = casesByIndicator[payload.indicatorId].associatedCases;
         }
 
         cb(null, {

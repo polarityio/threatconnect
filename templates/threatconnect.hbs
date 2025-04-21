@@ -1336,11 +1336,10 @@
                       </div>
                     </div>
                   </div>
-
                 </div>
-
               {{/each}}
-              {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
+
+              {{#if (gt orgData.indicator.__associatedCasesCount associatedCasesPageSize)}}
                 <div class="paging-bar">
                   <button
                     class="btn paging-btn"
