@@ -376,13 +376,17 @@ polarity.export = PolarityComponent.extend({
       e.stopPropagation();
       return false;
     },
-    changeTab: function (tabName, indicatorId) {
+    changeTab: async function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
       if (
         tabName === 'cases' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
       ) {
-        this.getField(indicatorId, 'associatedCases');
+        await this.getField(indicatorId, 'associatedCases');
+        this.get(`indicators.${indicatorId}.indicator.associatedCases.data`).forEach((caseObj) => {
+          this.applySeverityColorToCase(caseObj);
+          this.applyStatusColorToCase(caseObj);
+        });
       } else if (
         tabName === 'groups' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedGroups`) === 'undefined'
@@ -681,94 +685,89 @@ polarity.export = PolarityComponent.extend({
 
     return 'Confirmed';
   },
-  getField(indicatorId, field) {
+  async getField(indicatorId, field) {
     this.set(`indicators.${indicatorId}.__${field}Loading`, true);
+
     const payload = {
       action: 'GET_INDICATOR_FIELD',
       field,
       indicatorId
     };
-    this.sendIntegrationMessage(payload)
-      .then((result) => {
-        if (result.error) {
-          console.error('Error', result);
-          this.flashMessage(`${result.error.detail}`, 'danger');
-        } else if (result.data && typeof result.data[field] !== 'undefined') {
-          this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
 
-          result.data[field].data.forEach((caseObj) => {
-            this.applySeverityColorToCase(caseObj);
-            this.applyStatusColorToCase(caseObj);
-          });
+    try {
+      let result = await this.sendIntegrationMessage(payload);
+      if (result.error) {
+        console.error('Error', result);
+        this.flashMessage(`${result.error.detail}`, 'danger');
+      } else if (result.data && typeof result.data[field] !== 'undefined') {
+        this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
 
-          if (result.data[field].data) {
-            this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
+        if (result.data[field].data) {
+          this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
 
-            // setup a filtered data set, initialize the starting page to 1
-            this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
+          // setup a filtered data set, initialize the starting page to 1
+          this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
 
-            Ember.defineProperty(
-              this.get(`indicators.${indicatorId}.indicator`),
-              `__${field}PrevButtonDisabled`,
-              Ember.computed(`__${field}CurrentPage`, () => {
-                return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
-              })
-            );
+          Ember.defineProperty(
+            this.get(`indicators.${indicatorId}.indicator`),
+            `__${field}PrevButtonDisabled`,
+            Ember.computed(`__${field}CurrentPage`, () => {
+              return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
+            })
+          );
 
-            Ember.defineProperty(
-              this.get(`indicators.${indicatorId}.indicator`),
-              `__${field}NextButtonDisabled`,
-              Ember.computed(`__${field}CurrentPage`, `${field}.data.length`, () => {
-                let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
-                const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                const totalPages = Math.ceil(totalItems / fieldPageSize);
-                return currentPage === totalPages;
-              })
-            );
+          Ember.defineProperty(
+            this.get(`indicators.${indicatorId}.indicator`),
+            `__${field}NextButtonDisabled`,
+            Ember.computed(`__${field}CurrentPage`, `${field}.data.length`, () => {
+              let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
+              const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+              const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+              const totalPages = Math.ceil(totalItems / fieldPageSize);
+              return currentPage === totalPages;
+            })
+          );
 
-            Ember.defineProperty(
-              this.get(`indicators.${indicatorId}.indicator`),
-              `__${field}Filtered`,
-              Ember.computed(`${field}.data.length`, `__${field}CurrentPage`, () => {
-                let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
-                let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                const startIndex = (currentPage - 1) * fieldPageSize;
-                const endIndex = startIndex + fieldPageSize > totalItems ? totalItems : startIndex + fieldPageSize;
+          Ember.defineProperty(
+            this.get(`indicators.${indicatorId}.indicator`),
+            `__${field}Filtered`,
+            Ember.computed(`${field}.data.length`, `__${field}CurrentPage`, () => {
+              let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
+              let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+              let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+              const startIndex = (currentPage - 1) * fieldPageSize;
+              const endIndex = startIndex + fieldPageSize > totalItems ? totalItems : startIndex + fieldPageSize;
 
-                // Can't use set in a computed unless we ensure it only happens once per render
-                Ember.run.scheduleOnce(
-                  'afterRender',
-                  this,
-                  this.setStartEndIndexes,
-                  indicatorId,
-                  field,
-                  startIndex + 1,
-                  endIndex
-                );
-                return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
-              })
-            );
-            // This notify property change is required as the computed will not be flagged as dirty
-            // for the template until one of the dependent properties changes.
-            this.notifyPropertyChange(`${field}${indicatorId}Filtered`);
-            this.notifyPropertyChange(`${field}${indicatorId}PrevButtonDisabled`);
-            this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
-          } else {
-            this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
-          }
+              // Can't use set in a computed unless we ensure it only happens once per render
+              Ember.run.scheduleOnce(
+                'afterRender',
+                this,
+                this.setStartEndIndexes,
+                indicatorId,
+                field,
+                startIndex + 1,
+                endIndex
+              );
+              return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
+            })
+          );
+          // This notify property change is required as the computed will not be flagged as dirty
+          // for the template until one of the dependent properties changes.
+          this.notifyPropertyChange(`${field}${indicatorId}Filtered`);
+          this.notifyPropertyChange(`${field}${indicatorId}PrevButtonDisabled`);
+          this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
+        } else {
+          this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
         }
-      })
-      .catch((err) => {
-        console.error('getField Error', err);
-        if (err.status === '504') {
-          this.set(`indicators.${indicatorId}.indicator.__${field}Timeout`, true);
-        }
-      })
-      .finally(() => {
-        this.set(`indicators.${indicatorId}.__${field}Loading`, false);
-      });
+      }
+    } catch (err) {
+      console.error('getField Error', err);
+      if (err.status === '504') {
+        this.set(`indicators.${indicatorId}.indicator.__${field}Timeout`, true);
+      }
+    } finally {
+      this.set(`indicators.${indicatorId}.__${field}Loading`, false);
+    }
   },
   setStartEndIndexes: function (indicatorId, field, startIndex, endIndex) {
     this.set(`indicators.${indicatorId}.indicator.__${field}StartItem`, startIndex);
