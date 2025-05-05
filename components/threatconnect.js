@@ -303,6 +303,14 @@ polarity.export = PolarityComponent.extend({
             __value: '',
             __error: false,
             __errorMessage: ''
+          },
+          {
+            key: 'tags',
+            name: 'Tags',
+            required: false,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
           }
         ]);
 
@@ -318,6 +326,7 @@ polarity.export = PolarityComponent.extend({
 
       const name = newCase.name ? newCase.name.trim() : '';
       const description = newCase.desscription || '';
+      const tags = newCase.tags || '';
       const severity = newCase.severity || 'Low';
       const status = newCase.status || 'Open';
       const notes = newCase.notes || '';
@@ -338,6 +347,7 @@ polarity.export = PolarityComponent.extend({
         action: 'CREATE_CASE',
         name,
         description,
+        tags,
         severity,
         status,
         notes,
@@ -377,6 +387,7 @@ polarity.export = PolarityComponent.extend({
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
             Ember.set(newCaseReset, 'description', '');
+            Ember.set(newCaseReset, 'tags', '');
             Ember.set(newCaseReset, 'severity', 'Low');
             Ember.set(newCaseReset, 'status', 'Open');
             Ember.set(newCaseReset, 'notes', '');

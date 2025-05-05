@@ -988,6 +988,19 @@
                       ></textarea>
                     </div>
 
+                    <div class="form-group">
+                      <label class="small ifta-label">
+                        Tags
+                      </label>
+                      <input
+                        type="text"
+                        class="form-control-new-case ifta-field"
+                        value={{orgData.indicator.__newCase.tags}}
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        {{on "input" (action "updateNewCaseField" indicatorId "tags")}}
+                      />
+                    </div>
+
                     <div style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;">
                       <div class="form-group" style="flex: 1; margin-right: 5px;">
                         <label for="case-severity">Severity</label>
