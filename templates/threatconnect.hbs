@@ -976,33 +976,74 @@
                     </div>
 
                     <div class="form-group">
-                      <label for="case-severity">Severity</label>
-                      <select
+                      <label class="small ifta-label">
+                        Description
+                      </label>
+                      <textarea
+                        class="form-control-new-case ifta-field"
+                        rows="2"
+                        value={{orgData.indicator.__newCase.description}}
                         disabled={{orgData.indicator.__isCreatingCase}}
-                        id="case-severity"
-                        class="form-control-new-case"
-                        value={{orgData.indicator.__newCase.severity}}
-                        {{on "change" (action "updateNewCaseField" indicatorId "severity")}}
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Critical">Critical</option>
-                      </select>
+                        {{on "input" (action "updateNewCaseField" indicatorId "description")}}
+                      ></textarea>
                     </div>
 
                     <div class="form-group">
-                      <label for="case-status">Status</label>
-                      <select
+                      <label class="small ifta-label">
+                        Tags
+                      </label>
+                      <input
+                        type="text"
+                        class="form-control-new-case ifta-field"
+                        value={{orgData.indicator.__newCase.tags}}
                         disabled={{orgData.indicator.__isCreatingCase}}
-                        id="case-status"
-                        class="form-control-new-case"
-                        value={{orgData.indicator.__newCase.status}}
-                        {{on "change" (action "updateNewCaseField" indicatorId "status")}}
-                      >
-                        <option value="Open">Open</option>
-                        <option value="Closed">Closed</option>
-                      </select>
+                        {{on "input" (action "updateNewCaseField" indicatorId "tags")}}
+                      />
+                    </div>
+
+                    <div style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;">
+                      <div class="form-group" style="flex: 1; margin-right: 5px;">
+                        <label for="case-severity">Severity</label>
+                        <select
+                          disabled={{orgData.indicator.__isCreatingCase}}
+                          id="case-severity"
+                          class="form-control-new-case"
+                          value={{orgData.indicator.__newCase.severity}}
+                          {{on "change" (action "updateNewCaseField" indicatorId "severity")}}
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                          <option value="Critical">Critical</option>
+                        </select>
+                      </div>
+      
+                      <div class="form-group" style="flex: 1; margin-left: 5px;">
+                        <label for="case-status">Status</label>
+                        <select
+                          disabled={{orgData.indicator.__isCreatingCase}}
+                          id="case-status"
+                          class="form-control-new-case"
+                          value={{orgData.indicator.__newCase.status}}
+                          {{on "change" (action "updateNewCaseField" indicatorId "status")}}
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Closed">Closed</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="small ifta-label">
+                        Notes
+                      </label>
+                      <textarea
+                        class="form-control-new-case ifta-field"
+                        rows="2"
+                        value={{orgData.indicator.__newCase.notes}}
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        {{on "input" (action "updateNewCaseField" indicatorId "notes")}}
+                      ></textarea>
                     </div>
 
                     <div class="checkbox-new-case">
@@ -1095,7 +1136,7 @@
                         <span class="p-footnote">
                           #{{case.id}}
                         </span>
-                        <div>{{case.name}}</div>
+                        <div style="margin-top: 3px">{{case.name}}</div>
                       </div>
                       <div style="min-width: 40px;">
                         <a href="{{details.appUrl}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view
@@ -1132,7 +1173,7 @@
                             {{on "input" (pick "target.value" (set case "__newDescription"))}}
                           >{{or case.__newDescription case.description}}</textarea>
                         {{else}}
-                          <span class="info-bar-value">{{case.description}}</span>
+                          <span class="info-bar-value">{{or case.description "---"}}</span>
                         {{/if}}
                       </div>
                       <div class="info-bar-row">
@@ -1235,7 +1276,7 @@
                         </div>
                       {{/if}}
                       {{#if case.attributes.data.length}}
-                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
+                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px; max-height: 150px; overflow: auto;">
                           <span class="info-bar-key">Case Attributes</span>
                           {{#each case.attributes.data as |caseAttr|}}
                             <div class="info-bar-value attributes">

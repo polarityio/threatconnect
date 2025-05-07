@@ -6,16 +6,28 @@ const SUCCESS_CODES = [201];
 async function createCase(payload, options) {
   const Logger = getLogger();
 
+  const fields = 'tags';
+
   const requestOptions = {
     uri: `${options.url}/v3/cases`,
+    qs: { fields },
     method: 'POST',
     body: {}
   };
 
   const name = payload.name;
-  Logger.trace('CASE NAME', name);
   if (name && name !== 'undefined') {
     requestOptions.body.name = name;
+  }
+
+  const description = payload.description;
+  if (description && description !== 'undefined') {
+    requestOptions.body.description = description;
+  }
+
+  const tags = payload.tags;
+  if (tags && tags !== 'undefined') {
+    requestOptions.body.tags = { data: [{ name: tags }] };
   }
 
   const severity = payload.severity;
@@ -26,6 +38,11 @@ async function createCase(payload, options) {
   const status = payload.status;
   if (status && status !== 'undefined') {
     requestOptions.body.status = status;
+  }
+
+  const notes = payload.notes;
+  if (notes && notes !== 'undefined') {
+    requestOptions.body.notes = { data: [{ text: notes }] };
   }
 
   const associateIndicator = payload.associateIndicator;
