@@ -22,6 +22,11 @@ async function createCase(payload, options) {
     requestOptions.body.description = description;
   }
 
+  const tags = payload.tags;
+  if (tags && tags !== 'undefined') {
+    requestOptions.body.tags = { data: [{ name: tags }] };
+  }
+
   const severity = payload.severity;
   if (severity && severity !== 'undefined') {
     requestOptions.body.severity = severity;
