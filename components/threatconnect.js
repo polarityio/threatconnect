@@ -317,7 +317,7 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
-      const description = newCase.desscription || '';
+      const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
       const status = newCase.status || 'Open';
       const notes = newCase.notes || '';
