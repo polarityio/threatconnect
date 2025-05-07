@@ -15,8 +15,8 @@ const { getTokenOwner } = require('./src/queries/get-token-owner');
 const { getCasesById } = require('./src/queries/get-cases-by-id');
 const { updateCaseTags } = require('./src/queries/update-cases');
 const { updateCase } = require('./src/queries/update-cases');
-const { getCaseAttributeTypes } = require('./src/queries/get-case-attribute-types');
 const { createCase } = require('./src/queries/create-case');
+const { getWorkflowTemplates } = require('./src/queries/get-workflow-templates');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -272,6 +272,18 @@ async function onMessage(payload, options, cb) {
           });
         }
         const response = await createCase(payload, options);
+        cb(null, {
+          data: response
+        });
+      } catch (error) {
+        cb(null, {
+          error
+        });
+      }
+      break;
+    case 'GET_WORKFLOW_TEMPLATES':
+      try {
+        const response = await getWorkflowTemplates(options);
         cb(null, {
           data: response
         });

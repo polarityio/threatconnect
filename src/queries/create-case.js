@@ -20,6 +20,11 @@ async function createCase(payload, options) {
     requestOptions.body.name = name;
   }
 
+  const workflowTemplate = payload.workflowTemplate;
+  if (workflowTemplate && workflowTemplate !== 'undefined') {
+    requestOptions.body.workflowTemplate = { id: parseInt(workflowTemplate, 10) };
+  }
+
   const description = payload.description;
   if (description && description !== 'undefined') {
     requestOptions.body.description = description;

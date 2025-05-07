@@ -32,8 +32,6 @@ async function getWorkflowTemplates(options) {
     );
   }
 
-  Logger.trace({ apiResponse }, 'getWorkflowTemplates API Response');
-
   return apiResponse;
 }
 

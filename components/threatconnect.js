@@ -315,6 +315,19 @@ polarity.export = PolarityComponent.extend({
         ]);
 
         this.notifyPropertyChange(path);
+
+        const payload = {
+          action: 'GET_WORKFLOW_TEMPLATES'
+        };
+
+        this.sendIntegrationMessage(payload)
+          .then((response) => {
+            this.set(`${path}.workflowTemplates`, response.data.body.data);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch workflow templates', error);
+            this.set(`${path}.workflowTemplates`, []);
+          });
       }
     },
     createCase(indicatorId, event) {
@@ -325,6 +338,7 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
+      const workflowTemplate = newCase.workflowTemplate;
       const tags = newCase.tags || '';
       const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
@@ -346,6 +360,7 @@ polarity.export = PolarityComponent.extend({
       const payload = {
         action: 'CREATE_CASE',
         name,
+        workflowTemplate,
         description,
         tags,
         severity,
@@ -386,6 +401,7 @@ polarity.export = PolarityComponent.extend({
           const newCaseReset = this.get(newCasePath);
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
+            Ember.set(newCaseReset, 'workflowTemplate', '');
             Ember.set(newCaseReset, 'description', '');
             Ember.set(newCaseReset, 'tags', '');
             Ember.set(newCaseReset, 'severity', 'Low');
