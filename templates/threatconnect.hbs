@@ -966,7 +966,10 @@
                         }}
                         value={{orgData.indicator.__newCase.name}}
                         required
-                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                        disabled={{or
+                          orgData.indicator.__isCreatingCase
+                          orgData.indicator.__newCase.__showDescriptionModal
+                        }}
                         {{on "input" (action "updateNewCaseField" indicatorId "name")}}
                       />
                       {{#if orgData.indicator.__newCase.__error}}
@@ -977,7 +980,10 @@
                     <div class="form-group">
                       <label for="case-workflowTemplate">Workflow Template</label>
                       <select
-                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                        disabled={{or
+                          orgData.indicator.__isCreatingCase
+                          orgData.indicator.__newCase.__showDescriptionModal
+                        }}
                         id="case-workflowTemplate"
                         class="form-control-new-case"
                         value={{orgData.indicator.__newCase.workflowTemplate}}
@@ -1003,10 +1009,8 @@
                             </div>
                           </span>
                           <div class="delete-confirmation-button">
-                            <button
-                              class="confirm-delete"
-                              {{action "confirmRemoveDescription" indicatorId}}
-                            >Use Template</button>
+                            <button class="confirm-delete" {{action "confirmRemoveDescription" indicatorId}}>Use
+                              Template</button>
                             <button class="cancel-delete" {{action "cancelRemoveDescription" indicatorId}}>Keep Current</button>
                           </div>
                         </div>
@@ -1021,7 +1025,10 @@
                         class="form-control-new-case ifta-field"
                         rows="4"
                         value={{orgData.indicator.__newCase.description}}
-                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                        disabled={{or
+                          orgData.indicator.__isCreatingCase
+                          orgData.indicator.__newCase.__showDescriptionModal
+                        }}
                         {{on "input" (action "updateNewCaseField" indicatorId "description")}}
                       ></textarea>
                     </div>
@@ -1034,16 +1041,24 @@
                         type="text"
                         class="form-control-new-case ifta-field"
                         value={{orgData.indicator.__newCase.tags}}
-                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                        disabled={{or
+                          orgData.indicator.__isCreatingCase
+                          orgData.indicator.__newCase.__showDescriptionModal
+                        }}
                         {{on "input" (action "updateNewCaseField" indicatorId "tags")}}
                       />
                     </div>
 
-                    <div style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;">
+                    <div
+                      style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;"
+                    >
                       <div class="form-group" style="flex: 1; margin-right: 5px;">
                         <label for="case-severity">Severity</label>
                         <select
-                          disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                          disabled={{or
+                            orgData.indicator.__isCreatingCase
+                            orgData.indicator.__newCase.__showDescriptionModal
+                          }}
                           id="case-severity"
                           class="form-control-new-case"
                           value={{orgData.indicator.__newCase.severity}}
@@ -1055,11 +1070,14 @@
                           <option value="Critical">Critical</option>
                         </select>
                       </div>
-      
+
                       <div class="form-group" style="flex: 1; margin-left: 5px;">
                         <label for="case-status">Status</label>
                         <select
-                          disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                          disabled={{or
+                            orgData.indicator.__isCreatingCase
+                            orgData.indicator.__newCase.__showDescriptionModal
+                          }}
                           id="case-status"
                           class="form-control-new-case"
                           value={{orgData.indicator.__newCase.status}}
@@ -1079,14 +1097,20 @@
                         class="form-control-new-case ifta-field"
                         rows="2"
                         value={{orgData.indicator.__newCase.notes}}
-                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                        disabled={{or
+                          orgData.indicator.__isCreatingCase
+                          orgData.indicator.__newCase.__showDescriptionModal
+                        }}
                         {{on "input" (action "updateNewCaseField" indicatorId "notes")}}
                       ></textarea>
                     </div>
 
                     <div class="checkbox-new-case">
                       <input
-                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
+                        disabled={{or
+                          orgData.indicator.__isCreatingCase
+                          orgData.indicator.__newCase.__showDescriptionModal
+                        }}
                         type="checkbox"
                         id="associate-indicator"
                         class="form-check-input-new-case"
