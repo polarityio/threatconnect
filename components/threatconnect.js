@@ -41,6 +41,7 @@ polarity.export = PolarityComponent.extend({
   isRunning: false,
   isCreatingCase: {},
   newCaseFields: {},
+  isDescription: false,
   flashMessage(message, type = 'info') {
     this.flashMessages.add({
       message: `${this.block.acronym}: ${message}`,
@@ -253,11 +254,52 @@ polarity.export = PolarityComponent.extend({
 
       Ember.set(caseToUpdate, '__newAttributes', updatedAttributes);
     },
+    cancelRemoveDescription(indicatorId) {
+      const path = `indicators.${indicatorId}.indicator.__newCase`;
+      this.set(`${path}.__showDescriptionModal`, null);
+    },
+
+    confirmRemoveDescription(indicatorId) {
+      const path = `indicators.${indicatorId}.indicator.__newCase`;
+      const modalData = this.get(`${path}.__showDescriptionModal`);
+
+      if (modalData) {
+        this.set(`${path}.description`, modalData.templateDescription || '');
+      }
+
+      this.set(`${path}.__showDescriptionModal`, null);
+    },
     updateNewCaseField(indicatorId, field, event) {
       const value = field === 'associateIndicator' ? event.target.checked : event.target.value;
       const path = `indicators.${indicatorId}.indicator.__newCase`;
 
       this.set(`${path}.${field}`, value);
+
+      if (field === 'workflowTemplate') {
+        const workflowTemplates = this.get(`${path}.workflowTemplates`) || [];
+        const selectedTemplateId = parseInt(value, 10);
+        const selectedTemplate = workflowTemplates.find((template) => template.id === selectedTemplateId);
+
+        const currentDescription = this.get(`${path}.description`) || '';
+
+        if (selectedTemplate) {
+          if (
+            currentDescription &&
+            currentDescription.trim().length > 0 &&
+            currentDescription !== selectedTemplate.description
+          ) {
+            this.set(`${path}.__showDescriptionModal`, {
+              templateDescription: selectedTemplate.description,
+              templateId: selectedTemplate.id
+            });
+          } else {
+            this.set(`${path}.description`, selectedTemplate.description || '');
+          }
+        } else {
+          this.set(`${path}.description`, '');
+        }
+      }
+
       this.notifyPropertyChange(path);
     },
     toggleCreateCase(indicatorId) {

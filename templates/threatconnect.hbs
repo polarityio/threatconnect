@@ -936,7 +936,6 @@
           {{/if}}
 
           {{! Cases Tab }}
-
           {{#if (eq orgData.__activeTab "cases")}}
             {{#if block.userOptions.enableEditingCases}}
               <h1
@@ -967,7 +966,7 @@
                         }}
                         value={{orgData.indicator.__newCase.name}}
                         required
-                        disabled={{orgData.indicator.__isCreatingCase}}
+                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                         {{on "input" (action "updateNewCaseField" indicatorId "name")}}
                       />
                       {{#if orgData.indicator.__newCase.__error}}
@@ -978,7 +977,7 @@
                     <div class="form-group">
                       <label for="case-workflowTemplate">Workflow Template</label>
                       <select
-                        disabled={{orgData.indicator.__isCreatingCase}}
+                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                         id="case-workflowTemplate"
                         class="form-control-new-case"
                         value={{orgData.indicator.__newCase.workflowTemplate}}
@@ -991,15 +990,38 @@
                       </select>
                     </div>
 
+                    {{#if orgData.indicator.__newCase.__showDescriptionModal}}
+                      <div class="ioc-deletion-modal">
+                        <div class="note">
+                          <span class="p-key">
+                            <span class="p-value"><em><b>WARNING:</b></em></span>
+                            <div>
+                              <span>The template you selected has a different description than your Case.</span>
+                            </div>
+                            <div>
+                              <span>Do you want to keep the current description?</span>
+                            </div>
+                          </span>
+                          <div class="delete-confirmation-button">
+                            <button
+                              class="confirm-delete"
+                              {{action "confirmRemoveDescription" indicatorId}}
+                            >Use Template</button>
+                            <button class="cancel-delete" {{action "cancelRemoveDescription" indicatorId}}>Keep Current</button>
+                          </div>
+                        </div>
+                      </div>
+                    {{/if}}
+
                     <div class="form-group">
                       <label class="small ifta-label">
                         Description
                       </label>
                       <textarea
                         class="form-control-new-case ifta-field"
-                        rows="2"
+                        rows="4"
                         value={{orgData.indicator.__newCase.description}}
-                        disabled={{orgData.indicator.__isCreatingCase}}
+                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                         {{on "input" (action "updateNewCaseField" indicatorId "description")}}
                       ></textarea>
                     </div>
@@ -1012,7 +1034,7 @@
                         type="text"
                         class="form-control-new-case ifta-field"
                         value={{orgData.indicator.__newCase.tags}}
-                        disabled={{orgData.indicator.__isCreatingCase}}
+                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                         {{on "input" (action "updateNewCaseField" indicatorId "tags")}}
                       />
                     </div>
@@ -1021,7 +1043,7 @@
                       <div class="form-group" style="flex: 1; margin-right: 5px;">
                         <label for="case-severity">Severity</label>
                         <select
-                          disabled={{orgData.indicator.__isCreatingCase}}
+                          disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                           id="case-severity"
                           class="form-control-new-case"
                           value={{orgData.indicator.__newCase.severity}}
@@ -1037,7 +1059,7 @@
                       <div class="form-group" style="flex: 1; margin-left: 5px;">
                         <label for="case-status">Status</label>
                         <select
-                          disabled={{orgData.indicator.__isCreatingCase}}
+                          disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                           id="case-status"
                           class="form-control-new-case"
                           value={{orgData.indicator.__newCase.status}}
@@ -1057,14 +1079,14 @@
                         class="form-control-new-case ifta-field"
                         rows="2"
                         value={{orgData.indicator.__newCase.notes}}
-                        disabled={{orgData.indicator.__isCreatingCase}}
+                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                         {{on "input" (action "updateNewCaseField" indicatorId "notes")}}
                       ></textarea>
                     </div>
 
                     <div class="checkbox-new-case">
                       <input
-                        disabled={{orgData.indicator.__isCreatingCase}}
+                        disabled={{or orgData.indicator.__isCreatingCase orgData.indicator.__newCase.__showDescriptionModal}}
                         type="checkbox"
                         id="associate-indicator"
                         class="form-check-input-new-case"
