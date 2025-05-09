@@ -277,19 +277,24 @@ async function onMessage(payload, options, cb) {
         });
       } catch (error) {
         cb(null, {
-          error
+          error: {
+            detail: 'Error creating case'
+          }
         });
       }
       break;
     case 'GET_WORKFLOW_TEMPLATES':
       try {
-        const response = await getWorkflowTemplates(options);
+        const workflowTemplates = await getWorkflowTemplates(options);
         cb(null, {
-          data: response
+          workflowTemplates
         });
       } catch (error) {
         cb(null, {
-          error
+          error: {
+            detail: 'Error fetching workflow templates',
+            error
+          }
         });
       }
       break;

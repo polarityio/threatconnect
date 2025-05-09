@@ -6,13 +6,18 @@ const SUCCESS_CODES = [200];
 async function getCasesById(casesIds, options) {
   const Logger = getLogger();
 
+  if (casesIds.length === 0) {
+    Logger.trace('No cases found for the given indicators.');
+    return { data: [] };
+  }
+
   const fields = ['tags', 'attributes'];
-  const tql = casesIds.length > 0 ? `id IN (${casesIds.join(',')})` : '';
+  const tql = `id IN (${casesIds.join(',')})`;
 
   const requestOptions = {
     uri: `${options.url}/v3/cases`,
     qs: {
-      tql: tql,
+      tql,
       fields,
       sorting: 'dateAdded DESC'
     },

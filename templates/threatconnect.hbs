@@ -968,7 +968,7 @@
                         required
                         disabled={{or
                           orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__showDescriptionModal
+                          orgData.indicator.__newCase.__selectedWorkflowData
                         }}
                         {{on "input" (action "updateNewCaseField" indicatorId "name")}}
                       />
@@ -978,25 +978,35 @@
                     </div>
 
                     <div class="form-group">
-                      <label for="case-workflowTemplate">Workflow Template</label>
-                      <select
+                      <label for="workflowTemplate-{{indicatorId}}">
+                        Workflow Template
+                        {{#if orgData.indicator.__newCase.__isLoadingTemplates}}
+                          <span class="p-footnote">
+                            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                            Loading...
+                          </span>
+                        {{/if}}
+                      </label>
+                      <input
+                        list="workflowTemplateList-{{indicatorId}}"
+                        id="workflowTemplate-{{indicatorId}}"
+                        class="form-control-new-case"
+                        value={{orgData.indicator.__newCase.workflowTemplateName}}
                         disabled={{or
                           orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__showDescriptionModal
+                          orgData.indicator.__newCase.__isLoadingTemplates
                         }}
-                        id="case-workflowTemplate"
-                        class="form-control-new-case"
-                        value={{orgData.indicator.__newCase.workflowTemplate}}
-                        {{on "change" (action "updateNewCaseField" indicatorId "workflowTemplate")}}
-                      >
-                        <option value="">None</option>
+                        {{on "input" (action "onWorkflowTemplateInput" indicatorId)}}
+                      />
+                      <datalist id="workflowTemplateList-{{indicatorId}}">
+                        <option value="None" />
                         {{#each orgData.indicator.__newCase.workflowTemplates as |template|}}
-                          <option value={{template.id}}>{{template.name}}</option>
+                          <option value="{{template.name}}" />
                         {{/each}}
-                      </select>
+                      </datalist>
                     </div>
 
-                    {{#if orgData.indicator.__newCase.__showDescriptionModal}}
+                    {{#if orgData.indicator.__newCase.__selectedWorkflowData}}
                       <div class="ioc-deletion-modal">
                         <div class="note">
                           <span class="p-key">
@@ -1027,7 +1037,7 @@
                         value={{orgData.indicator.__newCase.description}}
                         disabled={{or
                           orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__showDescriptionModal
+                          orgData.indicator.__newCase.__selectedWorkflowData
                         }}
                         {{on "input" (action "updateNewCaseField" indicatorId "description")}}
                       ></textarea>
@@ -1043,7 +1053,7 @@
                         value={{orgData.indicator.__newCase.tags}}
                         disabled={{or
                           orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__showDescriptionModal
+                          orgData.indicator.__newCase.__selectedWorkflowData
                         }}
                         {{on "input" (action "updateNewCaseField" indicatorId "tags")}}
                       />
@@ -1057,7 +1067,7 @@
                         <select
                           disabled={{or
                             orgData.indicator.__isCreatingCase
-                            orgData.indicator.__newCase.__showDescriptionModal
+                            orgData.indicator.__newCase.__selectedWorkflowData
                           }}
                           id="case-severity"
                           class="form-control-new-case"
@@ -1076,7 +1086,7 @@
                         <select
                           disabled={{or
                             orgData.indicator.__isCreatingCase
-                            orgData.indicator.__newCase.__showDescriptionModal
+                            orgData.indicator.__newCase.__selectedWorkflowData
                           }}
                           id="case-status"
                           class="form-control-new-case"
@@ -1099,7 +1109,7 @@
                         value={{orgData.indicator.__newCase.notes}}
                         disabled={{or
                           orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__showDescriptionModal
+                          orgData.indicator.__newCase.__selectedWorkflowData
                         }}
                         {{on "input" (action "updateNewCaseField" indicatorId "notes")}}
                       ></textarea>
@@ -1109,7 +1119,7 @@
                       <input
                         disabled={{or
                           orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__showDescriptionModal
+                          orgData.indicator.__newCase.__selectedWorkflowData
                         }}
                         type="checkbox"
                         id="associate-indicator"

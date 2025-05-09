@@ -32,7 +32,7 @@ async function getWorkflowTemplates(options) {
     );
   }
 
-  return apiResponse;
+  return apiResponse.body.data;
 }
 
 module.exports = {

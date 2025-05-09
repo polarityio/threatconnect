@@ -256,18 +256,18 @@ polarity.export = PolarityComponent.extend({
     },
     cancelRemoveDescription(indicatorId) {
       const path = `indicators.${indicatorId}.indicator.__newCase`;
-      this.set(`${path}.__showDescriptionModal`, null);
+      this.set(`${path}.__selectedWorkflowData`, null);
     },
 
     confirmRemoveDescription(indicatorId) {
       const path = `indicators.${indicatorId}.indicator.__newCase`;
-      const modalData = this.get(`${path}.__showDescriptionModal`);
+      const modalData = this.get(`${path}.__selectedWorkflowData`);
 
       if (modalData) {
         this.set(`${path}.description`, modalData.templateDescription || '');
       }
 
-      this.set(`${path}.__showDescriptionModal`, null);
+      this.set(`${path}.__selectedWorkflowData`, null);
     },
     updateNewCaseField(indicatorId, field, event) {
       const value = field === 'associateIndicator' ? event.target.checked : event.target.value;
@@ -288,7 +288,7 @@ polarity.export = PolarityComponent.extend({
             currentDescription.trim().length > 0 &&
             currentDescription !== selectedTemplate.description
           ) {
-            this.set(`${path}.__showDescriptionModal`, {
+            this.set(`${path}.__selectedWorkflowData`, {
               templateDescription: selectedTemplate.description,
               templateId: selectedTemplate.id
             });
@@ -362,15 +362,47 @@ polarity.export = PolarityComponent.extend({
           action: 'GET_WORKFLOW_TEMPLATES'
         };
 
+        this.set(`${path}.__isLoadingTemplates`, true);
+
         this.sendIntegrationMessage(payload)
           .then((response) => {
-            this.set(`${path}.workflowTemplates`, response.data.body.data);
+            this.set(`${path}.workflowTemplates`, response.workflowTemplates);
           })
           .catch((error) => {
             console.error('Failed to fetch workflow templates', error);
+            this.flashMessage(`${result.error.detail}`, 'danger');
             this.set(`${path}.workflowTemplates`, []);
+          })
+          .finally(() => {
+            this.set(`${path}.__isLoadingTemplates`, false);
           });
       }
+    },
+    onWorkflowTemplateInput(indicatorId, event) {
+      const inputValue = event.target.value;
+      const path = `indicators.${indicatorId}.indicator.__newCase`;
+      const templates = this.get(`${path}.workflowTemplates`) || [];
+
+      if (inputValue === 'None') {
+        this.set(`${path}.workflowTemplate`, '');
+        this.set(`${path}.workflowTemplateName`, 'None');
+        this.set(`${path}.__selectedWorkflowData`, null);
+      } else {
+        const selected = templates.find((t) => t.name === inputValue);
+
+        if (selected) {
+          this.set(`${path}.workflowTemplate`, selected.id);
+          this.set(`${path}.workflowTemplateName`, selected.name);
+          this.set(`${path}.__selectedWorkflowData`, selected);
+        } else {
+          // Optional: clear ID if name doesn't match a known template
+          this.set(`${path}.workflowTemplate`, '');
+          this.set(`${path}.workflowTemplateName`, inputValue);
+          this.set(`${path}.__selectedWorkflowData`, null);
+        }
+      }
+
+      this.notifyPropertyChange(path);
     },
     createCase(indicatorId, event) {
       event.preventDefault();
