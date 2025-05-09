@@ -3,29 +3,18 @@ const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
 const SUCCESS_CODES = [200];
 
-async function getCasesById(casesIds, options) {
+async function getWorkflowTemplates(options) {
   const Logger = getLogger();
 
-  if (casesIds.length === 0) {
-    Logger.trace('No cases found for the given indicators.');
-    return { data: [] };
-  }
-
-  const fields = ['tags', 'attributes'];
-  const tql = `id IN (${casesIds.join(',')})`;
-
   const requestOptions = {
-    uri: `${options.url}/v3/cases`,
+    uri: `${options.url}/v3/workflowTemplates`,
     qs: {
-      tql,
-      fields,
-      sorting: 'dateAdded DESC'
+      tql: `active EQ true`
     },
-    useQuerystring: true,
     method: 'GET'
   };
 
-  Logger.trace({ requestOptions }, 'Request Options');
+  Logger.trace({ requestOptions }, 'Workflow Templates Request Options');
 
   const apiResponse = await polarityRequest.request(requestOptions, options);
 
@@ -34,7 +23,7 @@ async function getCasesById(casesIds, options) {
     (apiResponse.body && apiResponse.body.status && apiResponse.body.status !== 'Success')
   ) {
     throw new ApiRequestError(
-      `Unexpected status code ${apiResponse.statusCode} received when fetching Cases details via the ThreatConnect API`,
+      `Unexpected status code ${apiResponse.statusCode} received when fetching Workflow Templates via the ThreatConnect API`,
       {
         statusCode: apiResponse.statusCode,
         requestOptions: apiResponse.requestOptions,
@@ -43,11 +32,9 @@ async function getCasesById(casesIds, options) {
     );
   }
 
-  Logger.trace({ apiResponse }, 'getCasesById API Response');
-
-  return apiResponse.body;
+  return apiResponse.body.data;
 }
 
 module.exports = {
-  getCasesById
+  getWorkflowTemplates
 };
