@@ -977,6 +977,27 @@
                       {{/if}}
                     </div>
 
+                    {{#if orgData.indicator.__newCase.workflowTemplates.__error}}
+                      <div class="alert alert-danger error-message mt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <div class="error-message-title">
+                            Error retrieving workflow templates
+                          </div>
+                          <div>
+                            {{fa-icon
+                              icon="times"
+                              fixedWidth=true
+                              class="close-icon"
+                              click=(action "clearErrorField" indicatorId "workflowTemplates")
+                            }}
+                          </div>
+                        </div>
+                        <div class="error-scrolling-container">
+                          <pre class="no-border">{{orgData.indicator.__newCase.workflowTemplates.__errorMessage}}</pre>
+                        </div>
+                      </div>
+                    {{/if}}
+
                     <div class="form-group">
                       <label for="workflowTemplate-{{indicatorId}}">
                         Workflow Template

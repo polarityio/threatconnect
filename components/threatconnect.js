@@ -370,12 +370,21 @@ polarity.export = PolarityComponent.extend({
           })
           .catch((error) => {
             console.error('Failed to fetch workflow templates', error);
-            this.flashMessage(`${result.error.detail}`, 'danger');
+            this.flashMessage(`${error.detail}`, 'danger');
             this.set(`${path}.workflowTemplates`, []);
+            this.set(`${path}.workflowTemplates.__error`, true);
+            this.set(`${path}.workflowTemplates.__errorMessage`, JSON.stringify(error, null, 2));
           })
           .finally(() => {
             this.set(`${path}.__isLoadingTemplates`, false);
           });
+      }
+    },
+    clearErrorField(indicatorId, pathToField) {
+      const fullPath = `indicators.${indicatorId}.indicator.__newCase.${pathToField}`;
+      if (this.get(fullPath)) {
+        this.set(`${fullPath}.__error`, false);
+        this.set(`${fullPath}.__errorMessage`, '');
       }
     },
     onWorkflowTemplateInput(indicatorId, event) {
@@ -395,7 +404,6 @@ polarity.export = PolarityComponent.extend({
           this.set(`${path}.workflowTemplateName`, selected.name);
           this.set(`${path}.__selectedWorkflowData`, selected);
         } else {
-          // Optional: clear ID if name doesn't match a known template
           this.set(`${path}.workflowTemplate`, '');
           this.set(`${path}.workflowTemplateName`, inputValue);
           this.set(`${path}.__selectedWorkflowData`, null);

@@ -290,7 +290,7 @@ async function onMessage(payload, options, cb) {
           workflowTemplates
         });
       } catch (error) {
-        cb(null, {
+        cb(error, {
           error: {
             detail: 'Error fetching workflow templates',
             error
