@@ -994,7 +994,8 @@
                         </div>
                       </div>
                     {{/if}}
-                    {{#let orgData.indicator.__newCase as | newCase |}}
+
+                    {{#let orgData.indicator.__newCase as |newCase|}}
                       <div class="form-group">
                         <label>
                           Workflow Template
@@ -1011,15 +1012,18 @@
                           disabled={{or orgData.indicator.__isCreatingCase newCase.__isLoadingTemplates}}
                         >
                           <option value="none">None</option>
-                          {{#each newCase.workflowTemplates as | template |}}
-                            <option value="{{template.id}}" selected={{eq template.id newCase.__selectedWorkflowData.id}}>
+                          {{#each newCase.workflowTemplates as |template|}}
+                            <option
+                              value="{{template.id}}"
+                              selected={{eq template.id newCase.__selectedWorkflowData.id}}
+                            >
                               {{template.name}}
                             </option>
                           {{/each}}
                         </select>
                       </div>
 
-                      {{#if orgData.indicator.__newCase.__showNewCaseChangeDescriptionModal}}
+                      {{#if orgData.indicator.__newCase.__templateDescriptionMismatch}}
                         <div class="ioc-deletion-modal">
                           <div class="note">
                             <span class="p-key">
@@ -1032,10 +1036,21 @@
                               </div>
                             </span>
                             <div class="delete-confirmation-button">
-                              <button class="confirm-delete" {{action (pipe-action (set newCase "description" newCase.__selectedWorkflowData.description)(set newCase "__showNewCaseChangeDescriptionModal" false))}}>
+                              <button
+                                class="confirm-delete"
+                                {{action
+                                  (pipe-action
+                                    (set newCase "description" newCase.__selectedWorkflowData.description)
+                                    (set newCase "__templateDescriptionMismatch" false)
+                                  )
+                                }}
+                              >
                                 Use Template
                               </button>
-                              <button class="cancel-delete" {{action (set newCase "__showNewCaseChangeDescriptionModal" false)}}>Keep Current</button>
+                              <button
+                                class="cancel-delete"
+                                {{action (set newCase "__templateDescriptionMismatch" false)}}
+                              >Keep Current</button>
                             </div>
                           </div>
                         </div>
@@ -1073,7 +1088,7 @@
                     >
                       <div class="form-group" style="flex: 1; margin-right: 5px;">
                         <label for="case-severity">Severity</label>
-                        <select 
+                        <select
                           disabled={{orgData.indicator.__isCreatingCase}}
                           id="case-severity"
                           class="form-control-new-case"

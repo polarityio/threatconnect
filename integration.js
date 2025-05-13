@@ -276,9 +276,11 @@ async function onMessage(payload, options, cb) {
           data: response
         });
       } catch (error) {
+        Logger.error({ error }, 'Error creating case');
         cb(null, {
           error: {
-            detail: 'Error creating case'
+            detail: 'Error creating case',
+            error
           }
         });
       }
