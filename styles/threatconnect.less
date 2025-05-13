@@ -346,6 +346,11 @@ pre {
   border: 1px solid @border-color;
   border-radius: 4px;
   margin-bottom: 0px;
+
+  &.no-border {
+    border: none !important;
+    border-radius: 0 !important;
+  }
 }
 
 .active-icon {
@@ -641,4 +646,79 @@ a.tc-link-tag:hover {
 
 .space-button {
   padding: 7px 0px 7px 0px;
+}
+
+.ioc-deletion-modal {
+  background: #ff8f0012;
+  border: #ff8f0012 1px solid;
+  top: 30px;
+  left: 30px;
+  width: 100%;
+  z-index: 9999999 !important;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-right: 8px;
+  padding-left: 8px;
+
+  .p-key {
+    color: #616a71 !important;
+
+    div {
+      padding-top: 4px;
+    }
+  }
+
+  .delete-confirmation-button,
+  .ok-button-container {
+    padding-top: 6px;
+    display: flex;
+    justify-content: flex-end;
+
+    .cancel-delete {
+      margin-right: 8px;
+      background-color: white;
+      font-weight: 600;
+      padding: 0 15px;
+      border-radius: 4px;
+      height: 27px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      cursor: pointer;
+      border-color: #f97b06;
+      color: #f97b06;
+      font-size: 0.775rem !important;
+    }
+
+    .cancel-delete:active {
+      background-color: #f97b06;
+      color: white;
+      border-color: #f97b06;
+    }
+
+    /* Confirm-delete should look like cancel style (orange text + active state) */
+    .confirm-delete {
+      margin-right: 8px;
+      background-color: #f97b06;
+      color: white;
+      font-weight: 600;
+      padding: 0 15px;
+      border-radius: 4px;
+      height: 27px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid transparent;
+      cursor: pointer;
+      border-color: #f97b06;
+      font-size: 0.775rem !important;
+    }
+
+    .confirm-delete:active {
+      background-color: #ec7200;
+      color: white;
+      border-color: #ec7200;
+    }
+  }
 }

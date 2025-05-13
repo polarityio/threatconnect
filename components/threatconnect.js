@@ -41,6 +41,7 @@ polarity.export = PolarityComponent.extend({
   isRunning: false,
   isCreatingCase: {},
   newCaseFields: {},
+  isDescription: false,
   flashMessage(message, type = 'info') {
     this.flashMessages.add({
       message: `${this.block.acronym}: ${message}`,
@@ -315,6 +316,67 @@ polarity.export = PolarityComponent.extend({
         ]);
 
         this.notifyPropertyChange(path);
+
+        const payload = {
+          action: 'GET_WORKFLOW_TEMPLATES'
+        };
+
+        this.set(`${path}.__isLoadingTemplates`, true);
+
+        this.sendIntegrationMessage(payload)
+          .then((response) => {
+            this.set(`${path}.workflowTemplates`, response.workflowTemplates);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch workflow templates', error);
+            this.flashMessage(`${error.detail}`, 'danger');
+            this.set(`${path}.workflowTemplates`, []);
+            this.set(`${path}.workflowTemplates.__error`, true);
+            this.set(`${path}.workflowTemplates.__errorMessage`, JSON.stringify(error, null, 2));
+          })
+          .finally(() => {
+            this.set(`${path}.__isLoadingTemplates`, false);
+          });
+      }
+    },
+    clearErrorField(indicatorId, pathToField) {
+      const fullPath = `indicators.${indicatorId}.indicator.__newCase.${pathToField}`;
+      if (this.get(fullPath)) {
+        this.set(`${fullPath}.__error`, false);
+        this.set(`${fullPath}.__errorMessage`, '');
+      }
+    },
+    onWorkflowTemplateChange(indicatorId, workflowId) {
+      const path = `indicators.${indicatorId}.indicator.__newCase`;
+      const templates = this.get(`${path}.workflowTemplates`) || [];
+
+      if (workflowId === 'none') {
+        this.set(`${path}.__selectedWorkflowData`, null);
+        this.set(`${path}.__templateDescriptionMismatch`, false);
+        this.set(`${path}.description`, '');
+      } else {
+        const selectedWorkflow = templates.find((t) => t.id.toString() === workflowId);
+
+        if (selectedWorkflow) {
+          const currentDescription = this.get(`${path}.description`) || '';
+
+          if (
+            currentDescription &&
+            currentDescription.trim().length > 0 &&
+            currentDescription !== selectedWorkflow.description
+          ) {
+            this.set(`${path}.__selectedWorkflowData`, selectedWorkflow);
+            this.set(`${path}.__templateDescriptionMismatch`, true);
+          } else {
+            this.set(`${path}.description`, selectedWorkflow.description || '');
+            this.set(`${path}.__selectedWorkflowData`, selectedWorkflow);
+            this.set(`${path}.__templateDescriptionMismatch`, false);
+          }
+        } else {
+          this.set(`${path}.description`, '');
+          this.set(`${path}.__selectedWorkflowData`, null);
+          this.set(`${path}.__templateDescriptionMismatch`, false);
+        }
       }
     },
     createCase(indicatorId, event) {
@@ -325,6 +387,7 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
+      const workflowTemplateId = newCase.__selectedWorkflowData.id;
       const tags = newCase.tags || '';
       const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
@@ -346,6 +409,7 @@ polarity.export = PolarityComponent.extend({
       const payload = {
         action: 'CREATE_CASE',
         name,
+        workflowTemplateId,
         description,
         tags,
         severity,
