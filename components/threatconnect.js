@@ -258,7 +258,6 @@ polarity.export = PolarityComponent.extend({
       const path = `indicators.${indicatorId}.indicator.__newCase`;
       this.set(`${path}.__selectedWorkflowData`, null);
     },
-
     confirmRemoveDescription(indicatorId) {
       const path = `indicators.${indicatorId}.indicator.__newCase`;
       const modalData = this.get(`${path}.__selectedWorkflowData`);
@@ -387,40 +386,15 @@ polarity.export = PolarityComponent.extend({
         this.set(`${fullPath}.__errorMessage`, '');
       }
     },
-    onWorkflowTemplateInput(indicatorId, event) {
-      const inputValue = event.target.value;
-      const path = `indicators.${indicatorId}.indicator.__newCase`;
-      const templates = this.get(`${path}.workflowTemplates`) || [];
-
-      if (inputValue === 'None') {
-        this.set(`${path}.workflowTemplate`, '');
-        this.set(`${path}.workflowTemplateName`, 'None');
-        this.set(`${path}.__selectedWorkflowData`, null);
-      } else {
-        const selected = templates.find((t) => t.name === inputValue);
-
-        if (selected) {
-          this.set(`${path}.workflowTemplate`, selected.id);
-          this.set(`${path}.workflowTemplateName`, selected.name);
-          this.set(`${path}.__selectedWorkflowData`, selected);
-        } else {
-          this.set(`${path}.workflowTemplate`, '');
-          this.set(`${path}.workflowTemplateName`, inputValue);
-          this.set(`${path}.__selectedWorkflowData`, null);
-        }
-      }
-
-      this.notifyPropertyChange(path);
-    },
     createCase(indicatorId, event) {
       event.preventDefault();
 
       const indicatorPath = `indicators.${indicatorId}.indicator`;
       const newCasePath = `${indicatorPath}.__newCase`;
       let newCase = this.get(newCasePath) || {};
-
+      
       const name = newCase.name ? newCase.name.trim() : '';
-      const workflowTemplate = newCase.workflowTemplate;
+      const workflowTemplateId = newCase.__selectedWorkflowId;
       const tags = newCase.tags || '';
       const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
@@ -442,7 +416,7 @@ polarity.export = PolarityComponent.extend({
       const payload = {
         action: 'CREATE_CASE',
         name,
-        workflowTemplate,
+        workflowTemplateId,
         description,
         tags,
         severity,
@@ -483,7 +457,7 @@ polarity.export = PolarityComponent.extend({
           const newCaseReset = this.get(newCasePath);
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
-            Ember.set(newCaseReset, 'workflowTemplate', '');
+            Ember.set(newCaseReset, 'workflowTemplateId', '');
             Ember.set(newCaseReset, 'description', '');
             Ember.set(newCaseReset, 'tags', '');
             Ember.set(newCaseReset, 'severity', 'Low');

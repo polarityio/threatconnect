@@ -999,32 +999,30 @@
                     {{/if}}
 
                     <div class="form-group">
-                      <label for="workflowTemplate-{{indicatorId}}">
-                        Workflow Template
-                        {{#if orgData.indicator.__newCase.__isLoadingTemplates}}
-                          <span class="p-footnote">
-                            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
-                            Loading...
-                          </span>
-                        {{/if}}
-                      </label>
-                      <input
-                        list="workflowTemplateList-{{indicatorId}}"
-                        id="workflowTemplate-{{indicatorId}}"
-                        class="form-control-new-case"
-                        value={{orgData.indicator.__newCase.workflowTemplateName}}
-                        disabled={{or
-                          orgData.indicator.__isCreatingCase
-                          orgData.indicator.__newCase.__isLoadingTemplates
-                        }}
-                        {{on "input" (action "onWorkflowTemplateInput" indicatorId)}}
-                      />
-                      <datalist id="workflowTemplateList-{{indicatorId}}">
-                        <option value="None" />
-                        {{#each orgData.indicator.__newCase.workflowTemplates as |template|}}
-                          <option value="{{template.name}}" />
-                        {{/each}}
-                      </datalist>
+                      {{#let orgData.indicator.__newCase as | newCase |}}
+                        <label>
+                          Workflow Template
+                          {{#if newCase.__isLoadingTemplates}}
+                            <span class="p-footnote">
+                              {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                              Loading...
+                            </span>
+                          {{/if}}
+                        </label>
+                        <select 
+                          class="form-control-new-case" 
+                          onchange={{action (mut newCase.__selectedWorkflowId) value="target.value"}} 
+                          disabled={{or orgData.indicator.__isCreatingCase newCase.__isLoadingTemplates}}
+                        >
+                          <option value="none">None</option>
+                          {{#each newCase.workflowTemplates as | template |}}
+                            {{!-- `concat` helper is require to coerce the `template.id` into a string --}}
+                            <option value="{{template.id}}" selected={{eq (concat template.id "") newCase.__selectedWorkflowId}}>
+                              {{template.name}}
+                            </option>
+                          {{/each}}
+                        </select>
+                      {{/let}}
                     </div>
 
                     {{#if orgData.indicator.__newCase.__selectedWorkflowData}}

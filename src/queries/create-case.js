@@ -20,9 +20,9 @@ async function createCase(payload, options) {
     requestOptions.body.name = name;
   }
 
-  const workflowTemplate = payload.workflowTemplate;
-  if (workflowTemplate && workflowTemplate !== 'undefined') {
-    requestOptions.body.workflowTemplate = { id: parseInt(workflowTemplate, 10) };
+  const workflowTemplateId = parseInt(payload.workflowTemplateId, 10);
+  if (!Number.isNaN(workflowTemplateId)) {
+    requestOptions.body.workflowTemplate = { id: workflowTemplateId };
   }
 
   const description = payload.description;
