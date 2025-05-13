@@ -254,21 +254,6 @@ polarity.export = PolarityComponent.extend({
 
       Ember.set(caseToUpdate, '__newAttributes', updatedAttributes);
     },
-    cancelRemoveDescription(indicatorId) {
-      const path = `indicators.${indicatorId}.indicator.__newCase`;
-      this.set(`${path}.__selectedWorkflowData`, null);
-    },
-
-    confirmRemoveDescription(indicatorId) {
-      const path = `indicators.${indicatorId}.indicator.__newCase`;
-      const modalData = this.get(`${path}.__selectedWorkflowData`);
-
-      if (modalData) {
-        this.set(`${path}.description`, modalData.templateDescription || '');
-      }
-
-      this.set(`${path}.__selectedWorkflowData`, null);
-    },
     updateNewCaseField(indicatorId, field, event) {
       const value = field === 'associateIndicator' ? event.target.checked : event.target.value;
       const path = `indicators.${indicatorId}.indicator.__newCase`;
@@ -387,30 +372,24 @@ polarity.export = PolarityComponent.extend({
         this.set(`${fullPath}.__errorMessage`, '');
       }
     },
-    onWorkflowTemplateInput(indicatorId, event) {
-      const inputValue = event.target.value;
+    onWorkflowTemplateChange(indicatorId, workflowId) {
       const path = `indicators.${indicatorId}.indicator.__newCase`;
       const templates = this.get(`${path}.workflowTemplates`) || [];
 
-      if (inputValue === 'None') {
-        this.set(`${path}.workflowTemplate`, '');
-        this.set(`${path}.workflowTemplateName`, 'None');
+      if (workflowId === 'none') {
         this.set(`${path}.__selectedWorkflowData`, null);
+        this.set(`${path}.__showNewCaseChangeDescriptionModal`, false);
       } else {
-        const selected = templates.find((t) => t.name === inputValue);
-
-        if (selected) {
-          this.set(`${path}.workflowTemplate`, selected.id);
-          this.set(`${path}.workflowTemplateName`, selected.name);
-          this.set(`${path}.__selectedWorkflowData`, selected);
+        const selectedWorkflow = templates.find((t) => t.id.toString() === workflowId);
+        
+        if (selectedWorkflow) {
+          this.set(`${path}.__selectedWorkflowData`, selectedWorkflow);
+          this.set(`${path}.__showNewCaseChangeDescriptionModal`, true);
         } else {
-          this.set(`${path}.workflowTemplate`, '');
-          this.set(`${path}.workflowTemplateName`, inputValue);
           this.set(`${path}.__selectedWorkflowData`, null);
+          this.set(`${path}.__showNewCaseChangeDescriptionModal`, false);
         }
       }
-
-      this.notifyPropertyChange(path);
     },
     createCase(indicatorId, event) {
       event.preventDefault();
@@ -420,7 +399,7 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
-      const workflowTemplate = newCase.workflowTemplate;
+      const workflowTemplateId = newCase.__selectedWorkflowData.id;
       const tags = newCase.tags || '';
       const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
@@ -442,7 +421,7 @@ polarity.export = PolarityComponent.extend({
       const payload = {
         action: 'CREATE_CASE',
         name,
-        workflowTemplate,
+        workflowTemplateId,
         description,
         tags,
         severity,
@@ -451,7 +430,7 @@ polarity.export = PolarityComponent.extend({
         associateIndicator: associate,
         indicatorId
       };
-
+      
       this.set(`${indicatorPath}.__isCreatingCase`, true);
 
       this.sendIntegrationMessage(payload)
