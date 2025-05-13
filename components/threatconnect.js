@@ -421,7 +421,7 @@ polarity.export = PolarityComponent.extend({
       const payload = {
         action: 'CREATE_CASE',
         name,
-        workflowTemplate,
+        workflowTemplateId,
         description,
         tags,
         severity,
@@ -430,7 +430,7 @@ polarity.export = PolarityComponent.extend({
         associateIndicator: associate,
         indicatorId
       };
-
+      
       this.set(`${indicatorPath}.__isCreatingCase`, true);
 
       this.sendIntegrationMessage(payload)
