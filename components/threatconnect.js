@@ -387,7 +387,7 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
-      const workflowTemplateId = newCase.__selectedWorkflowData.id;
+      const workflowTemplateId = newCase.__selectedWorkflowData;
       const tags = newCase.tags || '';
       const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
@@ -396,20 +396,14 @@ polarity.export = PolarityComponent.extend({
       const associate = newCase.associateIndicator;
 
       if (!name) {
-        this.set(newCasePath, {
-          newCase,
-          __error: true,
-          __errorMessage: 'Name is required'
-        });
-
-        this.notifyPropertyChange(newCasePath);
+        this.set(`${newCasePath}.__error`, true);
+        this.set(`${newCasePath}.__errorMessage`, 'Name is required');
         return;
       }
 
       const payload = {
         action: 'CREATE_CASE',
         name,
-        workflowTemplateId,
         description,
         tags,
         severity,
@@ -418,6 +412,10 @@ polarity.export = PolarityComponent.extend({
         associateIndicator: associate,
         indicatorId
       };
+
+      if (workflowTemplateId) {
+        payload.workflowTemplateId = workflowTemplateId.id;
+      }
 
       this.set(`${indicatorPath}.__isCreatingCase`, true);
 
@@ -450,6 +448,8 @@ polarity.export = PolarityComponent.extend({
           const newCaseReset = this.get(newCasePath);
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
+            Ember.set(newCaseReset, '__selectedWorkflowData', null);
+            Ember.set(newCaseReset, '__templateDescriptionMismatch', false);
             Ember.set(newCaseReset, 'description', '');
             Ember.set(newCaseReset, 'tags', '');
             Ember.set(newCaseReset, 'severity', 'Low');
