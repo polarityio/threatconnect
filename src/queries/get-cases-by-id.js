@@ -11,8 +11,8 @@ async function getCasesById(casesIds, options) {
     return { data: [] };
   }
 
-  const fields = ['tags', 'attributes'];
-  const tql = `id IN (${casesIds.join(',')})`;
+  const fields = ['tags', 'attributes', 'notes'];
+  const tql = casesIds.length > 0 ? `id IN (${casesIds.join(',')})` : '';
 
   const requestOptions = {
     uri: `${options.url}/v3/cases`,

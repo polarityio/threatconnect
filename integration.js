@@ -173,6 +173,8 @@ async function onMessage(payload, options, cb) {
           });
 
           response[payload.indicatorId].associatedCases = casesByIndicator[payload.indicatorId].associatedCases;
+
+          Logger.trace(response, 'Associated Cases');
         }
 
         cb(null, {

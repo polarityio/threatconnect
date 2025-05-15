@@ -6,13 +6,14 @@ const SUCCESS_CODES = [201];
 async function createCase(payload, options) {
   const Logger = getLogger();
 
-  const fields = 'tags';
+  const fields = ['tags', 'attributes', 'notes'];
 
   const requestOptions = {
     uri: `${options.url}/v3/cases`,
     qs: { fields },
     method: 'POST',
-    body: {}
+    body: {},
+    useQuerystring: true
   };
 
   const name = payload.name;
