@@ -1462,11 +1462,12 @@
                   </div>
 
                   <div class="d-flex align-items-center justify-content-between">
-                    <div class="p-title" style="margin-left: 6px;">
+                    <div class="p-title" style="margin-left: 5px;">
                       Notes
                     </div>
                   </div>
-                  <div class="card note-container">
+
+                  <div class="note-container">
                     {{#unless case.notes.data.length}}
                       <div class="p-footnote mb-2">
                         <span>No Notes</span>
@@ -1475,18 +1476,37 @@
                       <div class="tag-container">
                         {{#each case.notes.data as |note noteIndex|}}
                           {{#if note}}
-                            <div class="card-title-no-border">
-                              <div class="align-items-start justify-content-between">
-                                <div>
-                                  <div class="author-information">{{note.author}}</div>
-                                  <span class="p-footnote author-information">
-                                    {{note.dateAdded}}
-                                  </span>
+                            <div class="card">
+                              <div class="card-title-no-border">
+                                <div class="align-items-start justify-content-between">
+                                  <div>
+                                    <div class="author-information">{{note.author}}</div>
+                                    <span class="p-footnote author-information">
+                                      {{note.dateAdded}}
+                                    </span>
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <div class="full-width note-summary">
-                              <span>{{note.summary}}</span>
+
+                              <div class="full-width">
+                                <div
+                                  class="note-summary {{if note.__isExpanded 'expanded'}}"
+                                  data-note-id="note-{{case.id}}-{{noteIndex}}"
+                                >
+                                  {{note.text}}
+                                </div>
+                              </div>
+                              {{#if note.__showToggle}}
+                                <div class="view-toggle-wrapper">
+                                  <span
+                                    class="p-action edit-button-right"
+                                    {{action "toggleNoteExpansion" case.id indicatorId noteIndex}}
+                                  >
+                                    {{if note.__isExpanded "View Less" "View More"}}
+                                    {{fa-icon icon=(if note.__isExpanded "chevron-up" "chevron-down")}}
+                                  </span>
+                                </div>
+                              {{/if}}
                             </div>
                           {{/if}}
                         {{/each}}
@@ -1494,6 +1514,7 @@
                       <div style="clear:both"></div>
                     {{/unless}}
                   </div>
+
                 </div>
               {{/each}}
 

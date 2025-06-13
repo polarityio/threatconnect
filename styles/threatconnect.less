@@ -730,17 +730,10 @@ a.tc-link-tag:hover {
 
 .note-container {
   max-height: 200px;
-  overflow-y: scroll;
-  overflow-x: scroll;
+  overflow-y: auto;
+  overflow-x: auto;
   margin: 6px;
 }
-
-.note-summary {
-  margin-left: 6px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
-}
-
 .note-summary:last-child {
   border-bottom: none;
 }
@@ -748,4 +741,28 @@ a.tc-link-tag:hover {
 .author-information {
   font-size: 11px;
   font-weight: 400;
+}
+
+.note-summary {
+  margin: 5px 5px 5px 5px;
+  border-bottom: 1px solid #eee;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+  transition: all 0.3s ease;
+}
+
+.note-summary.expanded {
+  display: block;
+  overflow: visible;
+}
+
+.view-toggle-wrapper {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  height: 25px;
 }

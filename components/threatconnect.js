@@ -465,6 +465,40 @@ polarity.export = PolarityComponent.extend({
           this.notifyPropertyChange(newCasePath);
         });
     },
+    toggleNoteExpansion(caseId, indicatorId, noteIndex) {
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseObj = casesArray.find((c) => c.id === caseId);
+      if (!caseObj || !caseObj.notes || !caseObj.notes.data) return;
+      const caseIndex = casesArray.indexOf(caseObj);
+      const notePath = `${indicatorPath}.${caseIndex}.notes.data.${noteIndex}`;
+      const isExpanded = this.get(`${notePath}.__isExpanded`) || false;
+      this.set(`${notePath}.__isExpanded`, !isExpanded);
+    },
+    checkNoteOverflow(caseId, indicatorId) {
+      Ember.run.scheduleOnce('afterRender', this, () => {
+        setTimeout(() => {
+          const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+          const casesArray = this.get(indicatorPath);
+          const caseObj = casesArray.find((c) => c.id === caseId);
+          if (!caseObj || !caseObj.notes || !caseObj.notes.data) return;
+
+          const caseIndex = casesArray.indexOf(caseObj);
+
+          caseObj.notes.data.forEach((note, noteIndex) => {
+            const el = document.querySelector(`[data-note-id="note-${caseId}-${noteIndex}"]`);
+            if (el) {
+              const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+              const maxHeight = 2 * lineHeight;
+
+              const isOverflowing = el.scrollHeight > maxHeight;
+
+              this.set(`${indicatorPath}.${caseIndex}.notes.data.${noteIndex}.__showToggle`, isOverflowing);
+            }
+          });
+        }, 30);
+      });
+    },
     expandTags() {
       this.toggleProperty('isExpanded');
     },
@@ -482,9 +516,16 @@ polarity.export = PolarityComponent.extend({
         typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
       ) {
         await this.getField(indicatorId, 'associatedCases');
-        this.get(`indicators.${indicatorId}.indicator.associatedCases.data`).forEach((caseObj) => {
+        const casesArray = this.get(`indicators.${indicatorId}.indicator.associatedCases.data`);
+        casesArray.forEach((caseObj) => {
           this.applySeverityColorToCase(caseObj);
           this.applyStatusColorToCase(caseObj);
+        });
+
+        Ember.run.scheduleOnce('afterRender', this, () => {
+          casesArray.forEach((caseObj) => {
+            this.send('checkNoteOverflow', caseObj.id, indicatorId);
+          });
         });
       } else if (
         tabName === 'groups' &&
