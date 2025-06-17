@@ -751,13 +751,14 @@ a.tc-link-tag:hover {
   -webkit-line-clamp: 2;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: normal;
   transition: all 0.3s ease;
 }
 
 .note-summary.expanded {
   display: block;
+  -webkit-line-clamp: unset;
   overflow: visible;
+  white-space: pre-line;
 }
 
 .view-toggle-wrapper {
