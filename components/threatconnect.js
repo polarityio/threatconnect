@@ -535,6 +535,12 @@ polarity.export = PolarityComponent.extend({
             this.send('checkNoteOverflow', caseObj.id, indicatorId);
           });
         });
+
+        Ember.run.scheduleOnce('afterRender', this, () => {
+          casesArray.forEach((caseObj) => {
+            this.send('checkNoteOverflow', caseObj.id, indicatorId);
+          });
+        });
       } else if (
         tabName === 'groups' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedGroups`) === 'undefined'
