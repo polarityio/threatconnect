@@ -1461,6 +1461,122 @@
                       </div>
                     </div>
                   </div>
+
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="p-title" style="margin-left: 5px;">
+                      Notes
+                    </div>
+                  </div>
+
+                  <div class="note-container">
+                    {{#unless case.notes.data.length}}
+                      <div class="p-footnote mb-2">
+                        <span>No Notes</span>
+                      </div>
+                    {{else}}
+                    {{!-- Add notes --}}
+                      <label class="add-integration-data-label d-flex align-items-center">
+                        <input
+                          type="checkbox"
+                          checked={{case.__state.showIntegrationData}}
+                          onclick={{action "toggleCaseIntegrationCheckbox" case}}
+                        >
+                        <div class="label-text">
+                          Add integration data as comment
+                        </div>
+                      </label>
+
+
+                      {{#if case.__state.showIntegrationData}}
+                        <div class="write-container mt-2">
+                          <div>Data from selected integrations will be included as a comment.</div>
+                          <div class="d-flex justify-content-between align-items-center">
+                            <div class="p-action" {{action "toggleAllIntegrations" caseIndex}}>
+                              Toggle All Integrations
+                            </div>
+                            <div class="d-flex align-items-center">
+                              <div class="p-footnote">
+                                {{case.__state.numSelectedWriteIntegrations}} selected
+                              </div>
+                              <button class="btn ml-1 icon-btn p-action" {{action "refreshIntegrations" caseIndex}} title="Refresh">
+                                {{fa-icon icon="sync" fixedWidth=true spin=case.__state.spinRefresh}}
+                              </button>
+                            </div>
+                          </div>
+
+                          <div class="integration-labels-container {{if case.__state.missingIntegrations "error-text"}}">
+                            {{#each case.__state.integrations as |integration|}}
+                              <label class="integration-write-label d-flex align-items-center">
+                                <input
+                                  type="checkbox"
+                                  disabled={{case.__state.isSavingComment}}
+                                  checked={{integration.selected}}
+                                  onclick={{pipe-action
+                                    (action (mut integration.selected) value="target.checked")
+                                    (action "addCommentIntegrationSelected" caseIndex)
+                                  }}
+                                >
+                                <div class="label-text">
+                                  {{integration.integrationName}}
+                                </div>
+                              </label>
+                            {{/each}}
+                            {{#if (eq case.__state.integrations.length 0)}}
+                              <div>No integration data available.</div>
+                              <div class="p-action mt-1" {{action "refreshIntegrations" caseIndex}}>Click here to refresh</div>
+                            {{/if}}
+                          </div>
+
+                          <div class="p-footnote {{if case.__state.missingIntegrations "error-text"}}">
+                            {{#if (eq case.__state.integrations.length 0)}}
+                              At least one integration must return data before submitting.
+                            {{else}}
+                              Select one or more integrations
+                            {{/if}}
+                          </div>
+                        </div>
+                      {{/if}}
+
+                      <div class="pr-1">
+                        {{#each case.notes.data as |note noteIndex|}}
+                          {{#if note}}
+                            <div class="card">
+                              <div class="card-title-no-border">
+                                <div class="align-items-start justify-content-between">
+                                  <div>
+                                    <div class="author-information">{{note.author}}</div>
+                                    <span class="p-footnote author-information">
+                                      {{moment-format note.dateAdded "DD MMM YYYY, HH:mm"}}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div class="full-width">
+                                <div
+                                  class="note-summary {{if note.__isExpanded 'expanded'}}"
+                                  data-note-id="note-{{case.id}}-{{noteIndex}}"
+                                >{{note.text}}</div>
+                              </div>
+                              {{#if note.__showToggle}}
+                                <div class="view-toggle-wrapper">
+                                  <span
+                                    class="p-action edit-button-right"
+                                    {{action "toggleNoteExpansion" case.id indicatorId noteIndex}}
+                                  >
+                                    {{if note.__isExpanded "View Less" "View More"}}
+                                    {{fa-icon icon=(if note.__isExpanded "chevron-up" "chevron-down")}}
+                                  </span>
+                                </div>
+                              {{/if}}
+                            </div>
+                          {{/if}}
+                        {{/each}}
+                      </div>
+                      <div style="clear:both"></div>
+                    {{/unless}}
+                  </div>
+
                 </div>
               {{/each}}
 

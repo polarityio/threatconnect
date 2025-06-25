@@ -90,6 +90,15 @@
       "type": "boolean",
       "userCanEdit": false,
       "adminOnly": false
+    },
+    {
+      "key": "enableAddingNotes",
+      "name": "Enable Adding Notes to a Case",
+      "description": "If enabled, users will be able to add notes to a case. This option must be set to \"Lock and show option for all users\".",
+      "default": false,
+      "type": "boolean",
+      "userCanEdit": false,
+      "adminOnly": false
     }
   ]
 }

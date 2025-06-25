@@ -300,6 +300,19 @@ async function onMessage(payload, options, cb) {
         });
       }
       break;
+    case 'ADD_NOTE':
+      try {
+        if (!options.enableAddingNotes) {
+          Logger.info('Adding notes is disabled in the configuration');
+        }
+      } catch (error) {
+        cb(error, {
+          error: {
+            detail: 'Error adding note',
+            error
+          }
+        });
+      }
   }
 }
 
