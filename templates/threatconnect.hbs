@@ -936,7 +936,6 @@
           {{/if}}
 
           {{! Cases Tab }}
-
           {{#if (eq orgData.__activeTab "cases")}}
             {{#if block.userOptions.enableEditingCases}}
               <h1
@@ -975,13 +974,96 @@
                       {{/if}}
                     </div>
 
+                    {{#if orgData.indicator.__newCase.workflowTemplates.__error}}
+                      <div class="alert alert-danger error-message mt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <div class="error-message-title">
+                            Error retrieving workflow templates
+                          </div>
+                          <div>
+                            {{fa-icon
+                              icon="times"
+                              fixedWidth=true
+                              class="close-icon"
+                              click=(action "clearErrorField" indicatorId "workflowTemplates")
+                            }}
+                          </div>
+                        </div>
+                        <div class="error-scrolling-container">
+                          <pre class="no-border">{{orgData.indicator.__newCase.workflowTemplates.__errorMessage}}</pre>
+                        </div>
+                      </div>
+                    {{/if}}
+
+                    {{#let orgData.indicator.__newCase as |newCase|}}
+                      <div class="form-group">
+                        <label>
+                          Workflow Template
+                          {{#if newCase.__isLoadingTemplates}}
+                            <span class="p-footnote">
+                              {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                              Loading...
+                            </span>
+                          {{/if}}
+                        </label>
+                        <select
+                          class="form-control-new-case"
+                          onchange={{action (action "onWorkflowTemplateChange" indicatorId) value="target.value"}}
+                          disabled={{or orgData.indicator.__isCreatingCase newCase.__isLoadingTemplates}}
+                        >
+                          <option value="none">None</option>
+                          {{#each newCase.workflowTemplates as |template|}}
+                            <option
+                              value="{{template.id}}"
+                              selected={{eq template.id newCase.__selectedWorkflowData.id}}
+                            >
+                              {{template.name}}
+                            </option>
+                          {{/each}}
+                        </select>
+                      </div>
+
+                      {{#if orgData.indicator.__newCase.__templateDescriptionMismatch}}
+                        <div class="ioc-deletion-modal">
+                          <div class="note">
+                            <span class="p-key">
+                              <span class="p-value"><em><b>WARNING:</b></em></span>
+                              <div>
+                                <span>The template you selected has a different description than your Case.</span>
+                              </div>
+                              <div>
+                                <span>Do you want to keep the current description?</span>
+                              </div>
+                            </span>
+                            <div class="delete-confirmation-button">
+                              <button
+                                class="confirm-delete"
+                                {{action
+                                  (pipe-action
+                                    (set newCase "description" newCase.__selectedWorkflowData.description)
+                                    (set newCase "__templateDescriptionMismatch" false)
+                                  )
+                                }}
+                              >
+                                Use Template
+                              </button>
+                              <button
+                                class="cancel-delete"
+                                {{action (set newCase "__templateDescriptionMismatch" false)}}
+                              >Keep Current</button>
+                            </div>
+                          </div>
+                        </div>
+                      {{/if}}
+                    {{/let}}
+
                     <div class="form-group">
                       <label class="small ifta-label">
                         Description
                       </label>
                       <textarea
                         class="form-control-new-case ifta-field"
-                        rows="2"
+                        rows="4"
                         value={{orgData.indicator.__newCase.description}}
                         disabled={{orgData.indicator.__isCreatingCase}}
                         {{on "input" (action "updateNewCaseField" indicatorId "description")}}
@@ -1001,7 +1083,9 @@
                       />
                     </div>
 
-                    <div style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;">
+                    <div
+                      style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;"
+                    >
                       <div class="form-group" style="flex: 1; margin-right: 5px;">
                         <label for="case-severity">Severity</label>
                         <select
@@ -1017,7 +1101,7 @@
                           <option value="Critical">Critical</option>
                         </select>
                       </div>
-      
+
                       <div class="form-group" style="flex: 1; margin-left: 5px;">
                         <label for="case-status">Status</label>
                         <select
@@ -1136,7 +1220,7 @@
                         <span class="p-footnote">
                           #{{case.id}}
                         </span>
-                        <div style="margin-top: 3px">{{case.name}}</div>
+                        <div>{{case.name}}</div>
                       </div>
                       <div style="min-width: 40px;">
                         <a href="{{details.appUrl}}/#/workflow/cases/{{case.id}}" class="p-link p-footnote">view
@@ -1173,7 +1257,7 @@
                             {{on "input" (pick "target.value" (set case "__newDescription"))}}
                           >{{or case.__newDescription case.description}}</textarea>
                         {{else}}
-                          <span class="info-bar-value">{{or case.description "---"}}</span>
+                          <span class="info-bar-value">{{case.description}}</span>
                         {{/if}}
                       </div>
                       <div class="info-bar-row">
@@ -1276,7 +1360,7 @@
                         </div>
                       {{/if}}
                       {{#if case.attributes.data.length}}
-                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px; max-height: 150px; overflow: auto;">
+                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
                           <span class="info-bar-key">Case Attributes</span>
                           {{#each case.attributes.data as |caseAttr|}}
                             <div class="info-bar-value attributes">
