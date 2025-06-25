@@ -1063,7 +1063,7 @@
                       </label>
                       <textarea
                         class="form-control-new-case ifta-field"
-                        rows="4"
+                        rows="3"
                         value={{orgData.indicator.__newCase.description}}
                         disabled={{orgData.indicator.__isCreatingCase}}
                         {{on "input" (action "updateNewCaseField" indicatorId "description")}}
@@ -1167,7 +1167,6 @@
                       >
                         Cancel
                       </button>
-
                     </div>
                   </form>
                 </div>
@@ -1227,8 +1226,8 @@
                           {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
                       </div>
                     </div>
-
                   </div>
+
                   <div class="card-item">
                     <div
                       class="info-bar mb-1 no-border"
@@ -1247,17 +1246,17 @@
                           </div>
                         {{/unless}}
                       {{/if}}
-                      <div class="info-bar-pill full-width">
+                      <div class="info-bar-pill full-width scrollable">
                         <span class="info-bar-key">Description</span>
                         {{#if case.__isEditing}}
                           <textarea
                             disabled={{case.__isSaving}}
                             class="info-bar-value"
-                            rows="3"
+                            rows="5"
                             {{on "input" (pick "target.value" (set case "__newDescription"))}}
                           >{{or case.__newDescription case.description}}</textarea>
                         {{else}}
-                          <span class="info-bar-value">{{case.description}}</span>
+                          <span class="info-bar-value" style="white-space: pre-line;">{{case.description}}</span>
                         {{/if}}
                       </div>
                       <div class="info-bar-row">
@@ -1360,7 +1359,7 @@
                         </div>
                       {{/if}}
                       {{#if case.attributes.data.length}}
-                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
+                        <div class="info-bar-pill scrollable" style="width: 100%; padding-bottom: 5px;">
                           <span class="info-bar-key">Case Attributes</span>
                           {{#each case.attributes.data as |caseAttr|}}
                             <div class="info-bar-value attributes">
@@ -1475,6 +1474,7 @@
                       </div>
                     {{else}}
                     {{!-- Add notes --}}
+                    {{GETS HERE}}
                       <label class="add-integration-data-label d-flex align-items-center">
                         <input
                           type="checkbox"
