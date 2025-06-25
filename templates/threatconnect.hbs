@@ -1473,7 +1473,7 @@
                         <span>No Notes</span>
                       </div>
                     {{else}}
-                      <div class="tag-container">
+                      <div class="pr-1">
                         {{#each case.notes.data as |note noteIndex|}}
                           {{#if note}}
                             <div class="card">
@@ -1492,9 +1492,7 @@
                                 <div
                                   class="note-summary {{if note.__isExpanded 'expanded'}}"
                                   data-note-id="note-{{case.id}}-{{noteIndex}}"
-                                >
-                                  {{note.text}}
-                                </div>
+                                >{{note.text}}</div>
                               </div>
                               {{#if note.__showToggle}}
                                 <div class="view-toggle-wrapper">
