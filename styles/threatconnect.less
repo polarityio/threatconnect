@@ -782,3 +782,38 @@ a.tc-link-tag:hover {
     background-color: #eee;
   }
 }
+
+.write-container {
+  .integration-labels-description {
+    margin: 5px 0px 5px 3px;
+  }
+
+  .integration-labels-container {
+    max-height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 4px;
+    resize: vertical;
+
+    &.disabled {
+      background-color: #f6f6f2;
+    }
+
+    .integration-write-label {
+      cursor: pointer;
+      padding: 3px;
+      margin: 0px;
+      border-radius: 4px;
+
+      .label-text {
+        padding-bottom: 2px;
+        padding-left: 5px;
+      }
+
+      &:hover {
+        background-color: #eee;
+      }
+    }
+  }
+}

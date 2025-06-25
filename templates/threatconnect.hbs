@@ -1474,45 +1474,51 @@
                       </div>
                     {{else}}
                     {{!-- Add notes --}}
-                      <label class="add-integration-data-label d-flex align-items-center">
+                      <label class={{concat
+                        "add-integration-data-label d-flex align-items-center"
+                        (if case.__state.missingIntegrations " error" "")
+                      }}>
                         <input
                           type="checkbox"
                           checked={{case.__state.showIntegrationData}}
                           onclick={{action "toggleCaseIntegrationCheckbox" case}}
                         >
                         <div class="label-text">
-                          Add integration data as comment
+                          Add integration data as a note
                         </div>
                       </label>
 
-
                       {{#if case.__state.showIntegrationData}}
-                        <div class="write-container mt-2">
-                          <div>Data from selected integrations will be included as a comment.</div>
+                        <div class="write-container">
+                          <div class="mt-2">Data from selected integrations will be included as a note.</div>
+                          
                           <div class="d-flex justify-content-between align-items-center">
-                            <div class="p-action" {{action "toggleAllIntegrations" caseIndex}}>
+                            <div class="p-action {{if (eq case.__state.integrations.length 0) "invisible"}}" {{action "toggleAllIntegrations" case}}>
                               Toggle All Integrations
                             </div>
-                            <div class="d-flex align-items-center">
+                            <div class="d-flex align-items-center justify-content-between">
                               <div class="p-footnote">
                                 {{case.__state.numSelectedWriteIntegrations}} selected
                               </div>
-                              <button class="btn ml-1 icon-btn p-action" {{action "refreshIntegrations" caseIndex}} title="Refresh">
+                              <button class="btn ml-1 icon-btn p-action" {{action "refreshIntegrations" case}} title="Refresh">
                                 {{fa-icon icon="sync" fixedWidth=true spin=case.__state.spinRefresh}}
                               </button>
                             </div>
                           </div>
 
-                          <div class="integration-labels-container {{if case.__state.missingIntegrations "error-text"}}">
+                          <div class={{concat
+                            "integration-labels-container"
+                            (if case.__state.missingIntegrations " error-text" "")
+                          }}>
                             {{#each case.__state.integrations as |integration|}}
                               <label class="integration-write-label d-flex align-items-center">
                                 <input
                                   type="checkbox"
-                                  disabled={{case.__state.isSavingComment}}
+                                  disabled={{case.__state.isSavingNote}}
                                   checked={{integration.selected}}
                                   onclick={{pipe-action
                                     (action (mut integration.selected) value="target.checked")
-                                    (action "addCommentIntegrationSelected" caseIndex)
+                                    (action "addNoteIntegrationSelected" case)
                                   }}
                                 >
                                 <div class="label-text">
@@ -1520,13 +1526,17 @@
                                 </div>
                               </label>
                             {{/each}}
+
                             {{#if (eq case.__state.integrations.length 0)}}
                               <div>No integration data available.</div>
-                              <div class="p-action mt-1" {{action "refreshIntegrations" caseIndex}}>Click here to refresh</div>
+                              <div class="p-action mt-1" {{action "refreshIntegrations" case}}>Click here to refresh</div>
                             {{/if}}
                           </div>
 
-                          <div class="p-footnote {{if case.__state.missingIntegrations "error-text"}}">
+                          <div class={{concat
+                            "integration-labels-description p-footnote"
+                            (if case.__state.missingIntegrations " error-text" "")
+                          }}>
                             {{#if (eq case.__state.integrations.length 0)}}
                               At least one integration must return data before submitting.
                             {{else}}
@@ -1535,6 +1545,7 @@
                           </div>
                         </div>
                       {{/if}}
+
 
                       <div class="pr-1">
                         {{#each case.notes.data as |note noteIndex|}}
