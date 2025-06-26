@@ -1558,29 +1558,29 @@
                             {{/if}}
                           </div>
                         </div>
+                      
+                        <div class="mt-2">
+                          <button
+                            class="btn btn-polarity"
+                            {{action "createNote" case}}
+                            disabled={{or (not displayNoteFieldsForCase) case.__state.isCreatingNote}}
+                          >
+                            {{#if case.__state.isCreatingNote}}
+                              {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                            {{else}}
+                              Create
+                            {{/if}}
+                          </button>
+
+                          <button
+                            class="btn btn-cancel"
+                            {{action "cancelIntegrationNote" case}}
+                            disabled={{case.__state.isCreatingNote}}
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       {{/if}}
-                      <div class="mt-2">
-                        <button
-                          class="btn btn-polarity"
-                          {{action "createNote" case}}
-                          disabled={{or (not displayNoteFieldsForCase) case.__state.isCreatingNote}}
-                        >
-                          {{#if case.__state.isCreatingNote}}
-                            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
-                          {{else}}
-                            Create
-                          {{/if}}
-                        </button>
-
-                        <button
-                          class="btn btn-cancel"
-                          {{action (pipe-action (toggle "case.__state.showCreateNote" case) (action "clearCreateNoteFields" case))}}
-                          disabled={{case.__state.isCreatingNote}}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-
                       {{! End Add Integration Data Notes }}
 
                       <div class="pr-1">

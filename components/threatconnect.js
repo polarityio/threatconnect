@@ -913,6 +913,13 @@ polarity.export = PolarityComponent.extend({
       Ember.set(caseObj.__state, 'errorMessage', '');
       Ember.set(caseObj.__state, 'errorTitle', '');
       Ember.set(caseObj.__state, 'shortErrorMessage', '');
+    },
+    toggleShowCreateNote(caseObj) {
+      Ember.set(caseObj.__state, 'showCreateNote', !caseObj.__state.showCreateNote);
+    },
+    cancelIntegrationNote(caseObj) {
+      Ember.set(caseObj.__state, 'showIntegrationData', false);
+      this.send('clearCreateNoteFields', caseObj);
     }
   },
   refreshIntegrationsForCase(caseObj) {
