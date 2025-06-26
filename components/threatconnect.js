@@ -43,6 +43,15 @@ polarity.export = PolarityComponent.extend({
   newCaseFields: {},
   isDescription: false,
   notificationsData: Ember.inject.service('notificationsData'),
+  displayNoteFieldsForCase(caseObj) {
+    const projectId = caseObj.__state.selectedProjectId;
+    const issueType = caseObj.__state.selectedIssueType;
+
+    const isValidProject = projectId != null && projectId !== '' && typeof projectId !== 'undefined';
+    const isValidIssueType = issueType != null && issueType !== '' && typeof issueType !== 'undefined';
+
+    return isValidProject && isValidIssueType;
+  },
   flashMessage(message, type = 'info') {
     this.flashMessages.add({
       message: `${this.block.acronym}: ${message}`,
@@ -528,6 +537,7 @@ polarity.export = PolarityComponent.extend({
               spinRefresh: false
             });
           }
+          Ember.set(caseObj.__state, 'displayNoteFields', this.displayNoteFieldsForCase(caseObj));
         });
 
         Ember.run.scheduleOnce('afterRender', this, () => {
@@ -837,6 +847,72 @@ polarity.export = PolarityComponent.extend({
       if (checked) {
         this.refreshIntegrationsForCase(caseObj);
       }
+    },
+    createNote(caseObj) {
+      const state = caseObj.__state;
+
+      // this.clearErrorsForCase(caseObj);
+
+      const includeIntegrationData = state.showIntegrationData;
+      let selectedIntegrations = [];
+      let annotations;
+
+      if (state.integrations) {
+        selectedIntegrations = state.integrations.filter(
+          (integration) => integration.selected && !integration.isAnnotations
+        );
+        annotations = state.integrations.find((integration) => integration.selected && integration.isAnnotations);
+      }
+
+      if (includeIntegrationData && selectedIntegrations.length === 0 && !annotations) {
+        Ember.set(state, 'missingIntegrations', true);
+        return;
+      }
+
+      Ember.set(state, 'isCreatingNote', true);
+
+      const payload = {
+        action: 'ADD_NOTE',
+        caseId,
+        mode: 'append'
+      };
+
+      if (includeIntegrationData) {
+        payload.integrationData = selectedIntegrations;
+        payload.annotations = annotations;
+      }
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          this.flashMessage(`Issue ${result.issue.key} created successfully`, 'success');
+          Ember.set(state, 'lastCreatedIssue', result.issue.key);
+          Ember.set(state, 'showCreateIssue', false);
+          this.clearCreateIssueFieldsForCase(caseObj);
+        })
+        .catch((e) => {
+          console.error('Failed to create note', e);
+          this.flashMessage('Failed to create note', 'danger');
+          Ember.set(state, 'errorMessage', JSON.stringify(e, null, 2));
+          Ember.set(state, 'errorTitle', 'Failed to create note');
+        })
+        .finally(() => {
+          Ember.set(state, 'isCreatingNote', false);
+        });
+    },
+    clearCreateNoteFields(caseObj) {
+      const issueFields = caseObj.__state.issueFields;
+
+      if (Array.isArray(issueFields)) {
+        issueFields.forEach((field) => {
+          if (field.__isRendered && field.__value) {
+            field.__value = '';
+          }
+        });
+      }
+      Ember.set(caseObj.__state, 'missingIntegrations', false);
+      Ember.set(caseObj.__state, 'errorMessage', '');
+      Ember.set(caseObj.__state, 'errorTitle', '');
+      Ember.set(caseObj.__state, 'shortErrorMessage', '');
     }
   },
   refreshIntegrationsForCase(caseObj) {
