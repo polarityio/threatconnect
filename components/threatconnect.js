@@ -804,19 +804,6 @@ polarity.export = PolarityComponent.extend({
       Ember.set(caseObj.__state, 'integrations', integrationData);
       Ember.set(caseObj.__state, 'numSelectedWriteIntegrations', this.getNumSelectedIntegration(integrationData));
     },
-    refreshIntegrations(caseObj) {
-      if (!caseObj || !caseObj.__state) return;
-
-      Ember.set(caseObj.__state, 'spinRefresh', true);
-
-      this.send('setIntegrationSelection', caseObj);
-
-      setTimeout(() => {
-        if (!this.isDestroyed && caseObj.__state) {
-          Ember.set(caseObj.__state, 'spinRefresh', false);
-        }
-      }, 1000);
-    },
     toggleAllIntegrations(caseObj) {
       if (!caseObj.__state) {
         Ember.set(caseObj, '__state', {
@@ -840,6 +827,7 @@ polarity.export = PolarityComponent.extend({
       this.setNumSelectedIntegrations(caseObj);
     },
     toggleCaseIntegrationCheckbox(caseObj, event) {
+      console.log('Got here 1');
       const checked = event.target.checked;
 
       Ember.set(caseObj.__state, 'showIntegrationData', checked);
@@ -858,6 +846,7 @@ polarity.export = PolarityComponent.extend({
       let annotations;
 
       if (state.integrations) {
+        console.log('INTEGRATIONS', state.integrations);
         selectedIntegrations = state.integrations.filter(
           (integration) => integration.selected && !integration.isAnnotations
         );
@@ -869,10 +858,13 @@ polarity.export = PolarityComponent.extend({
         return;
       }
 
+      console.log('ANNOTATIONS', annotations);
+      console.log('SELECTED INTEGRATIONS', selectedIntegrations);
+
       Ember.set(state, 'isCreatingNote', true);
 
       const payload = {
-        action: 'ADD_NOTE',
+        action: 'NOT_SET',
         caseId,
         mode: 'append'
       };
@@ -923,9 +915,10 @@ polarity.export = PolarityComponent.extend({
     }
   },
   refreshIntegrationsForCase(caseObj) {
+    console.log('Got here 2');
     const integrationData = this.getIntegrationData();
     const annotations = this.getAnnotations();
-
+    console.log('INTEGRATION DATA', integrationData);
     if (Array.isArray(annotations) && annotations.length > 0) {
       integrationData.unshift({
         integrationName: 'Polarity Annotations',
