@@ -3,56 +3,49 @@
  */
 
 const async = require('async');
-const polarityRequest = require('./polarity-request');
-const { ApiRequestError } = require('./errors');
-const { getLogger } = require('./logger');
+const polarityRequest = require('../polarity-request');
+const { ApiRequestError } = require('../errors');
+const { getLogger } = require('../logger');
 const SUCCESS_CODES = [201];
-const MAX_CHARACTER_COUNT_PER_INTEGRATION = 15000;
+const MAX_CHARACTER_COUNT_PER_INTEGRATION = 60000;
 
 /**
  *
- * @param issueId
+ * @param caseId
  * @param data - object containing the userName, userEmail, and integration data
  * @param options
  * @returns {Promise<*>}
  */
-async function addIntegrationDataAsNote(
-  issueId,
-  comment,
-  entity,
-  username,
-  userEmail,
-  integrationData,
-  annotations,
-  options
-) {
+async function addIntegrationDataAsNote(payload, options) {
   const Logger = getLogger();
+  const integrationData = payload.integrationData || [];
+  const annotations = payload.annotations || [];
 
-  const integrationDataAdf = integrationData
+  const dataToPush = integrationData
     .map((integration, index) => {
-      const { characterCount, adf } = getIntegrationDataExpansion(integration);
+      const { characterCount, contentData } = getIntegrationDataExpansion(integration);
 
-      const commentData = [getHeading3(integration.integrationName), getTags(integration.data.summary), adf];
+      const noteData = [getHeading3(integration.integrationName), getTags(integration.data.summary), contentData];
 
       // Add the divider but not for the last integration
       if (index !== integrationData.length - 1) {
-        commentData.push({
+        noteData.push({
           type: 'rule'
         });
       }
 
       return {
         characterCount,
-        adf: commentData,
+        contentData: noteData,
         integrationName: integration.integrationName
       };
     })
     .flat();
 
   if (annotations) {
-    integrationDataAdf.push({
+    dataToPush.push({
       characterCount: JSON.stringify(annotations).length,
-      adf: getAnnotations(annotations),
+      contentData: getAnnotations(annotations),
       integrationName: 'Polarity Annotations'
     });
   }
@@ -62,33 +55,29 @@ async function addIntegrationDataAsNote(
     firstBinTarget = MAX_CHARACTER_COUNT_PER_INTEGRATION - comment.length;
   }
 
-  const commentGroups = groupIntegrationDataToTarget(
-    integrationDataAdf,
-    firstBinTarget,
-    MAX_CHARACTER_COUNT_PER_INTEGRATION
-  );
+  const noteGroups = groupIntegrationDataToTarget(dataToPush, firstBinTarget, MAX_CHARACTER_COUNT_PER_INTEGRATION);
 
   const debugStructure = [];
-  commentGroups.forEach((group) => {
+  noteGroups.forEach((group) => {
     debugStructure.push(group.map((integration) => integration.integrationName));
   });
 
   Logger.debug({ debugStructure }, 'Integration Data Grouping');
 
-  const newlyCreatedComments = [];
-  // We need to reverse the commentGroups so that the first group which has extra space for a comment
-  // now comes at the end so that we can add our comment to it and have it appear first
-  // on the Jira comments page.  This is meant to support the default sort order in Jira which is
-  // to display the most recent comment first (i.e., the first comment we had becomes the last comment so we
-  // need the last comment we add to be the first).
-  commentGroups.reverse();
-  await async.eachOfLimit(commentGroups, 1, async (group, index) => {
+  const newlyCreatedNotes = [];
+  // We need to reverse the noteGroups so that the first group which has extra space for a note
+  // now comes at the end so that we can add our note to it and have it appear first
+  // on the Case Notes page.  This is meant to support the default sort order which is
+  // to display the most recent note first (i.e., the first note we had becomes the last ntoe so we
+  // need the last note we add to be the first).
+  noteGroups.reverse();
+  await async.eachOfLimit(noteGroups, 1, async (group, index) => {
     const content = [];
 
     // If the user wanted to add some regular comment text, we add it to the first comment
     // Remember comments appear in reverse order which is why we add it to the last comment in
     // the array.
-    if (comment && index === commentGroups.length - 1) {
+    if (comment && index === noteGroups.length - 1) {
       content.push({
         content: [
           {
@@ -102,15 +91,15 @@ async function addIntegrationDataAsNote(
 
     content.push(
       getPanel(
-        `(${commentGroups.length - index} of ${
-          commentGroups.length
-        }) Polarity Integration Data – the following information was added by ${username} (${userEmail}) via Polarity`
+        `(${noteGroups.length - index} of ${
+          noteGroups.length
+        }) Polarity Integration Data – the following information was added via Polarity`
       )
     );
     content.push(getHeading1(defangEntity(entity)));
-    content.push(...group.map((integration) => integration.adf).flat());
+    content.push(...group.map((integration) => integration.contentData).flat());
 
-    const commentInAtlassianDocumentFormat = {
+    const noteContent = {
       body: {
         content,
         type: 'doc',
@@ -118,45 +107,43 @@ async function addIntegrationDataAsNote(
       }
     };
 
-    const addedComment = await addComment(issueId, commentInAtlassianDocumentFormat, options);
-    newlyCreatedComments.unshift(addedComment);
+    const addedNote = await addNote(payload.caseId, options, noteContent);
+    newlyCreatedNotes.unshift(addedNote);
   });
 
-  return newlyCreatedComments;
+  return newlyCreatedNotes;
 }
 
-async function addComment(issueId, atlassianDocumentFormatData, options) {
+async function addNote(caseId, options, noteContent) {
   const Logger = getLogger();
 
   const requestOptions = {
-    uri: `${options.baseUrl}/rest/api/3/issue/${issueId}/comment`,
-    followAllRedirects: true,
-    method: 'POST',
-    qs: {
-      expand: 'renderedBody'
-    },
-    body: atlassianDocumentFormatData
+    uri: `${options.url}/v3/cases/${caseId}`,
+    method: 'PUT',
+    body: {}
   };
 
-  const adfString = JSON.stringify(requestOptions.body);
+  requestOptions.body.notes = { data: [{ text: noteContent }] };
+
+  const noteString = JSON.stringify(requestOptions.body);
 
   Logger.debug(
     {
       //requestOptions,
       textNodeLength: countTextNodeLength(requestOptions.body),
-      commentLength: adfString.length,
-      fileSize: getStringSize(adfString)
+      commentLength: noteString.length,
+      fileSize: getStringSize(noteString)
     },
-    `Add Integration Data Comment to Issue ${issueId} Request Options`
+    `Add Integration Data Comment to Issue ${caseId} Request Options`
   );
 
   const apiResponse = await polarityRequest.request(requestOptions, options);
 
-  Logger.trace({ apiResponse }, `Add Comment to Issue ${issueId} response`);
+  Logger.trace({ apiResponse }, `Add Note to Case ${caseId} response`);
 
   if (!SUCCESS_CODES.includes(apiResponse.statusCode)) {
     throw new ApiRequestError(
-      `Unexpected status code ${apiResponse.statusCode} received when making request to add integration data comment to Jira Issue`,
+      `Unexpected status code ${apiResponse.statusCode} received when making request to add integration data note to ThreatConnect Case ${caseId}`,
       {
         statusCode: apiResponse.statusCode,
         requestOptions,
@@ -622,10 +609,10 @@ function getIntegrationDataExpansion(integration) {
     })
     .flat();
 
-  const adfContent = [];
+  const content = [];
 
   if (isTruncated) {
-    adfContent.push(
+    content.push(
       getPanel(
         `Data from ${integration.integrationName} was truncated to fit within the character limit of 15,000 characters`,
         'warning'
@@ -633,7 +620,7 @@ function getIntegrationDataExpansion(integration) {
     );
   }
 
-  adfContent.push({
+  content.push({
     type: 'table',
     attrs: {
       isNumberColumnEnabled: false,
@@ -644,9 +631,9 @@ function getIntegrationDataExpansion(integration) {
 
   return {
     characterCount,
-    adf: {
+    contentData: {
       type: 'expand',
-      content: adfContent,
+      content: content,
       attrs: {
         title: integration.integrationName
       }
@@ -743,7 +730,7 @@ function getFlatObjectTableRow(data) {
   };
 
   if (row.content[1].content[0].content.length === 0) {
-    // returning an empty object will leave this out of the Jira comment
+    // returning an empty object will leave this out of the note
     return [];
   }
 

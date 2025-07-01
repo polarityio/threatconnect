@@ -860,12 +860,12 @@ polarity.export = PolarityComponent.extend({
 
       console.log('ANNOTATIONS', annotations);
       console.log('SELECTED INTEGRATIONS', selectedIntegrations);
-
+      console.log('Obj id', caseObj.id);
       Ember.set(state, 'isCreatingNote', true);
 
       const payload = {
-        action: 'NOT_SET',
-        caseId,
+        action: 'ADD_INTEGRATION_DATA_AS_NOTE',
+        caseId: caseObj.id,
         mode: 'append'
       };
 
@@ -876,6 +876,7 @@ polarity.export = PolarityComponent.extend({
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
+          console.log('Result', result);
           this.flashMessage(`Issue ${result.issue.key} created successfully`, 'success');
           Ember.set(state, 'lastCreatedIssue', result.issue.key);
           Ember.set(state, 'showCreateIssue', false);

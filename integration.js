@@ -17,6 +17,7 @@ const { updateCaseTags } = require('./src/queries/update-cases');
 const { updateCase } = require('./src/queries/update-cases');
 const { createCase } = require('./src/queries/create-case');
 const { getWorkflowTemplates } = require('./src/queries/get-workflow-templates');
+const { addIntegrationDataAsNote } = require('./src/queries/add-integration-data-as-note');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -300,11 +301,18 @@ async function onMessage(payload, options, cb) {
         });
       }
       break;
-    case 'ADD_NOTE':
+    case 'ADD_INTEGRATION_DATA_AS_NOTE':
       try {
+        let note;
         if (!options.enableAddingNotes) {
           Logger.info('Adding notes is disabled in the configuration');
         }
+        if (payload.includeIntegrationData) {
+          note = await addIntegrationDataAsNote(payload, options);
+        }
+        cb(null, {
+          note
+        });
       } catch (error) {
         cb(error, {
           error: {
@@ -313,6 +321,7 @@ async function onMessage(payload, options, cb) {
           }
         });
       }
+      break;
   }
 }
 
