@@ -15,8 +15,8 @@ const { getTokenOwner } = require('./src/queries/get-token-owner');
 const { getCasesById } = require('./src/queries/get-cases-by-id');
 const { updateCaseTags } = require('./src/queries/update-cases');
 const { updateCase } = require('./src/queries/update-cases');
-const { getCaseAttributeTypes } = require('./src/queries/get-case-attribute-types');
 const { createCase } = require('./src/queries/create-case');
+const { getWorkflowTemplates } = require('./src/queries/get-workflow-templates');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -42,7 +42,7 @@ function startup(logger) {
  * is deployed.
  * @param entities - array of entity objects
  */
-function fixEntityType(entities){
+function fixEntityType(entities) {
   const validTypes = ['hash', 'IPv4', 'IPv6', 'email', 'domain', 'url'];
 
   entities.forEach((entity) => {
@@ -57,7 +57,7 @@ function fixEntityType(entities){
 
 async function doLookup(entities, options, cb) {
   fixEntityType(entities);
-  
+
   Logger.trace({ entities }, 'doLookup');
 
   let lookupResults = [];
@@ -106,20 +106,7 @@ async function onDetails(resultObject, options, cb) {
       const indicatorDetails = indicatorsById[indicatorId];
       resultObject.data.details.indicators[indicatorId].indicator = indicatorDetails;
     }
-    const casesList = await getCasesById(indicatorIdList, options);
-    // Overwriting the associatedCases field from the getIndicatorsById with the same field but enriched from getCasesById
-    Object.keys(resultObject.data.details.indicators).forEach((indicatorId) => {
-      const numericIndicatorId = Number(indicatorId);
-      if (casesList[numericIndicatorId] && casesList[numericIndicatorId].associatedCases) {
-        const associatedCases = casesList[numericIndicatorId].associatedCases;
-        resultObject.data.details.indicators[indicatorId].indicator.associatedCases = {
-          data: Object.values(associatedCases)
-        };
-      }
-    });
 
-    const caseAttributeTypes = await getCaseAttributeTypes(options);
-    resultObject.data.details.caseAttributeTypes = caseAttributeTypes.body;
     Logger.trace({ resultObject, indicatorsById }, 'onDetails Result');
 
     cb(null, resultObject.data);
@@ -152,6 +139,42 @@ async function onMessage(payload, options, cb) {
             );
           }
         }
+        if (payload.field === 'associatedCases') {
+          const casesIds = Object.values(response)
+            .flatMap((indicator) => (indicator.associatedCases?.data || []).map((caseObj) => caseObj.id))
+            .filter(Boolean);
+
+          const apiResponse = await getCasesById(casesIds, options);
+
+          const casesByIndicator = {};
+
+          Object.entries(response).forEach(([indicatorId, indicator]) => {
+            casesByIndicator[indicatorId] = {
+              indicatorId: parseInt(indicatorId, 10),
+              ownerName: indicator.ownerName,
+              associatedCases: {
+                data: []
+              }
+            };
+          });
+
+          apiResponse.data.forEach((caseObj) => {
+            Object.entries(response).forEach(([indicatorId, indicator]) => {
+              const associatedCases = indicator.associatedCases?.data || [];
+
+              if (associatedCases.some((c) => c.id === caseObj.id)) {
+                casesByIndicator[indicatorId].associatedCases.data.push({
+                  ...caseObj,
+                  indicatorId: parseInt(indicatorId, 10),
+                  ownerName: indicator.ownerName
+                });
+              }
+            });
+          });
+
+          response[payload.indicatorId].associatedCases = casesByIndicator[payload.indicatorId].associatedCases;
+        }
+
         cb(null, {
           data: response[payload.indicatorId]
         });
@@ -253,8 +276,27 @@ async function onMessage(payload, options, cb) {
           data: response
         });
       } catch (error) {
+        Logger.error({ error }, 'Error creating case');
         cb(null, {
-          error
+          error: {
+            detail: 'Error creating case',
+            error
+          }
+        });
+      }
+      break;
+    case 'GET_WORKFLOW_TEMPLATES':
+      try {
+        const workflowTemplates = await getWorkflowTemplates(options);
+        cb(null, {
+          workflowTemplates
+        });
+      } catch (error) {
+        cb(error, {
+          error: {
+            detail: 'Error fetching workflow templates',
+            error
+          }
         });
       }
       break;

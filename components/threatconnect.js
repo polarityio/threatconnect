@@ -34,13 +34,14 @@ polarity.export = PolarityComponent.extend({
   newTagValues: Ember.computed(() => ({})),
   isExpanded: false,
   pageSize: 10,
+  associatedCasesPageSize: 3,
   indicatorMessage: '',
   indicatorErrorMessage: '',
   indicatorPlaybookId: null,
   isRunning: false,
-  caseAttributeTypes: Ember.computed.alias('details.caseAttributeTypes'),
   isCreatingCase: {},
   newCaseFields: {},
+  isDescription: false,
   flashMessage(message, type = 'info') {
     this.flashMessages.add({
       message: `${this.block.acronym}: ${message}`,
@@ -114,13 +115,6 @@ polarity.export = PolarityComponent.extend({
         }
 
         indicator.__totalAssociations = totalAssociations;
-
-        if (indicator.associatedCases && indicator.associatedCases.data) {
-          indicator.associatedCases.data.forEach((caseObj) => {
-            this.applySeverityColorToCase(caseObj);
-            this.applyStatusColorToCase(caseObj);
-          });
-        }
       }
     }
   },
@@ -276,8 +270,10 @@ polarity.export = PolarityComponent.extend({
 
         this.set(path, {
           name: '',
+          description: '',
           status: 'Open',
           severity: 'Low',
+          notes: '',
           associateIndicator: true,
           __error: false,
           __errorMessage: '',
@@ -292,10 +288,95 @@ polarity.export = PolarityComponent.extend({
             __value: '',
             __error: false,
             __errorMessage: ''
+          },
+          {
+            key: 'description',
+            name: 'Description',
+            required: false,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
+          },
+          {
+            key: 'notes',
+            name: 'Notes',
+            required: false,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
+          },
+          {
+            key: 'tags',
+            name: 'Tags',
+            required: false,
+            __value: '',
+            __error: false,
+            __errorMessage: ''
           }
         ]);
 
         this.notifyPropertyChange(path);
+
+        const payload = {
+          action: 'GET_WORKFLOW_TEMPLATES'
+        };
+
+        this.set(`${path}.__isLoadingTemplates`, true);
+
+        this.sendIntegrationMessage(payload)
+          .then((response) => {
+            this.set(`${path}.workflowTemplates`, response.workflowTemplates);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch workflow templates', error);
+            this.flashMessage(`${error.detail}`, 'danger');
+            this.set(`${path}.workflowTemplates`, []);
+            this.set(`${path}.workflowTemplates.__error`, true);
+            this.set(`${path}.workflowTemplates.__errorMessage`, JSON.stringify(error, null, 2));
+          })
+          .finally(() => {
+            this.set(`${path}.__isLoadingTemplates`, false);
+          });
+      }
+    },
+    clearErrorField(indicatorId, pathToField) {
+      const fullPath = `indicators.${indicatorId}.indicator.__newCase.${pathToField}`;
+      if (this.get(fullPath)) {
+        this.set(`${fullPath}.__error`, false);
+        this.set(`${fullPath}.__errorMessage`, '');
+      }
+    },
+    onWorkflowTemplateChange(indicatorId, workflowId) {
+      const path = `indicators.${indicatorId}.indicator.__newCase`;
+      const templates = this.get(`${path}.workflowTemplates`) || [];
+
+      if (workflowId === 'none') {
+        this.set(`${path}.__selectedWorkflowData`, null);
+        this.set(`${path}.__templateDescriptionMismatch`, false);
+        this.set(`${path}.description`, '');
+      } else {
+        const selectedWorkflow = templates.find((t) => t.id.toString() === workflowId);
+
+        if (selectedWorkflow) {
+          const currentDescription = this.get(`${path}.description`) || '';
+
+          if (
+            currentDescription &&
+            currentDescription.trim().length > 0 &&
+            currentDescription !== selectedWorkflow.description
+          ) {
+            this.set(`${path}.__selectedWorkflowData`, selectedWorkflow);
+            this.set(`${path}.__templateDescriptionMismatch`, true);
+          } else {
+            this.set(`${path}.description`, selectedWorkflow.description || '');
+            this.set(`${path}.__selectedWorkflowData`, selectedWorkflow);
+            this.set(`${path}.__templateDescriptionMismatch`, false);
+          }
+        } else {
+          this.set(`${path}.description`, '');
+          this.set(`${path}.__selectedWorkflowData`, null);
+          this.set(`${path}.__templateDescriptionMismatch`, false);
+        }
       }
     },
     createCase(indicatorId, event) {
@@ -306,29 +387,35 @@ polarity.export = PolarityComponent.extend({
       let newCase = this.get(newCasePath) || {};
 
       const name = newCase.name ? newCase.name.trim() : '';
+      const workflowTemplateId = newCase.__selectedWorkflowData;
+      const tags = newCase.tags || '';
+      const description = newCase.description || '';
       const severity = newCase.severity || 'Low';
       const status = newCase.status || 'Open';
+      const notes = newCase.notes || '';
       const associate = newCase.associateIndicator;
 
       if (!name) {
-        this.set(newCasePath, {
-          newCase,
-          __error: true,
-          __errorMessage: 'Name is required'
-        });
-
-        this.notifyPropertyChange(newCasePath);
+        this.set(`${newCasePath}.__error`, true);
+        this.set(`${newCasePath}.__errorMessage`, 'Name is required');
         return;
       }
 
       const payload = {
         action: 'CREATE_CASE',
         name,
+        description,
+        tags,
         severity,
         status,
+        notes,
         associateIndicator: associate,
         indicatorId
       };
+
+      if (workflowTemplateId) {
+        payload.workflowTemplateId = workflowTemplateId.id;
+      }
 
       this.set(`${indicatorPath}.__isCreatingCase`, true);
 
@@ -361,8 +448,13 @@ polarity.export = PolarityComponent.extend({
           const newCaseReset = this.get(newCasePath);
           if (newCaseReset) {
             Ember.set(newCaseReset, 'name', '');
+            Ember.set(newCaseReset, '__selectedWorkflowData', null);
+            Ember.set(newCaseReset, '__templateDescriptionMismatch', false);
+            Ember.set(newCaseReset, 'description', '');
+            Ember.set(newCaseReset, 'tags', '');
             Ember.set(newCaseReset, 'severity', 'Low');
             Ember.set(newCaseReset, 'status', 'Open');
+            Ember.set(newCaseReset, 'notes', '');
             Ember.set(newCaseReset, 'associateIndicator', false);
             Ember.set(newCaseReset, '__error', false);
             Ember.set(newCaseReset, '__errorMessage', null);
@@ -372,6 +464,40 @@ polarity.export = PolarityComponent.extend({
           this.set(`${indicatorPath}.__isCreatingCase`, false);
           this.notifyPropertyChange(newCasePath);
         });
+    },
+    toggleNoteExpansion(caseId, indicatorId, noteIndex) {
+      const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+      const caseObj = casesArray.find((c) => c.id === caseId);
+      if (!caseObj || !caseObj.notes || !caseObj.notes.data) return;
+      const caseIndex = casesArray.indexOf(caseObj);
+      const notePath = `${indicatorPath}.${caseIndex}.notes.data.${noteIndex}`;
+      const isExpanded = this.get(`${notePath}.__isExpanded`) || false;
+      this.set(`${notePath}.__isExpanded`, !isExpanded);
+    },
+    checkNoteOverflow(caseId, indicatorId) {
+      Ember.run.scheduleOnce('afterRender', this, () => {
+        setTimeout(() => {
+          const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+          const casesArray = this.get(indicatorPath);
+          const caseObj = casesArray.find((c) => c.id === caseId);
+          if (!caseObj || !caseObj.notes || !caseObj.notes.data) return;
+
+          const caseIndex = casesArray.indexOf(caseObj);
+
+          caseObj.notes.data.forEach((note, noteIndex) => {
+            const el = document.querySelector(`[data-note-id="note-${caseId}-${noteIndex}"]`);
+            if (el) {
+              const lineHeight = parseFloat(getComputedStyle(el).lineHeight) || 20;
+              const maxHeight = 2 * lineHeight;
+
+              const isOverflowing = el.scrollHeight > maxHeight;
+
+              this.set(`${indicatorPath}.${caseIndex}.notes.data.${noteIndex}.__showToggle`, isOverflowing);
+            }
+          });
+        }, 30);
+      });
     },
     expandTags() {
       this.toggleProperty('isExpanded');
@@ -383,14 +509,24 @@ polarity.export = PolarityComponent.extend({
       e.stopPropagation();
       return false;
     },
-    changeTab: function (tabName, indicatorId) {
+    changeTab: async function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
-
       if (
         tabName === 'cases' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedCases`) === 'undefined'
       ) {
-        this.getField(indicatorId, 'associatedCases');
+        await this.getField(indicatorId, 'associatedCases');
+        const casesArray = this.get(`indicators.${indicatorId}.indicator.associatedCases.data`);
+        casesArray.forEach((caseObj) => {
+          this.applySeverityColorToCase(caseObj);
+          this.applyStatusColorToCase(caseObj);
+        });
+
+        Ember.run.scheduleOnce('afterRender', this, () => {
+          casesArray.forEach((caseObj) => {
+            this.send('checkNoteOverflow', caseObj.id, indicatorId);
+          });
+        });
       } else if (
         tabName === 'groups' &&
         typeof this.get(`indicators.${indicatorId}.indicator.associatedGroups`) === 'undefined'
@@ -610,7 +746,8 @@ polarity.export = PolarityComponent.extend({
     },
     nextPage(indicatorId, field) {
       const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-      const totalPages = Math.ceil(totalFieldResults / this.pageSize);
+      const pageSize = this.get(`${field}PageSize`) || this.pageSize;
+      const totalPages = Math.ceil(totalFieldResults / pageSize);
       let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
       if (currentPage < totalPages) {
         this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, currentPage + 1);
@@ -622,7 +759,8 @@ polarity.export = PolarityComponent.extend({
     },
     lastPage(indicatorId, field) {
       const totalFieldResults = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-      const totalPages = Math.ceil(totalFieldResults / this.pageSize);
+      const pageSize = this.get(`${field}PageSize`) || this.pageSize;
+      const totalPages = Math.ceil(totalFieldResults / pageSize);
       this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, totalPages);
     },
     getField(indicatorId, field) {
@@ -687,89 +825,89 @@ polarity.export = PolarityComponent.extend({
 
     return 'Confirmed';
   },
-  getField(indicatorId, field) {
+  async getField(indicatorId, field) {
     this.set(`indicators.${indicatorId}.__${field}Loading`, true);
+
     const payload = {
       action: 'GET_INDICATOR_FIELD',
       field,
       indicatorId
     };
 
-    this.sendIntegrationMessage(payload)
-      .then((result) => {
-        if (result.error) {
-          console.error(result.error);
-          this.flashMessage(`${result.error.detail}`, 'danger');
-        } else if (result.data && typeof result.data[field] !== 'undefined') {
-          this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
-          if (result.data[field].data) {
-            this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
+    try {
+      let result = await this.sendIntegrationMessage(payload);
+      if (result.error) {
+        console.error('Error', result);
+        this.flashMessage(`${result.error.detail}`, 'danger');
+      } else if (result.data && typeof result.data[field] !== 'undefined') {
+        this.set(`indicators.${indicatorId}.indicator.${field}`, result.data[field]);
 
-            // setup a filtered data set, initialize the starting page to 1
-            this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
+        if (result.data[field].data) {
+          this.set(`indicators.${indicatorId}.indicator.__${field}Count`, result.data[field].data.length);
 
-            Ember.defineProperty(
-              this.get(`indicators.${indicatorId}.indicator`),
-              `__${field}PrevButtonDisabled`,
-              Ember.computed(`__${field}CurrentPage`, () => {
-                return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
-              })
-            );
+          // setup a filtered data set, initialize the starting page to 1
+          this.set(`indicators.${indicatorId}.indicator.__${field}CurrentPage`, 1);
 
-            Ember.defineProperty(
-              this.get(`indicators.${indicatorId}.indicator`),
-              `__${field}NextButtonDisabled`,
-              Ember.computed(`__${field}CurrentPage`, `${field}.data.length`, () => {
-                const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                const totalPages = Math.ceil(totalItems / this.pageSize);
-                return currentPage === totalPages;
-              })
-            );
+          Ember.defineProperty(
+            this.get(`indicators.${indicatorId}.indicator`),
+            `__${field}PrevButtonDisabled`,
+            Ember.computed(`__${field}CurrentPage`, () => {
+              return this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`) === 1;
+            })
+          );
 
-            Ember.defineProperty(
-              this.get(`indicators.${indicatorId}.indicator`),
-              `__${field}Filtered`,
-              Ember.computed(`${field}.data.length`, `__${field}CurrentPage`, () => {
-                let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
-                let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
-                const startIndex = (currentPage - 1) * this.pageSize;
-                const endIndex = startIndex + this.pageSize > totalItems ? totalItems : startIndex + this.pageSize;
+          Ember.defineProperty(
+            this.get(`indicators.${indicatorId}.indicator`),
+            `__${field}NextButtonDisabled`,
+            Ember.computed(`__${field}CurrentPage`, `${field}.data.length`, () => {
+              let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
+              const currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+              const totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+              const totalPages = Math.ceil(totalItems / fieldPageSize);
+              return currentPage === totalPages;
+            })
+          );
 
-                // Can't use set in a computed unless we ensure it only happens once per render
-                Ember.run.scheduleOnce(
-                  'afterRender',
-                  this,
-                  this.setStartEndIndexes,
-                  indicatorId,
-                  field,
-                  startIndex + 1,
-                  endIndex
-                );
+          Ember.defineProperty(
+            this.get(`indicators.${indicatorId}.indicator`),
+            `__${field}Filtered`,
+            Ember.computed(`${field}.data.length`, `__${field}CurrentPage`, () => {
+              let fieldPageSize = this.get(`${field}PageSize`) || this.pageSize;
+              let totalItems = this.get(`indicators.${indicatorId}.indicator.${field}.data.length`);
+              let currentPage = this.get(`indicators.${indicatorId}.indicator.__${field}CurrentPage`);
+              const startIndex = (currentPage - 1) * fieldPageSize;
+              const endIndex = startIndex + fieldPageSize > totalItems ? totalItems : startIndex + fieldPageSize;
 
-                return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
-              })
-            );
-
-            // This notify property change is required as the computed will not be flagged as dirty
-            // for the template until one of the dependent properties changes.
-            this.notifyPropertyChange(`${field}${indicatorId}Filtered`);
-            this.notifyPropertyChange(`${field}${indicatorId}PrevButtonDisabled`);
-            this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
-          } else {
-            this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
-          }
+              // Can't use set in a computed unless we ensure it only happens once per render
+              Ember.run.scheduleOnce(
+                'afterRender',
+                this,
+                this.setStartEndIndexes,
+                indicatorId,
+                field,
+                startIndex + 1,
+                endIndex
+              );
+              return this.get(`indicators.${indicatorId}.indicator.${field}.data`).slice(startIndex, endIndex);
+            })
+          );
+          // This notify property change is required as the computed will not be flagged as dirty
+          // for the template until one of the dependent properties changes.
+          this.notifyPropertyChange(`${field}${indicatorId}Filtered`);
+          this.notifyPropertyChange(`${field}${indicatorId}PrevButtonDisabled`);
+          this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
+        } else {
+          this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
         }
-      })
-      .catch((err) => {
-        console.error('getField Error', err);
-        if (err.status === '504') {
-          this.set(`indicators.${indicatorId}.indicator.__${field}Timeout`, true);
-        }
-      })
-      .finally(() => {
-        this.set(`indicators.${indicatorId}.__${field}Loading`, false);
-      });
+      }
+    } catch (err) {
+      console.error('getField Error', err);
+      if (err.status === '504') {
+        this.set(`indicators.${indicatorId}.indicator.__${field}Timeout`, true);
+      }
+    } finally {
+      this.set(`indicators.${indicatorId}.__${field}Loading`, false);
+    }
   },
   setStartEndIndexes: function (indicatorId, field, startIndex, endIndex) {
     this.set(`indicators.${indicatorId}.indicator.__${field}StartItem`, startIndex);

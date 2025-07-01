@@ -936,7 +936,6 @@
           {{/if}}
 
           {{! Cases Tab }}
-
           {{#if (eq orgData.__activeTab "cases")}}
             {{#if block.userOptions.enableEditingCases}}
               <h1
@@ -975,34 +974,160 @@
                       {{/if}}
                     </div>
 
+                    {{#if orgData.indicator.__newCase.workflowTemplates.__error}}
+                      <div class="alert alert-danger error-message mt-2">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                          <div class="error-message-title">
+                            Error retrieving workflow templates
+                          </div>
+                          <div>
+                            {{fa-icon
+                              icon="times"
+                              fixedWidth=true
+                              class="close-icon"
+                              click=(action "clearErrorField" indicatorId "workflowTemplates")
+                            }}
+                          </div>
+                        </div>
+                        <div class="error-scrolling-container">
+                          <pre class="no-border">{{orgData.indicator.__newCase.workflowTemplates.__errorMessage}}</pre>
+                        </div>
+                      </div>
+                    {{/if}}
+
+                    {{#let orgData.indicator.__newCase as |newCase|}}
+                      <div class="form-group">
+                        <label>
+                          Workflow Template
+                          {{#if newCase.__isLoadingTemplates}}
+                            <span class="p-footnote">
+                              {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                              Loading...
+                            </span>
+                          {{/if}}
+                        </label>
+                        <select
+                          class="form-control-new-case"
+                          onchange={{action (action "onWorkflowTemplateChange" indicatorId) value="target.value"}}
+                          disabled={{or orgData.indicator.__isCreatingCase newCase.__isLoadingTemplates}}
+                        >
+                          <option value="none">None</option>
+                          {{#each newCase.workflowTemplates as |template|}}
+                            <option
+                              value="{{template.id}}"
+                              selected={{eq template.id newCase.__selectedWorkflowData.id}}
+                            >
+                              {{template.name}}
+                            </option>
+                          {{/each}}
+                        </select>
+                      </div>
+
+                      {{#if orgData.indicator.__newCase.__templateDescriptionMismatch}}
+                        <div class="ioc-deletion-modal">
+                          <div class="note">
+                            <span class="p-key">
+                              <span class="p-value"><em><b>WARNING:</b></em></span>
+                              <div>
+                                <span>The template you selected has a different description than your Case.</span>
+                              </div>
+                              <div>
+                                <span>Do you want to keep the current description?</span>
+                              </div>
+                            </span>
+                            <div class="delete-confirmation-button">
+                              <button
+                                class="confirm-delete"
+                                {{action
+                                  (pipe-action
+                                    (set newCase "description" newCase.__selectedWorkflowData.description)
+                                    (set newCase "__templateDescriptionMismatch" false)
+                                  )
+                                }}
+                              >
+                                Use Template
+                              </button>
+                              <button
+                                class="cancel-delete"
+                                {{action (set newCase "__templateDescriptionMismatch" false)}}
+                              >Keep Current</button>
+                            </div>
+                          </div>
+                        </div>
+                      {{/if}}
+                    {{/let}}
+
                     <div class="form-group">
-                      <label for="case-severity">Severity</label>
-                      <select
+                      <label class="small ifta-label">
+                        Description
+                      </label>
+                      <textarea
+                        class="form-control-new-case ifta-field"
+                        rows="3"
+                        value={{orgData.indicator.__newCase.description}}
                         disabled={{orgData.indicator.__isCreatingCase}}
-                        id="case-severity"
-                        class="form-control-new-case"
-                        value={{orgData.indicator.__newCase.severity}}
-                        {{on "change" (action "updateNewCaseField" indicatorId "severity")}}
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                        <option value="Critical">Critical</option>
-                      </select>
+                        {{on "input" (action "updateNewCaseField" indicatorId "description")}}
+                      ></textarea>
                     </div>
 
                     <div class="form-group">
-                      <label for="case-status">Status</label>
-                      <select
+                      <label class="small ifta-label">
+                        Tags
+                      </label>
+                      <input
+                        type="text"
+                        class="form-control-new-case ifta-field"
+                        value={{orgData.indicator.__newCase.tags}}
                         disabled={{orgData.indicator.__isCreatingCase}}
-                        id="case-status"
-                        class="form-control-new-case"
-                        value={{orgData.indicator.__newCase.status}}
-                        {{on "change" (action "updateNewCaseField" indicatorId "status")}}
-                      >
-                        <option value="Open">Open</option>
-                        <option value="Closed">Closed</option>
-                      </select>
+                        {{on "input" (action "updateNewCaseField" indicatorId "tags")}}
+                      />
+                    </div>
+
+                    <div
+                      style="display: flex; flex-wrap: nowrap; align-content: stretch; justify-content: space-around;"
+                    >
+                      <div class="form-group" style="flex: 1; margin-right: 5px;">
+                        <label for="case-severity">Severity</label>
+                        <select
+                          disabled={{orgData.indicator.__isCreatingCase}}
+                          id="case-severity"
+                          class="form-control-new-case"
+                          value={{orgData.indicator.__newCase.severity}}
+                          {{on "change" (action "updateNewCaseField" indicatorId "severity")}}
+                        >
+                          <option value="Low">Low</option>
+                          <option value="Medium">Medium</option>
+                          <option value="High">High</option>
+                          <option value="Critical">Critical</option>
+                        </select>
+                      </div>
+
+                      <div class="form-group" style="flex: 1; margin-left: 5px;">
+                        <label for="case-status">Status</label>
+                        <select
+                          disabled={{orgData.indicator.__isCreatingCase}}
+                          id="case-status"
+                          class="form-control-new-case"
+                          value={{orgData.indicator.__newCase.status}}
+                          {{on "change" (action "updateNewCaseField" indicatorId "status")}}
+                        >
+                          <option value="Open">Open</option>
+                          <option value="Closed">Closed</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div class="form-group">
+                      <label class="small ifta-label">
+                        Notes
+                      </label>
+                      <textarea
+                        class="form-control-new-case ifta-field"
+                        rows="2"
+                        value={{orgData.indicator.__newCase.notes}}
+                        disabled={{orgData.indicator.__isCreatingCase}}
+                        {{on "input" (action "updateNewCaseField" indicatorId "notes")}}
+                      ></textarea>
                     </div>
 
                     <div class="checkbox-new-case">
@@ -1042,7 +1167,6 @@
                       >
                         Cancel
                       </button>
-
                     </div>
                   </form>
                 </div>
@@ -1087,7 +1211,7 @@
                   </div>
                 {{/if}}
               </h1>
-              {{#each orgData.indicator.associatedCases.data as |case|}}
+              {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
                 <div class="card">
                   <div class="card-title">
                     <div class="d-flex align-items-start justify-content-between">
@@ -1102,8 +1226,8 @@
                           {{fa-icon icon="external-link" class="p-link external-icon"}}</a>
                       </div>
                     </div>
-
                   </div>
+
                   <div class="card-item">
                     <div
                       class="info-bar mb-1 no-border"
@@ -1122,17 +1246,17 @@
                           </div>
                         {{/unless}}
                       {{/if}}
-                      <div class="info-bar-pill full-width">
+                      <div class="info-bar-pill full-width scrollable">
                         <span class="info-bar-key">Description</span>
                         {{#if case.__isEditing}}
                           <textarea
                             disabled={{case.__isSaving}}
                             class="info-bar-value"
-                            rows="3"
+                            rows="5"
                             {{on "input" (pick "target.value" (set case "__newDescription"))}}
                           >{{or case.__newDescription case.description}}</textarea>
                         {{else}}
-                          <span class="info-bar-value">{{case.description}}</span>
+                          <span class="info-bar-value" style="white-space: pre-line;">{{case.description}}</span>
                         {{/if}}
                       </div>
                       <div class="info-bar-row">
@@ -1235,7 +1359,7 @@
                         </div>
                       {{/if}}
                       {{#if case.attributes.data.length}}
-                        <div class="info-bar-pill" style="width: 100%; padding-bottom: 5px;">
+                        <div class="info-bar-pill scrollable" style="width: 100%; padding-bottom: 5px;">
                           <span class="info-bar-key">Case Attributes</span>
                           {{#each case.attributes.data as |caseAttr|}}
                             <div class="info-bar-value attributes">
@@ -1337,10 +1461,62 @@
                     </div>
                   </div>
 
-                </div>
+                  <div class="d-flex align-items-center justify-content-between">
+                    <div class="p-title" style="margin-left: 5px;">
+                      Notes
+                    </div>
+                  </div>
 
+                  <div class="note-container">
+                    {{#unless case.notes.data.length}}
+                      <div class="p-footnote mb-2">
+                        <span>No Notes</span>
+                      </div>
+                    {{else}}
+                      <div class="pr-1">
+                        {{#each case.notes.data as |note noteIndex|}}
+                          {{#if note}}
+                            <div class="card">
+                              <div class="card-title-no-border">
+                                <div class="align-items-start justify-content-between">
+                                  <div>
+                                    <div class="author-information">{{note.author}}</div>
+                                    <span class="p-footnote author-information">
+                                      {{moment-format note.dateAdded "DD MMM YYYY, HH:mm"}}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div class="full-width">
+                                <div
+                                  class="note-summary {{if note.__isExpanded 'expanded'}}"
+                                  data-note-id="note-{{case.id}}-{{noteIndex}}"
+                                >{{note.text}}</div>
+                              </div>
+                              {{#if note.__showToggle}}
+                                <div class="view-toggle-wrapper">
+                                  <span
+                                    class="p-action edit-button-right"
+                                    {{action "toggleNoteExpansion" case.id indicatorId noteIndex}}
+                                  >
+                                    {{if note.__isExpanded "View Less" "View More"}}
+                                    {{fa-icon icon=(if note.__isExpanded "chevron-up" "chevron-down")}}
+                                  </span>
+                                </div>
+                              {{/if}}
+                            </div>
+                          {{/if}}
+                        {{/each}}
+                      </div>
+                      <div style="clear:both"></div>
+                    {{/unless}}
+                  </div>
+
+                </div>
               {{/each}}
-              {{#if (gt orgData.indicator.__associatedCasesCount pageSize)}}
+
+              {{#if (gt orgData.indicator.__associatedCasesCount associatedCasesPageSize)}}
                 <div class="paging-bar">
                   <button
                     class="btn paging-btn"
