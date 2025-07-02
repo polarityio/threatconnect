@@ -860,13 +860,14 @@ polarity.export = PolarityComponent.extend({
 
       console.log('ANNOTATIONS', annotations);
       console.log('SELECTED INTEGRATIONS', selectedIntegrations);
-      console.log('Obj id', caseObj.id);
+      console.log('Obj id', caseObj);
       Ember.set(state, 'isCreatingNote', true);
 
       const payload = {
         action: 'ADD_INTEGRATION_DATA_AS_NOTE',
         caseId: caseObj.id,
-        mode: 'append'
+        mode: 'append',
+        includeIntegrationData
       };
 
       if (includeIntegrationData) {
@@ -877,10 +878,9 @@ polarity.export = PolarityComponent.extend({
       this.sendIntegrationMessage(payload)
         .then((result) => {
           console.log('Result', result);
-          this.flashMessage(`Issue ${result.issue.key} created successfully`, 'success');
-          Ember.set(state, 'lastCreatedIssue', result.issue.key);
-          Ember.set(state, 'showCreateIssue', false);
-          this.clearCreateIssueFieldsForCase(caseObj);
+          this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
+          Ember.set(state, 'lastCreatedNote', result.note);
+          Ember.set(state, 'showCreateNote', false);
         })
         .catch((e) => {
           console.error('Failed to create note', e);

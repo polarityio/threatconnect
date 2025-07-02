@@ -3,7 +3,7 @@
   "name": "ThreatConnect",
   "acronym": "TC",
   "logging": {
-    "level": "info"
+    "level": "trace"
   },
   "entityTypes": ["IPv4", "IPv6", "MD5", "SHA1", "SHA256", "email", "domain", "url"],
   "description": "Polarity integration that searches indicators in the ThreatConnect threat intelligence platform",

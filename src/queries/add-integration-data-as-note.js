@@ -6,13 +6,12 @@ const async = require('async');
 const polarityRequest = require('../polarity-request');
 const { ApiRequestError } = require('../errors');
 const { getLogger } = require('../logger');
-const SUCCESS_CODES = [201];
-const MAX_CHARACTER_COUNT_PER_INTEGRATION = 60000;
+const SUCCESS_CODES = [200, 201];
+const MAX_CHARACTER_COUNT_PER_INTEGRATION = 65000;
 
 /**
  *
  * @param caseId
- * @param data - object containing the userName, userEmail, and integration data
  * @param options
  * @returns {Promise<*>}
  */
@@ -21,100 +20,101 @@ async function addIntegrationDataAsNote(payload, options) {
   const integrationData = payload.integrationData || [];
   const annotations = payload.annotations || [];
 
-  const dataToPush = integrationData
-    .map((integration, index) => {
-      const { characterCount, contentData } = getIntegrationDataExpansion(integration);
+  const dataToPush = integrationData.map((integration, index) => {
+    const { characterCount, contentData } = getIntegrationDataExpansion(integration);
 
-      const noteData = [getHeading3(integration.integrationName), getTags(integration.data.summary), contentData];
+    Logger.info('Character Count for Integration Data', characterCount);
 
-      // Add the divider but not for the last integration
-      if (index !== integrationData.length - 1) {
-        noteData.push({
-          type: 'rule'
-        });
-      }
+    const lines = [
+      `### Integration: ${integration.integrationName}`,
+      ...(Array.isArray(integration.data.summary) ? integration.data.summary.map((tag) => `- ${getTagText(tag)}`) : []),
+      '',
+      ...flattenContentDataToText(contentData)
+    ];
 
-      return {
-        characterCount,
-        contentData: noteData,
-        integrationName: integration.integrationName
-      };
-    })
-    .flat();
+    if (index !== integrationData.length - 1) {
+      lines.push('\n---\n');
+    }
 
-  if (annotations) {
+    return {
+      characterCount: lines.join('\n').length,
+      text: lines.join('\n'),
+      integrationName: integration.integrationName
+    };
+  });
+
+  if (annotations && annotations.data?.length) {
+    const text = (formatted = formatAnnotationsAsFixedWidthText(payload.annotations));
+
     dataToPush.push({
-      characterCount: JSON.stringify(annotations).length,
-      contentData: getAnnotations(annotations),
+      characterCount: text.length,
+      text,
       integrationName: 'Polarity Annotations'
     });
   }
 
-  let firstBinTarget = MAX_CHARACTER_COUNT_PER_INTEGRATION;
-  if (comment) {
-    firstBinTarget = MAX_CHARACTER_COUNT_PER_INTEGRATION - comment.length;
-  }
-
-  const noteGroups = groupIntegrationDataToTarget(dataToPush, firstBinTarget, MAX_CHARACTER_COUNT_PER_INTEGRATION);
-
-  const debugStructure = [];
-  noteGroups.forEach((group) => {
-    debugStructure.push(group.map((integration) => integration.integrationName));
-  });
-
+  const noteGroups = groupIntegrationDataToTarget(
+    dataToPush,
+    MAX_CHARACTER_COUNT_PER_INTEGRATION,
+    MAX_CHARACTER_COUNT_PER_INTEGRATION
+  );
+  Logger.info(`Grouped integration data into ${noteGroups.length} notes`);
+  const debugStructure = noteGroups.map((group) => group.map((integration) => integration.integrationName));
   Logger.debug({ debugStructure }, 'Integration Data Grouping');
 
   const newlyCreatedNotes = [];
-  // We need to reverse the noteGroups so that the first group which has extra space for a note
-  // now comes at the end so that we can add our note to it and have it appear first
-  // on the Case Notes page.  This is meant to support the default sort order which is
-  // to display the most recent note first (i.e., the first note we had becomes the last ntoe so we
-  // need the last note we add to be the first).
-  noteGroups.reverse();
+
   await async.eachOfLimit(noteGroups, 1, async (group, index) => {
-    const content = [];
+    const noteText = [
+      `(${index + 1} of ${noteGroups.length}) Polarity Integration Data – added via Polarity`,
+      '',
+      ...group.map((integration) => integration.text)
+    ].join('\n');
 
-    // If the user wanted to add some regular comment text, we add it to the first comment
-    // Remember comments appear in reverse order which is why we add it to the last comment in
-    // the array.
-    if (comment && index === noteGroups.length - 1) {
-      content.push({
-        content: [
-          {
-            text: comment,
-            type: 'text'
-          }
-        ],
-        type: 'paragraph'
-      });
-    }
-
-    content.push(
-      getPanel(
-        `(${noteGroups.length - index} of ${
-          noteGroups.length
-        }) Polarity Integration Data – the following information was added via Polarity`
-      )
-    );
-    content.push(getHeading1(defangEntity(entity)));
-    content.push(...group.map((integration) => integration.contentData).flat());
-
-    const noteContent = {
-      body: {
-        content,
-        type: 'doc',
-        version: 1
-      }
+    const noteBody = {
+      text: truncateIfNeeded(noteText, MAX_CHARACTER_COUNT_PER_INTEGRATION)
     };
 
-    const addedNote = await addNote(payload.caseId, options, noteContent);
-    newlyCreatedNotes.unshift(addedNote);
+    Logger.debug({ noteBody }, 'Payload being sent to ThreatConnect');
+
+    const addedNote = await addNote(payload.caseId, options, noteBody);
+    newlyCreatedNotes.push(addedNote);
   });
 
   return newlyCreatedNotes;
 }
 
-async function addNote(caseId, options, noteContent) {
+function formatAnnotationsAsFixedWidthText(annotations) {
+  if (!annotations || !annotations.data || annotations.data.length === 0) return '';
+
+  // Get unique headers dynamically
+  const headers = Array.from(
+    new Set(annotations.data.flatMap((a) => Object.keys(a || {})).filter((k) => typeof k === 'string'))
+  );
+
+  const rows = annotations.data.map((entry) => headers.map((key) => (entry[key] != null ? String(entry[key]) : '')));
+
+  // Determine natural column widths (longest word per column)
+  const columnWidths = headers.map((_, i) => Math.max(headers[i].length, ...rows.map((row) => row[i]?.length || 0)));
+
+  const pad = (text, width) => text.padEnd(width, ' ');
+
+  const lines = [];
+
+  // Header with Sentence Case
+  const headerLabels = headers.map((h) => h.charAt(0).toUpperCase() + h.slice(1).toLowerCase());
+  lines.push(headerLabels.map((h, i) => pad(h, columnWidths[i])).join(' | '));
+  lines.push(columnWidths.map((w) => '-'.repeat(w)).join('-|-'));
+
+  // Rows
+  for (const row of rows) {
+    lines.push(row.map((cell, i) => pad(cell, columnWidths[i])).join(' | '));
+  }
+
+  return lines.join('\n');
+}
+
+async function addNote(caseId, options, noteBody) {
   const Logger = getLogger();
 
   const requestOptions = {
@@ -123,7 +123,7 @@ async function addNote(caseId, options, noteContent) {
     body: {}
   };
 
-  requestOptions.body.notes = { data: [{ text: noteContent }] };
+  requestOptions.body.notes = { data: [noteBody] };
 
   const noteString = JSON.stringify(requestOptions.body);
 
@@ -153,6 +153,56 @@ async function addNote(caseId, options, noteContent) {
   }
 
   return apiResponse.body;
+}
+
+function flattenContentDataToText(contentData) {
+  if (!contentData) return [];
+  if (Array.isArray(contentData)) {
+    return contentData.map((block) => flattenSingleBlock(block)).flat();
+  } else {
+    return flattenSingleBlock(contentData);
+  }
+}
+
+function flattenSingleBlock(block) {
+  if (!block) return [];
+
+  switch (block.type) {
+    case 'paragraph':
+      return [block.content?.map((node) => node.text).join('') || ''];
+    case 'heading':
+      const level = block.attrs?.level || 3;
+      const hashes = '#'.repeat(level);
+      return [`${hashes} ${block.content?.map((n) => n.text).join('') || ''}`];
+    case 'rule':
+      return ['---'];
+    case 'expand':
+      return flattenContentDataToText(block.content);
+    case 'table':
+      return flattenTable(block);
+    case 'panel':
+      return flattenContentDataToText(block.content);
+    default:
+      return [];
+  }
+}
+
+function flattenTable(table) {
+  const lines = [];
+  for (const row of table.content || []) {
+    const cells = row.content || [];
+    const rowText = cells
+      .map((cell) =>
+        (cell.content || []).map((paragraph) => paragraph.content?.map((n) => n.text).join('') || '').join(' ')
+      )
+      .join(' | ');
+    lines.push(rowText);
+  }
+  return lines;
+}
+
+function truncateIfNeeded(text, limit) {
+  return text.length > limit ? text.slice(0, limit - 3) + '...' : text;
 }
 
 function getStringSize(str) {
@@ -300,194 +350,6 @@ function countTextNodeLength(jsonObj) {
     totalTextLength,
     totalTextWithKeyLength,
     totalTypeAndTextLength
-  };
-}
-
-function getAnnotations(annotations) {
-  if (annotations) {
-    return [
-      getHeading3('Annotations'),
-      getTags(annotations.data.map((annotation) => annotation.tag)),
-      {
-        type: 'expand',
-        content: [
-          {
-            type: 'table',
-            attrs: {
-              isNumberColumnEnabled: false,
-              layout: 'align-start'
-            },
-            content: [
-              getAnnotationsTableHeader(),
-              ...annotations.data
-                .map((annotation) => {
-                  return [
-                    {
-                      type: 'tableRow',
-                      content: [
-                        {
-                          type: 'tableCell',
-                          attrs: {},
-                          content: [
-                            {
-                              type: 'paragraph',
-                              content: [
-                                {
-                                  type: 'text',
-                                  text: annotation.tag
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          type: 'tableCell',
-                          attrs: {},
-                          content: [
-                            {
-                              type: 'paragraph',
-                              content: [
-                                {
-                                  type: 'text',
-                                  text: annotation.channel
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          type: 'tableCell',
-                          attrs: {},
-                          content: [
-                            {
-                              type: 'paragraph',
-                              content: [
-                                {
-                                  type: 'text',
-                                  text: annotation.user
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          type: 'tableCell',
-                          attrs: {},
-                          content: [
-                            {
-                              type: 'paragraph',
-                              content: [
-                                {
-                                  type: 'text',
-                                  text: annotation.applied
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ];
-                })
-                .flat()
-            ]
-          }
-        ],
-        attrs: {
-          title: 'Annotations'
-        }
-      }
-    ];
-  } else {
-    return [];
-  }
-}
-
-function getAnnotationsTableHeader() {
-  return {
-    type: 'tableRow',
-    content: [
-      {
-        type: 'tableHeader',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'Annotation',
-                marks: [
-                  {
-                    type: 'strong'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        type: 'tableHeader',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'Channel',
-                marks: [
-                  {
-                    type: 'strong'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        type: 'tableHeader',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'User',
-                marks: [
-                  {
-                    type: 'strong'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        type: 'tableHeader',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'Applied',
-                marks: [
-                  {
-                    type: 'strong'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
   };
 }
 
