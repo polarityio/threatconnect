@@ -29,7 +29,7 @@ async function addIntegrationDataAsNote(payload, options) {
       `### Integration: ${integration.integrationName}`,
       ...(Array.isArray(integration.data.summary) ? integration.data.summary.map((tag) => `- ${getTagText(tag)}`) : []),
       '',
-      ...flattenContentDataToText(contentData)
+      contentData
     ];
 
     if (index !== integrationData.length - 1) {
@@ -441,66 +441,77 @@ function getPanel(text, type = 'info') {
  * @param integrationData
  */
 function getIntegrationDataExpansion(integration) {
-  let flattenedData;
   let characterCount;
+  let text;
   let isTruncated = false;
-  if (integration && integration.data && integration.data.details) {
-    const result = jsonToDotNotationArray(integration.data.details);
-    flattenedData = result.result;
-    characterCount = result.characterCount;
-    isTruncated = result.isTruncated;
+
+  let plainDetails;
+
+  try {
+    // Convert details to plain JSON to remove getter/setter functions
+    plainDetails = JSON.parse(JSON.stringify(integration.data.details));
+  } catch (e) {
+    getLogger().warn({ error: e }, 'Could not stringify integration.data.details');
+    plainDetails = null;
+  }
+
+  if (plainDetails) {
+    const { result, characterCount: count, isTruncated: truncated } = jsonToDotNotationArray(plainDetails);
+    characterCount = count;
+    isTruncated = truncated;
+    text = formatIntegrationDetailsAsFixedWidthText(plainDetails, MAX_CHARACTER_COUNT_PER_INTEGRATION);
   } else {
-    flattenedData = [
-      {
-        key: 'No Data',
-        value: 'No data was returned from the integration'
-      }
-    ];
-    characterCount = 'No Data'.length + 'No data was returned from the integration'.length;
+    text = 'No data was returned from the integration';
+    characterCount = text.length;
   }
-
-  getLogger().debug({ characterCount, name: integration.integrationName }, 'Character Count for Integration Data');
-
-  const tableRows = flattenedData
-    .map((data) => {
-      if (data.isFlatObject) {
-        return getFlatObjectTableRow(data);
-      } else {
-        return getNestedOrPrimitiveTableRow(data);
-      }
-    })
-    .flat();
-
-  const content = [];
-
-  if (isTruncated) {
-    content.push(
-      getPanel(
-        `Data from ${integration.integrationName} was truncated to fit within the character limit of 15,000 characters`,
-        'warning'
-      )
-    );
-  }
-
-  content.push({
-    type: 'table',
-    attrs: {
-      isNumberColumnEnabled: false,
-      layout: 'align-start'
-    },
-    content: [getIntegrationTableHeader(isTruncated), ...tableRows]
-  });
 
   return {
     characterCount,
-    contentData: {
-      type: 'expand',
-      content: content,
-      attrs: {
-        title: integration.integrationName
-      }
-    }
+    contentData: text,
+    integrationName: integration.integrationName
   };
+}
+
+function formatIntegrationDetailsAsFixedWidthText(integrationData, maxCharCount = MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+  const flatData = jsonToDotNotationArray(integrationData);
+
+  const rows = flatData.result.map((entry) => [entry.key, formatFlatValue(entry.value)]);
+  const headers = ['Field', 'Value'];
+
+  const columnWidths = headers.map((_, colIndex) =>
+    Math.max(headers[colIndex].length, ...rows.map((row) => row[colIndex]?.length || 0))
+  );
+
+  const pad = (text, width) => text.padEnd(width, ' ');
+
+  const lines = [];
+
+  // Header
+  lines.push(headers.map((h, i) => pad(h, columnWidths[i])).join(' | '));
+  lines.push(columnWidths.map((w) => '-'.repeat(w)).join('-|-'));
+
+  // Rows
+  for (const row of rows) {
+    const line = row.map((cell, i) => pad(cell, columnWidths[i])).join(' | ');
+    const projectedLength = lines.join('\n').length + line.length + 1;
+    if (projectedLength > maxCharCount) {
+      lines.push('... (truncated due to length)');
+      break;
+    }
+    lines.push(line);
+  }
+
+  return lines.join('\n');
+}
+
+function formatFlatValue(value) {
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return Object.entries(value)
+      .filter(([k, v]) => !isValueToIgnore(v))
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(', ');
+  }
+  return String(value);
 }
 
 /**
@@ -775,76 +786,78 @@ function jsonToDotNotationArray(obj) {
   let characterCount = 0;
   let isTruncated = false;
 
-  /**
-   * Recursive helper to traverse the object and collect paths/values.
-   *
-   * @param {any} current - The current sub‐object or value.
-   * @param {string} path - The accumulated dot‐notation path so far.
-   */
   function traverse(current, path) {
-    if (isValueToIgnore(current) || characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+    if (isValueToIgnore(current) || characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) return;
+
+    // Case 1: Primitive array → join into comma-separated string
+    if (Array.isArray(current) && isPrimitiveArray(current)) {
+      const value = current.filter((v) => !isValueToIgnore(v)).join(', ');
+      const tmpCount = characterCount + value.length + path.length;
+      if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+        isTruncated = true;
+        return;
+      }
+      characterCount = tmpCount;
+      result.push({ key: path, value, isPrimitiveArray: true });
       return;
     }
 
-    if (current && isPrimitiveArray(current)) {
-      // If current is a primitive array we just take the array values and concat them together
-      // after ignoring values
-      let value = current.filter((value) => !isValueToIgnore(value)).join(', ');
-      const tmpCharacterCount = characterCount + value.length + path.length;
-      if (characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
-        isTruncated = true;
-        return;
-      } else {
-        characterCount = tmpCharacterCount;
+    // Case 2: Array of objects → add as-is by index, don't traverse inside
+    if (Array.isArray(current) && current.length && typeof current[0] === 'object') {
+      for (let i = 0; i < current.length; i++) {
+        const value = current[i];
+        const newPath = `${path}.${i}`;
+        const tmpCount = characterCount + JSON.stringify(value).length + newPath.length;
+        if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+          isTruncated = true;
+          return;
+        }
+        characterCount = tmpCount;
+        result.push({ key: newPath, value });
       }
-      result.push({ key: path, value, isPrimitiveArray: true });
-    } else if (current && isFlatObject(current)) {
-      // Remove values from flat object that should be ignored
-      const currentMinusIgnored = Object.keys(current)
-        .filter((key) => !isValueToIgnore(current[key]))
-        .reduce((obj, key) => {
-          obj[key] = current[key];
+      return;
+    }
+
+    // Case 3: Flat object → show inside cell
+    if (isFlatObject(current)) {
+      const trimmed = Object.keys(current)
+        .filter((k) => !isValueToIgnore(current[k]))
+        .reduce((obj, k) => {
+          obj[k] = current[k];
           return obj;
         }, {});
-      const numCharacters = getFlatObjectCharacterCount(currentMinusIgnored);
-      const tmpCharacterCount = characterCount + numCharacters + path.length;
-
-      if (characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+      const tmpCount = characterCount + getFlatObjectCharacterCount(trimmed) + path.length;
+      if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
         isTruncated = true;
         return;
-      } else {
-        characterCount = tmpCharacterCount;
       }
-      result.push({ key: path, value: currentMinusIgnored, isFlatObject: true });
-    } else if (current && typeof current === 'object') {
-      // If current is an object or array, keep traversing its properties.
-      for (const key in current) {
-        if (Object.prototype.hasOwnProperty.call(current, key)) {
-          let newPath = path;
-          // Only add the key if it's not an array or if it's an array with more than one element
-          if (!Array.isArray(current) || (Array.isArray(current) && current.length > 1)) {
-            newPath = path ? `${path}.${key}` : key;
-          }
-          traverse(current[key], newPath);
-        }
-      }
-    } else {
-      // current is a primitive value (string, number, boolean, or null)
-      const tmpCharacterCount = characterCount + String(current).length + path.length;
-
-      // If the current data puts us over the max character count, skip it and mark this integration
-      // as having truncated data
-      if (tmpCharacterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
-        isTruncated = true;
-        return;
-      } else {
-        characterCount = tmpCharacterCount;
-      }
-      result.push({ key: path, value: String(current) });
+      characterCount = tmpCount;
+      result.push({ key: path, value: trimmed, isFlatObject: true });
+      return;
     }
+
+    // Case 4: Nested object → recurse
+    if (typeof current === 'object' && current !== null) {
+      for (const key in current) {
+        if (!current.hasOwnProperty(key)) continue;
+        const newPath = path ? `${path}.${key}` : key;
+        traverse(current[key], newPath);
+      }
+      return;
+    }
+
+    // Case 5: Primitive value
+    const tmpCount = characterCount + String(current).length + path.length;
+    if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+      isTruncated = true;
+      return;
+    }
+    characterCount = tmpCount;
+    result.push({ key: path, value: current });
   }
 
   traverse(obj, '');
+
   return { result, characterCount, isTruncated };
 }
 
