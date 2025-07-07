@@ -20,55 +20,79 @@ async function addIntegrationDataAsNote(payload, options) {
   const integrationData = payload.integrationData || [];
   const annotations = payload.annotations || [];
 
-  const dataToPush = integrationData.map((integration, index) => {
-    const { characterCount, contentData } = getIntegrationDataExpansion(integration);
+  const allNoteChunks = [];
+
+  for (const integration of integrationData) {
+    const { characterCount, lines: rawLines, integrationName } = getIntegrationDataExpansion(integration);
 
     Logger.info('Character Count for Integration Data', characterCount);
 
-    const lines = [
-      `### Integration: ${integration.integrationName}`,
-      ...(Array.isArray(integration.data.summary) ? integration.data.summary.map((tag) => `- ${getTagText(tag)}`) : []),
-      '',
-      contentData
-    ];
+    const integrationLines = [];
 
-    if (index !== integrationData.length - 1) {
-      lines.push('\n---\n');
+    // Header: appears only in the first chunk of this integration
+    const headerLines = [`### Integration: ${integration.integrationName}`];
+    if (Array.isArray(integration.data.summary)) {
+      for (const tag of integration.data.summary) {
+        headerLines.push(`- ${getTagText(tag)}`);
+      }
     }
+    headerLines.push(''); // spacer
 
-    return {
-      characterCount: lines.join('\n').length,
-      text: lines.join('\n'),
-      integrationName: integration.integrationName
-    };
-  });
+    Logger.info(`Raw line count: ${rawLines.length}`);
+    Logger.info(`Raw char count: ${rawLines.reduce((acc, l) => acc + l.length, 0)}`);
+    // With this:
+    const TABLE_HEADER = ['Field | Value', '----- | -----'];
+    const linesWithHeaders = [TABLE_HEADER.join('\n'), ...rawLines, '\n---\n'];
+    const chunks = splitLinesByCharacterLimit(linesWithHeaders, MAX_CHARACTER_COUNT_PER_INTEGRATION);
 
-  if (annotations && annotations.data?.length) {
-    const text = (formatted = formatAnnotationsAsFixedWidthText(payload.annotations));
+    Logger.info(`Chunk count: ${chunks.length}`);
+    chunks.forEach((chunk, i) =>
+      Logger.debug({ index: i, charCount: chunk.length, preview: chunk.slice(0, 3) }, 'Chunk preview')
+    );
 
-    dataToPush.push({
-      characterCount: text.length,
-      text,
-      integrationName: 'Polarity Annotations'
-    });
+    // Remove header from second+ chunks to avoid duplication
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = [...chunks[i]];
+      const finalChunk = [];
+
+      // Add Integration title and summary tags only in first chunk
+      if (i === 0) {
+        finalChunk.push(...headerLines);
+      }
+
+      // Always add table headers
+      finalChunk.push(...TABLE_HEADER);
+
+      // Then the actual content (excluding old headers if present)
+      const contentOnly = chunk.filter(
+        (line) =>
+          !line.startsWith('### Integration:') &&
+          !line.startsWith('- ') &&
+          !TABLE_HEADER.includes(line.trim()) &&
+          line.trim() !== ''
+      );
+
+      finalChunk.push(...contentOnly);
+      allNoteChunks.push(finalChunk);
+    }
   }
 
-  const noteGroups = groupIntegrationDataToTarget(
-    dataToPush,
-    MAX_CHARACTER_COUNT_PER_INTEGRATION,
-    MAX_CHARACTER_COUNT_PER_INTEGRATION
-  );
-  Logger.info(`Grouped integration data into ${noteGroups.length} notes`);
-  const debugStructure = noteGroups.map((group) => group.map((integration) => integration.integrationName));
-  Logger.debug({ debugStructure }, 'Integration Data Grouping');
+  // Add Annotations (at the very end, if present)
+  if (annotations && annotations.data?.length) {
+    const annotationText = formatAnnotationsAsFixedWidthText(payload.annotations, 300);
+    allNoteChunks.push(['### Polarity Annotations', '', ...annotationText.split('\n')]);
+  }
+
+  Logger.info(`Total flattened lines across integrations: ${allNoteChunks.flat().length}`);
+  Logger.info(`Total note chunks: ${allNoteChunks.length}`);
 
   const newlyCreatedNotes = [];
 
-  await async.eachOfLimit(noteGroups, 1, async (group, index) => {
+  await async.eachOfLimit(allNoteChunks, 1, async (chunk, index) => {
     const noteText = [
-      `(${index + 1} of ${noteGroups.length}) Polarity Integration Data – added via Polarity`,
+      `(${index + 1} of ${allNoteChunks.length}) Polarity Integration Data – added via Polarity`,
       '',
-      ...group.map((integration) => integration.text)
+      ...chunk
     ].join('\n');
 
     const noteBody = {
@@ -82,6 +106,46 @@ async function addIntegrationDataAsNote(payload, options) {
   });
 
   return newlyCreatedNotes;
+}
+
+function splitLinesByCharacterLimit(lines, maxChars) {
+  const chunks = [];
+  let currentChunk = [];
+  let currentLength = 0;
+
+  for (const line of lines) {
+    const lineLength = line.length + 1; // +1 for newline
+
+    // Split the line itself if it's longer than maxChars
+    if (lineLength > maxChars) {
+      const slicedLines = line.match(new RegExp(`.{1,${maxChars - 1}}`, 'g')) || [];
+      for (const sliced of slicedLines) {
+        if (currentLength + sliced.length + 1 > maxChars) {
+          chunks.push(currentChunk);
+          currentChunk = [];
+          currentLength = 0;
+        }
+        currentChunk.push(sliced);
+        currentLength += sliced.length + 1;
+      }
+      continue;
+    }
+
+    if (currentLength + lineLength > maxChars) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+      currentLength = 0;
+    }
+
+    currentChunk.push(line);
+    currentLength += lineLength;
+  }
+
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk);
+  }
+
+  return chunks;
 }
 
 function formatAnnotationsAsFixedWidthText(annotations) {
@@ -199,6 +263,12 @@ function flattenTable(table) {
     lines.push(rowText);
   }
   return lines;
+}
+
+function formatAnnotationsAsText(annotations) {
+  return annotations.data
+    .map((a) => `- ${a.tag} (Channel: ${a.channel}, User: ${a.user}, Applied: ${a.applied})`)
+    .join('\n');
 }
 
 function truncateIfNeeded(text, limit) {
@@ -441,77 +511,92 @@ function getPanel(text, type = 'info') {
  * @param integrationData
  */
 function getIntegrationDataExpansion(integration) {
-  let characterCount;
-  let text;
-  let isTruncated = false;
-
-  let plainDetails;
-
-  try {
-    // Convert details to plain JSON to remove getter/setter functions
-    plainDetails = JSON.parse(JSON.stringify(integration.data.details));
-  } catch (e) {
-    getLogger().warn({ error: e }, 'Could not stringify integration.data.details');
-    plainDetails = null;
+  if (!integration?.data?.details || typeof integration.data.details !== 'object') {
+    return { characterCount: 0, lines: [], integrationName: integration.integrationName };
   }
 
-  if (plainDetails) {
-    const { result, characterCount: count, isTruncated: truncated } = jsonToDotNotationArray(plainDetails);
-    characterCount = count;
-    isTruncated = truncated;
-    text = formatIntegrationDetailsAsFixedWidthText(plainDetails, MAX_CHARACTER_COUNT_PER_INTEGRATION);
-  } else {
-    text = 'No data was returned from the integration';
-    characterCount = text.length;
-  }
+  const flattened = flattenDeepObject(integration.data.details);
+
+  // Ensure table formatting is done here before splitting
+  const lines = formatTableFromFlattenedData(flattened); // ⬅️ This ensures every chunk gets table lines
 
   return {
-    characterCount,
-    contentData: text,
+    characterCount: lines.join('\n').length,
+    lines,
     integrationName: integration.integrationName
   };
 }
 
-function formatIntegrationDetailsAsFixedWidthText(integrationData, maxCharCount = MAX_CHARACTER_COUNT_PER_INTEGRATION) {
-  const flatData = jsonToDotNotationArray(integrationData);
+function flattenDeepObject(obj, parentKey = '') {
+  const result = {};
 
-  const rows = flatData.result.map((entry) => [entry.key, formatFlatValue(entry.value)]);
-  const headers = ['Field', 'Value'];
-
-  const columnWidths = headers.map((_, colIndex) =>
-    Math.max(headers[colIndex].length, ...rows.map((row) => row[colIndex]?.length || 0))
-  );
-
-  const pad = (text, width) => text.padEnd(width, ' ');
-
-  const lines = [];
-
-  // Header
-  lines.push(headers.map((h, i) => pad(h, columnWidths[i])).join(' | '));
-  lines.push(columnWidths.map((w) => '-'.repeat(w)).join('-|-'));
-
-  // Rows
-  for (const row of rows) {
-    const line = row.map((cell, i) => pad(cell, columnWidths[i])).join(' | ');
-    const projectedLength = lines.join('\n').length + line.length + 1;
-    if (projectedLength > maxCharCount) {
-      lines.push('... (truncated due to length)');
-      break;
+  function recurse(current, keyPath) {
+    if (isValueToIgnore(current)) {
+      return;
     }
-    lines.push(line);
+
+    if (Array.isArray(current)) {
+      const filtered = current.filter((item) => !isValueToIgnore(item));
+      if (filtered.length === 0) return;
+
+      filtered.forEach((item, index) => {
+        recurse(item, `${keyPath}.${index}`);
+      });
+    } else if (typeof current === 'object' && current !== null) {
+      const keys = Object.keys(current).filter((k) => !isValueToIgnore(current[k]));
+      if (keys.length === 0) return;
+
+      const isShallow = keys.every((k) => typeof current[k] !== 'object' || current[k] === null);
+
+      if (isShallow) {
+        const collapsed = keys.map((k) => `${k}: ${formatValue(current[k])}`).join('');
+        if (!isValueToIgnore(collapsed)) {
+          result[keyPath] = collapsed;
+        }
+      } else {
+        for (const k of keys) {
+          recurse(current[k], keyPath ? `${keyPath}.${k}` : k);
+        }
+      }
+    } else {
+      if (!isValueToIgnore(current)) {
+        result[keyPath] = formatValue(current);
+      }
+    }
   }
 
-  return lines.join('\n');
+  recurse(obj, parentKey);
+  return result;
 }
 
-function formatFlatValue(value) {
-  if (typeof value === 'object' && !Array.isArray(value)) {
-    return Object.entries(value)
-      .filter(([k, v]) => !isValueToIgnore(v))
-      .map(([k, v]) => `${k}: ${v}`)
-      .join(', ');
+function formatValue(val) {
+  if (Array.isArray(val)) {
+    return val.map(formatValue).join(', ');
   }
-  return String(value);
+  if (typeof val === 'object' && val !== null) {
+    return JSON.stringify(val);
+  }
+  return String(val);
+}
+
+function formatTableFromFlattenedData(flattenedData) {
+  const lines = [];
+
+  const entries = Object.entries(flattenedData);
+  if (entries.length === 0) return lines;
+
+  const fieldWidth = Math.max(...entries.map(([key]) => key.length), 5); // min width: "Field"
+  const header = `${'Field'.padEnd(fieldWidth)} | Value`;
+  const divider = `${'-'.repeat(fieldWidth)}-|-------`;
+
+  lines.push(header);
+  lines.push(divider);
+
+  for (const [key, value] of entries) {
+    lines.push(`${key.padEnd(fieldWidth)} | ${value}`);
+  }
+
+  return lines;
 }
 
 /**
@@ -610,143 +695,6 @@ function getFlatObjectTableRow(data) {
   return row;
 }
 
-function getNestedOrPrimitiveTableRow(data) {
-  return {
-    type: 'tableRow',
-    content: [
-      {
-        type: 'tableCell',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: data.key
-              }
-            ]
-          }
-        ]
-      },
-      {
-        type: 'tableCell',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: data.value
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function getHeading3(heading) {
-  return {
-    type: 'heading',
-    attrs: {
-      level: 3
-    },
-    content: [
-      {
-        type: 'text',
-        text: heading
-      }
-    ]
-  };
-}
-
-function getHeading1(heading) {
-  return {
-    type: 'heading',
-    attrs: {
-      level: 2
-    },
-    content: [
-      {
-        type: 'text',
-        text: heading,
-        marks: [
-          {
-            type: 'textColor',
-            attrs: {
-              color: '#0747a6'
-            }
-          }
-        ]
-      }
-    ]
-  };
-}
-
-function defangEntity(entity) {
-  if (entity.isIP) {
-    const lastDotIndex = entity.value.lastIndexOf('.');
-    return entity.value.slice(0, lastDotIndex) + '[.]' + entity.value.slice(lastDotIndex + 1);
-  } else if (entity.isDomain) {
-    return entity.value.replace(/\./g, '[.]');
-  } else if (entity.isUrl) {
-    return entity.value.replace(/^http/, 'hxxp').replace(/\./g, '[.]');
-  } else {
-    return entity.value;
-  }
-}
-
-function getIntegrationTableHeader() {
-  return {
-    type: 'tableRow',
-    content: [
-      {
-        type: 'tableHeader',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'Field',
-                marks: [
-                  {
-                    type: 'strong'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      },
-      {
-        type: 'tableHeader',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: 'Value',
-                marks: [
-                  {
-                    type: 'strong'
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  };
-}
-
 function stringIsBase64Image(value) {
   return /^data:image\/[a-zA-Z]*;base64,/.test(value);
 }
@@ -756,7 +704,13 @@ function stringIsHexColor(value) {
 }
 
 function isValueToIgnore(value) {
-  if (isEmptyValue(value)) {
+  if (
+    value === null ||
+    typeof value === 'undefined' ||
+    (typeof value === 'string' && value.trim().length === 0) ||
+    (Array.isArray(value) && value.every((v) => isValueToIgnore(v))) ||
+    (typeof value === 'object' && value !== null && Object.values(value).every((v) => isValueToIgnore(v)))
+  ) {
     return true;
   }
 
@@ -786,128 +740,72 @@ function jsonToDotNotationArray(obj) {
   let characterCount = 0;
   let isTruncated = false;
 
+  /**
+   * Recursive helper to traverse the object and collect paths/values.
+   *
+   * @param {any} current - The current sub‐object or value.
+   * @param {string} path - The accumulated dot‐notation path so far.
+   */
   function traverse(current, path) {
-    if (isValueToIgnore(current) || characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) return;
+    if (isValueToIgnore(current) || characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+      return;
+    }
 
-    // Case 1: Primitive array → join into comma-separated string
-    if (Array.isArray(current) && isPrimitiveArray(current)) {
-      const value = current.filter((v) => !isValueToIgnore(v)).join(', ');
-      const tmpCount = characterCount + value.length + path.length;
-      if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
-        isTruncated = true;
-        return;
-      }
-      characterCount = tmpCount;
+    if (current && isPrimitiveArray(current)) {
+      // If current is a primitive array we just take the array values and concat them together
+      // after ignoring values
+      let value = current.filter((value) => !isValueToIgnore(value)).join(', ');
+      const tmpCharacterCount = characterCount + value.length + path.length;
+      characterCount = tmpCharacterCount;
       result.push({ key: path, value, isPrimitiveArray: true });
-      return;
-    }
-
-    // Case 2: Array of objects → add as-is by index, don't traverse inside
-    if (Array.isArray(current) && current.length && typeof current[0] === 'object') {
-      for (let i = 0; i < current.length; i++) {
-        const value = current[i];
-        const newPath = `${path}.${i}`;
-        const tmpCount = characterCount + JSON.stringify(value).length + newPath.length;
-        if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
-          isTruncated = true;
-          return;
-        }
-        characterCount = tmpCount;
-        result.push({ key: newPath, value });
-      }
-      return;
-    }
-
-    // Case 3: Flat object → show inside cell
-    if (isFlatObject(current)) {
-      const trimmed = Object.keys(current)
-        .filter((k) => !isValueToIgnore(current[k]))
-        .reduce((obj, k) => {
-          obj[k] = current[k];
+    } else if (current && isFlatObject(current)) {
+      // Remove values from flat object that should be ignored
+      const currentMinusIgnored = Object.keys(current)
+        .filter((key) => !isValueToIgnore(current[key]))
+        .reduce((obj, key) => {
+          obj[key] = current[key];
           return obj;
         }, {});
-      const tmpCount = characterCount + getFlatObjectCharacterCount(trimmed) + path.length;
-      if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+      const numCharacters = getFlatObjectCharacterCount(currentMinusIgnored);
+      const tmpCharacterCount = characterCount + numCharacters + path.length;
+
+      if (characterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
         isTruncated = true;
         return;
+      } else {
+        characterCount = tmpCharacterCount;
       }
-      characterCount = tmpCount;
-      result.push({ key: path, value: trimmed, isFlatObject: true });
-      return;
-    }
-
-    // Case 4: Nested object → recurse
-    if (typeof current === 'object' && current !== null) {
+      result.push({ key: path, value: currentMinusIgnored, isFlatObject: true });
+    } else if (current && typeof current === 'object') {
+      // If current is an object or array, keep traversing its properties.
       for (const key in current) {
-        if (!current.hasOwnProperty(key)) continue;
-        const newPath = path ? `${path}.${key}` : key;
-        traverse(current[key], newPath);
+        if (Object.prototype.hasOwnProperty.call(current, key)) {
+          let newPath = path;
+          // Only add the key if it's not an array or if it's an array with more than one element
+          if (!Array.isArray(current) || (Array.isArray(current) && current.length > 1)) {
+            newPath = path ? `${path}.${key}` : key;
+          }
+          traverse(current[key], newPath);
+        }
       }
-      return;
-    }
+    } else {
+      // current is a primitive value (string, number, boolean, or null)
+      const tmpCharacterCount = characterCount + String(current).length + path.length;
 
-    // Case 5: Primitive value
-    const tmpCount = characterCount + String(current).length + path.length;
-    if (tmpCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
-      isTruncated = true;
-      return;
+      // If the current data puts us over the max character count, skip it and mark this integration
+      // as having truncated data
+      if (tmpCharacterCount > MAX_CHARACTER_COUNT_PER_INTEGRATION) {
+        isTruncated = true;
+        return;
+      } else {
+        characterCount = tmpCharacterCount;
+      }
+      result.push({ key: path, value: String(current) });
     }
-    characterCount = tmpCount;
-    result.push({ key: path, value: current });
   }
 
   traverse(obj, '');
-
   return { result, characterCount, isTruncated };
-}
-
-/**
- * Bin packing method which takes an array of numbers and a target sum, and groups the numbers into
- * as few groups as possible such that the sum of each group is less than or equal to the target sum.
- *
- * @param numbers
- * @param target
- * @returns {any[]}
- */
-function groupIntegrationDataToTarget(integrationData, firstBinTarget, target) {
-  // Sort descending
-  integrationData.sort((a, b) => b.characterCount - a.characterCount);
-
-  // Each element of 'bins' will be an object: { sum: <number>, items: <array> }
-  const bins = [];
-
-  // For every number, try to fit it into a bin
-  for (const integration of integrationData) {
-    let count = integration.characterCount;
-    let placed = false;
-
-    // Try to place `num` in the first bin where it fits
-    for (let i = 0; i < bins.length; i++) {
-      const bin = bins[i];
-      let tmpTarget = target;
-
-      // if this is the first bin, then use firstBinTarget because we need to leave
-      // room to add in our comment
-      if (i === 0) {
-        tmpTarget = firstBinTarget;
-      }
-
-      if (bin.sum + count <= tmpTarget) {
-        bin.items.push(integration);
-        bin.sum += count;
-        placed = true;
-        break;
-      }
-    }
-
-    // If we couldn't place it in any existing bin, create a new one
-    if (!placed) {
-      bins.push({ sum: count, items: [integration] });
-    }
-  }
-
-  // Extract just the array of items from each bin
-  return bins.map((bin) => bin.items);
 }
 
 module.exports = {
