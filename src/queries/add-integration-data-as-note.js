@@ -42,7 +42,8 @@ async function addIntegrationDataAsNote(payload, options) {
     Logger.info(`Raw char count: ${rawLines.reduce((acc, l) => acc + l.length, 0)}`);
     // With this:
     const TABLE_HEADER = ['Field | Value', '----- | -----'];
-    const linesWithHeaders = [TABLE_HEADER.join('\n'), ...rawLines, '\n---\n'];
+    const linesWithHeaders = [...rawLines, '\n---\n'];
+
     const chunks = splitLinesByCharacterLimit(linesWithHeaders, MAX_CHARACTER_COUNT_PER_INTEGRATION);
 
     Logger.info(`Chunk count: ${chunks.length}`);
@@ -585,12 +586,7 @@ function formatTableFromFlattenedData(flattenedData) {
   const entries = Object.entries(flattenedData);
   if (entries.length === 0) return lines;
 
-  const fieldWidth = Math.max(...entries.map(([key]) => key.length), 5); // min width: "Field"
-  const header = `${'Field'.padEnd(fieldWidth)} | Value`;
-  const divider = `${'-'.repeat(fieldWidth)}-|-------`;
-
-  lines.push(header);
-  lines.push(divider);
+  const fieldWidth = Math.max(...entries.map(([key]) => key.length), 5);
 
   for (const [key, value] of entries) {
     lines.push(`${key.padEnd(fieldWidth)} | ${value}`);
