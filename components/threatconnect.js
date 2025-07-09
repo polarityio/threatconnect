@@ -890,6 +890,11 @@ polarity.export = PolarityComponent.extend({
         })
         .finally(() => {
           Ember.set(state, 'isCreatingNote', false);
+          if (state.integrations) {
+            state.integrations.forEach((integration) => {
+              Ember.set(integration, 'selected', false);
+            });
+          }
         });
     },
     clearCreateNoteFields(caseObj) {
