@@ -496,8 +496,7 @@ function getIntegrationDataExpansion(integration) {
 
   const flattened = flattenDeepObject(integration.data.details);
 
-  // Ensure table formatting is done here before splitting
-  const lines = formatTableFromFlattenedData(flattened); // ⬅️ This ensures every chunk gets table lines
+  const lines = formatTableFromFlattenedData(flattened);
 
   return {
     characterCount: lines.join('\n').length,
@@ -528,7 +527,7 @@ function flattenDeepObject(obj, parentKey = '') {
       const isShallow = keys.every((k) => typeof current[k] !== 'object' || current[k] === null);
 
       if (isShallow) {
-        const collapsed = keys.map((k) => `${k}: ${formatValue(current[k])}`).join('');
+        const collapsed = keys.map((k) => `${k}: ${formatValue(current[k])}`).join(' ');
         if (!isValueToIgnore(collapsed)) {
           result[keyPath] = collapsed;
         }
@@ -558,33 +557,26 @@ function formatValue(val) {
   return String(val);
 }
 
-function formatTableFromFlattenedData(flattenedData) {
+function formatTableFromFlattenedData(flattenedData, fieldWidth = 300, valueWidth = 300) {
   const lines = [];
 
-  const entries = Object.entries(flattenedData);
-  if (entries.length === 0) return lines;
+  for (const [key, rawValue] of Object.entries(flattenedData)) {
+    // Format and truncate key
+    const truncatedKey = truncateAndEscape(String(key), fieldWidth);
 
-  const fieldWidth = Math.max(...entries.map(([key]) => key.length), 5);
+    // Format and truncate value
+    const raw = formatValue(rawValue);
+    const truncatedValue = truncateAndEscape(raw, valueWidth);
 
-  for (const [key, value] of entries) {
-    lines.push(`${key.padEnd(fieldWidth)} | ${value}`);
+    lines.push(`| ${truncatedKey} | ${truncatedValue} |`);
   }
 
   return lines;
 }
 
-/**
- * Check if a value is empty (null, undefined, empty string, or empty array).
- * @param value
- * @returns {boolean}
- */
-function isEmptyValue(value) {
-  return (
-    value === null ||
-    typeof value === 'undefined' ||
-    (Array.isArray(value) && value.length === 0) ||
-    (typeof value === 'string' && value.trim().length === 0)
-  );
+function truncateAndEscape(text, maxLength) {
+  const clean = text.replace(/\|/g, '\\|');
+  return clean.length > maxLength ? clean.slice(0, maxLength - 3) + '...' : clean;
 }
 
 /**
