@@ -1468,159 +1468,159 @@
                   </div>
 
                   <div class="note-container">
-                    {{#unless case.notes.data.length}}
+                    {{#unless (gt (get case.notes.data "length") 0)}}
                       <div class="p-footnote mb-2">
                         <span>No Notes</span>
                       </div>
-                    {{else}}
-                      {{! Add Integration Data Notes }}
-                      <label
-                        class={{concat
-                          "add-integration-data-label d-flex align-items-center"
-                          (if case.__state.missingIntegrations " error" "")
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={{case.__state.showIntegrationData}}
-                          onclick={{action "toggleCaseIntegrationCheckbox" case}}
-                        />
-                        <div class="label-text">
-                          Add integration data as a note
-                        </div>
-                      </label>
+                    {{/unless}}
 
-                      {{#if case.__state.showIntegrationData}}
-                        <div class="write-container">
-                          <div class="mt-2">Data from selected integrations will be included as a note.</div>
+                    {{! Add Integration Data Notes }}
+                    <label
+                      class={{concat
+                        "add-integration-data-label d-flex align-items-center"
+                        (if case.__state.missingIntegrations " error" "")
+                      }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={{case.__state.showIntegrationData}}
+                        onclick={{action "toggleCaseIntegrationCheckbox" case}}
+                      />
+                      <div class="label-text">
+                        Add integration data as note
+                      </div>
+                    </label>
 
-                          <div class="d-flex justify-content-between align-items-center">
-                            <div
-                              class="p-action {{if (eq case.__state.integrations.length 0) 'invisible'}}"
-                              {{action "toggleAllIntegrations" case}}
+                    {{#if case.__state.showIntegrationData}}
+                      <div class="write-container">
+                        <div class="mt-2">Data from selected integrations will be included as a note.</div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                          <div
+                            class="p-action {{if (eq case.__state.integrations.length 0) 'invisible'}}"
+                            {{action "toggleAllIntegrations" case}}
+                          >
+                            Toggle All Integrations
+                          </div>
+                          <div class="d-flex align-items-center justify-content-between">
+                            <div class="p-footnote">
+                              {{case.__state.numSelectedWriteIntegrations}}
+                              selected
+                            </div>
+                            <button
+                              class="btn ml-1 icon-btn p-action"
+                              {{action "refreshIntegrations" case}}
+                              title="Refresh"
                             >
-                              Toggle All Integrations
-                            </div>
-                            <div class="d-flex align-items-center justify-content-between">
-                              <div class="p-footnote">
-                                {{case.__state.numSelectedWriteIntegrations}}
-                                selected
-                              </div>
-                              <button
-                                class="btn ml-1 icon-btn p-action"
-                                {{action "refreshIntegrations" case}}
-                                title="Refresh"
-                              >
-                                {{fa-icon icon="sync" fixedWidth=true spin=case.__state.spinRefresh}}
-                              </button>
-                            </div>
-                          </div>
-
-                          <div
-                            class={{concat
-                              "integration-labels-container"
-                              (if case.__state.missingIntegrations " error-text" "")
-                            }}
-                          >
-                            {{#each case.__state.integrations as |integration|}}
-                              <label class="integration-write-label d-flex align-items-center">
-                                <input
-                                  type="checkbox"
-                                  disabled={{case.__state.isSavingNote}}
-                                  checked={{integration.selected}}
-                                  onclick={{pipe-action
-                                    (action (mut integration.selected) value="target.checked")
-                                    (action "addNoteIntegrationSelected" case)
-                                  }}
-                                />
-                                <div class="label-text">
-                                  {{integration.integrationName}}
-                                </div>
-                              </label>
-                            {{/each}}
-
-                            {{#if (eq case.__state.integrations.length 0)}}
-                              <div>No integration data available.</div>
-                              <div class="p-action mt-1" {{action "refreshIntegrations" case}}>Click here to refresh</div>
-                            {{/if}}
-                          </div>
-
-                          <div
-                            class={{concat
-                              "integration-labels-description p-footnote"
-                              (if case.__state.missingIntegrations " error-text" "")
-                            }}
-                          >
-                            {{#if (eq case.__state.integrations.length 0)}}
-                              At least one integration must return data before submitting.
-                            {{else}}
-                              Select one or more integrations
-                            {{/if}}
+                              {{fa-icon icon="sync" fixedWidth=true spin=case.__state.spinRefresh}}
+                            </button>
                           </div>
                         </div>
-                      
-                        <div class="mt-2">
-                          <button
-                            class="btn btn-polarity"
-                            {{action "createNote" case}}
-                            disabled={{or (not displayNoteFieldsForCase) case.__state.isCreatingNote}}
-                          >
-                            {{#if case.__state.isCreatingNote}}
-                              {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
-                            {{else}}
-                              Create
-                            {{/if}}
-                          </button>
 
-                          <button
-                            class="btn btn-cancel"
-                            {{action "cancelIntegrationNote" case}}
-                            disabled={{case.__state.isCreatingNote}}
-                          >
-                            Cancel
-                          </button>
+                        <div
+                          class={{concat
+                            "integration-labels-container"
+                            (if case.__state.missingIntegrations " error-text" "")
+                          }}
+                        >
+                          {{#each case.__state.integrations as |integration|}}
+                            <label class="integration-write-label d-flex align-items-center">
+                              <input
+                                type="checkbox"
+                                disabled={{case.__state.isSavingNote}}
+                                checked={{integration.selected}}
+                                onclick={{pipe-action
+                                  (action (mut integration.selected) value="target.checked")
+                                  (action "addNoteIntegrationSelected" case)
+                                }}
+                              />
+                              <div class="label-text">
+                                {{integration.integrationName}}
+                              </div>
+                            </label>
+                          {{/each}}
+
+                          {{#if (eq case.__state.integrations.length 0)}}
+                            <div>No integration data available.</div>
+                            <div class="p-action mt-1" {{action "refreshIntegrations" case}}>Click here to refresh</div>
+                          {{/if}}
                         </div>
-                      {{/if}}
-                      {{! End Add Integration Data Notes }}
 
-                      <div class="pr-1">
-                        {{#each case.notes.data as |note noteIndex|}}
-                          {{#if note}}
-                            <div class="card">
-                              <div class="card-title-no-border">
-                                <div class="align-items-start justify-content-between">
-                                  <div>
-                                    <div class="author-information">{{note.author}}</div>
-                                    <span class="p-footnote author-information">
-                                      {{moment-format note.dateAdded "DD MMM YYYY, HH:mm"}}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
+                        <div
+                          class={{concat
+                            "integration-labels-description p-footnote"
+                            (if case.__state.missingIntegrations " error-text" "")
+                          }}
+                        >
+                          {{#if (eq case.__state.integrations.length 0)}}
+                            At least one integration must return data before submitting.
+                          {{else}}
+                            Select one or more integrations
+                          {{/if}}
+                        </div>
+                      </div>
 
-                              <div class="full-width">
-                                <div
-                                  class="note-summary {{if note.__isExpanded 'expanded'}}"
-                                  data-note-id="note-{{case.id}}-{{noteIndex}}"
-                                >{{note.text}}</div>
-                              </div>
-                              {{#if note.__showToggle}}
-                                <div class="view-toggle-wrapper">
-                                  <span
-                                    class="p-action edit-button-right"
-                                    {{action "toggleNoteExpansion" case.id indicatorId noteIndex}}
-                                  >
-                                    {{if note.__isExpanded "View Less" "View More"}}
-                                    {{fa-icon icon=(if note.__isExpanded "chevron-up" "chevron-down")}}
+                      <div class="mt-2">
+                        <button
+                          class="btn btn-push-data"
+                          {{action "createNote" case}}
+                          disabled={{or (not displayNoteFieldsForCase) case.__state.isCreatingNote}}
+                        >
+                          {{#if case.__state.isCreatingNote}}
+                            {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
+                          {{else}}
+                            Create
+                          {{/if}}
+                        </button>
+
+                        <button
+                          class="btn btn-push-data cancel"
+                          {{action "cancelIntegrationNote" case}}
+                          disabled={{case.__state.isCreatingNote}}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    {{/if}}
+                    {{! End Add Integration Data Notes }}
+
+                    <div class="pr-1">
+                      {{#each case.notes.data as |note noteIndex|}}
+                        {{#if note}}
+                          <div class="card">
+                            <div class="card-title-no-border">
+                              <div class="align-items-start justify-content-between">
+                                <div>
+                                  <div class="author-information">{{note.author}}</div>
+                                  <span class="p-footnote author-information">
+                                    {{moment-format note.dateAdded "DD MMM YYYY, HH:mm"}}
                                   </span>
                                 </div>
-                              {{/if}}
+                              </div>
                             </div>
-                          {{/if}}
-                        {{/each}}
-                      </div>
-                      <div style="clear:both"></div>
-                    {{/unless}}
+
+                            <div class="full-width">
+                              <div
+                                class="note-summary {{if note.__isExpanded 'expanded'}}"
+                                data-note-id="note-{{case.id}}-{{noteIndex}}"
+                              >{{note.text}}</div>
+                            </div>
+                            {{#if note.__showToggle}}
+                              <div class="view-toggle-wrapper">
+                                <span
+                                  class="p-action edit-button-right"
+                                  {{action "toggleNoteExpansion" case.id indicatorId noteIndex}}
+                                >
+                                  {{if note.__isExpanded "View Less" "View More"}}
+                                  {{fa-icon icon=(if note.__isExpanded "chevron-up" "chevron-down")}}
+                                </span>
+                              </div>
+                            {{/if}}
+                          </div>
+                        {{/if}}
+                      {{/each}}
+                    </div>
+                    <div style="clear:both"></div>
                   </div>
 
                 </div>

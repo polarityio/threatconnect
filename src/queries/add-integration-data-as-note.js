@@ -25,46 +25,33 @@ async function addIntegrationDataAsNote(payload, options) {
   for (const integration of integrationData) {
     const { characterCount, lines: rawLines, integrationName } = getIntegrationDataExpansion(integration);
 
-    Logger.info('Character Count for Integration Data', characterCount);
-
-    const integrationLines = [];
-
-    // Header: appears only in the first chunk of this integration
     const headerLines = [`### Integration: ${integration.integrationName}`];
     if (Array.isArray(integration.data.summary)) {
       for (const tag of integration.data.summary) {
         headerLines.push(`- ${getTagText(tag)}`);
       }
     }
-    headerLines.push(''); // spacer
+    headerLines.push('');
 
-    Logger.info(`Raw line count: ${rawLines.length}`);
-    Logger.info(`Raw char count: ${rawLines.reduce((acc, l) => acc + l.length, 0)}`);
-    // With this:
     const TABLE_HEADER = ['Field | Value', '----- | -----'];
     const linesWithHeaders = [...rawLines, '\n---\n'];
 
     const chunks = splitLinesByCharacterLimit(linesWithHeaders, MAX_CHARACTER_COUNT_PER_INTEGRATION);
 
-    Logger.info(`Chunk count: ${chunks.length}`);
     chunks.forEach((chunk, i) =>
       Logger.debug({ index: i, charCount: chunk.length, preview: chunk.slice(0, 3) }, 'Chunk preview')
     );
 
-    // Remove header from second+ chunks to avoid duplication
     for (let i = 0; i < chunks.length; i++) {
       const chunk = [...chunks[i]];
       const finalChunk = [];
 
-      // Add Integration title and summary tags only in first chunk
       if (i === 0) {
         finalChunk.push(...headerLines);
       }
 
-      // Always add table headers
       finalChunk.push(...TABLE_HEADER);
 
-      // Then the actual content (excluding old headers if present)
       const contentOnly = chunk.filter(
         (line) =>
           !line.startsWith('### Integration:') &&
@@ -78,14 +65,10 @@ async function addIntegrationDataAsNote(payload, options) {
     }
   }
 
-  // Add Annotations (at the very end, if present)
   if (annotations && annotations.data?.length) {
-    const annotationText = formatAnnotationsAsFixedWidthText(payload.annotations, 300);
+    const annotationText = formatAnnotationsAsFixedWidthText(payload.annotations);
     allNoteChunks.push(['### Polarity Annotations', '', ...annotationText.split('\n')]);
   }
-
-  Logger.info(`Total flattened lines across integrations: ${allNoteChunks.flat().length}`);
-  Logger.info(`Total note chunks: ${allNoteChunks.length}`);
 
   const newlyCreatedNotes = [];
 
@@ -115,9 +98,8 @@ function splitLinesByCharacterLimit(lines, maxChars) {
   let currentLength = 0;
 
   for (const line of lines) {
-    const lineLength = line.length + 1; // +1 for newline
+    const lineLength = line.length + 1;
 
-    // Split the line itself if it's longer than maxChars
     if (lineLength > maxChars) {
       const slicedLines = line.match(new RegExp(`.{1,${maxChars - 1}}`, 'g')) || [];
       for (const sliced of slicedLines) {
@@ -152,26 +134,22 @@ function splitLinesByCharacterLimit(lines, maxChars) {
 function formatAnnotationsAsFixedWidthText(annotations) {
   if (!annotations || !annotations.data || annotations.data.length === 0) return '';
 
-  // Get unique headers dynamically
   const headers = Array.from(
     new Set(annotations.data.flatMap((a) => Object.keys(a || {})).filter((k) => typeof k === 'string'))
   );
 
   const rows = annotations.data.map((entry) => headers.map((key) => (entry[key] != null ? String(entry[key]) : '')));
 
-  // Determine natural column widths (longest word per column)
   const columnWidths = headers.map((_, i) => Math.max(headers[i].length, ...rows.map((row) => row[i]?.length || 0)));
 
   const pad = (text, width) => text.padEnd(width, ' ');
 
   const lines = [];
 
-  // Header with Sentence Case
   const headerLabels = headers.map((h) => h.charAt(0).toUpperCase() + h.slice(1).toLowerCase());
   lines.push(headerLabels.map((h, i) => pad(h, columnWidths[i])).join(' | '));
   lines.push(columnWidths.map((w) => '-'.repeat(w)).join('-|-'));
 
-  // Rows
   for (const row of rows) {
     lines.push(row.map((cell, i) => pad(cell, columnWidths[i])).join(' | '));
   }

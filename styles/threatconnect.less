@@ -250,6 +250,10 @@ a.tc-link-tag {
     margin-bottom: 0px;
   }
 
+  &:first-child {
+    margin-top: 10px;
+  }
+
   .card-title {
     border-bottom: 1px solid #eee;
     margin: 0px;
@@ -815,5 +819,33 @@ a.tc-link-tag:hover {
         background-color: #eee;
       }
     }
+  }
+}
+
+.btn-push-data {
+  height: 27px !important;
+  width: 91px;
+  font-size: 0.775rem !important;
+  color: #ffffff;
+  background-color: #7bc942;
+  border-color: #7bc942;
+
+  &:hover {
+    background-color: #63a830;
+    border-color: #63a830;
+  }
+
+  &.cancel {
+    background-color: #00000000;
+    color: black;
+    border-color: #00000000;
+    font-weight: 500;
+  }
+
+  &.cancel:active {
+    background-color: #00000000;
+    color: black;
+    border-color: #00000000;
+    font-weight: 500;
   }
 }
