@@ -87,6 +87,70 @@ polarity.export = PolarityComponent.extend({
         Ember.set(caseObj, '__severityColor', '');
     }
   },
+  parseMarkdownTablesForIndicator(indicatorId) {
+    const casePath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+    const casesArray = this.get(casePath) || [];
+
+    casesArray.forEach((caseObj, caseIndex) => {
+      const notesPath = `${casePath}.${caseIndex}.notes.data`;
+      const notesArray = this.get(notesPath) || [];
+
+      notesArray.forEach((note) => {
+        const markdown = note.text;
+        if (!markdown || !markdown.includes('|')) {
+          Ember.set(note, '__renderedHtml', markdown);
+          return;
+        }
+
+        const lines = markdown.trim().split('\n');
+
+        if (lines.length < 2) {
+          Ember.set(note, '__renderedHtml', markdown);
+          return;
+        }
+
+        const headers = lines[0]
+          .split('|')
+          .map((h) => h.trim())
+          .filter(Boolean);
+        const rows = lines
+          .slice(1)
+          .filter(function (line) {
+            return !/^\s*\|?(?:\s*:?-+:?\s*\|)+\s*$/.test(line.trim());
+          })
+          .map(function (line) {
+            return line
+              .split('|')
+              .map(function (cell) {
+                return cell.trim();
+              })
+              .filter(Boolean);
+          });
+
+        let html = '<div class="table-wrapper">';
+        html += '<table class="markdown-table equal-width-table"><thead><tr>';
+
+        headers.forEach(function (header) {
+          html += '<th>' + header + '</th>';
+        });
+        html += '</tr></thead></table>';
+
+        html += '<div class="table-body-wrapper">';
+        html += '<table class="markdown-table equal-width-table"><tbody>';
+        rows.forEach(function (row) {
+          html += '<tr>';
+          row.forEach(function (cell) {
+            html += '<td>' + cell + '</td>';
+          });
+          html += '</tr>';
+        });
+        html += '</tbody></table></div>'; // END wrapper
+        html += '</div>';
+
+        Ember.set(note, '__renderedHtml', html);
+      });
+    });
+  },
   init() {
     let array = new Uint32Array(5);
     this.set('uniqueIdPrefix', window.crypto.getRandomValues(array).join(''));
@@ -127,6 +191,43 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
+    transformMarkdownTable(note) {
+      console.log('Transforming markdown table for note:', note);
+      const markdown = note.text;
+      const lines = markdown.trim().split('\n');
+
+      if (lines.length < 2) {
+        Ember.set(note, '__renderedHtml', '<p>Invalid markdown table</p>');
+        return;
+      }
+
+      const headers = lines[0]
+        .split('|')
+        .map((h) => h.trim())
+        .filter(Boolean);
+      const rows = lines.slice(2).map((line) =>
+        line
+          .split('|')
+          .map((cell) => cell.trim())
+          .filter(Boolean)
+      );
+
+      let html = '<table class="markdown-table"><thead><tr>';
+      headers.forEach((header) => {
+        html += `<th>${header}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+      rows.forEach((row) => {
+        html += '<tr>';
+        row.forEach((cell) => {
+          html += `<td>${cell}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+
+      Ember.set(note, '__renderedHtml', html);
+    },
     toggleEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
@@ -897,56 +998,6 @@ polarity.export = PolarityComponent.extend({
           }
         });
     },
-    transformNoteText(noteText) {
-      if (!noteText || typeof noteText !== 'string') {
-        return htmlSafe('<pre>Invalid note</pre>');
-      }
-
-      const lines = noteText.trim().split('\n');
-
-      const tableStartIndex = lines.findIndex(
-        (line, idx) => line.includes('|') && lines[idx + 1]?.includes('|') && lines[idx + 2].includes('|')
-      );
-
-      if (tableStartIndex === -1) {
-        return htmlSafe(`<pre>${Ember.Handlebars.Utils.escapeExpression(noteText)}</pre>`);
-      }
-
-      const preTable = lines.slice(0, tableStartIndex).join('<br/>');
-      const headerLine = lines[tableStartIndex];
-      const tableLines = [];
-
-      for (let i = tableStartIndex + 2; i < lines.length; i++) {
-        const line = lines[i];
-        if (!line.includes('|')) break;
-        tableLines.push(line);
-      }
-
-      const headers = headerLine.split('|').map((h) => h.trim());
-      const rows = tableLines.map((line) => line.split('|').map((cell) => cell.trim()));
-
-      let html = '';
-      if (preTable) {
-        html += `<pre>${Ember.Handlebars.Utils.escapeExpression(preTable)}</pre>`;
-      }
-
-      html += '<table style="border-collapse: collapse; width: 100%;">';
-      html += '<thead><tr>';
-      headers.forEach((header) => {
-        html += `<th style="border: 1px solid #ccc; padding: 4px; background: #f9f9f9;">${header}</th>`;
-      });
-      html += '</tr></thead><tbody>';
-      rows.forEach((row) => {
-        html += '<tr>';
-        row.forEach((cell) => {
-          html += `<td style="border: 1px solid #ccc; padding: 4px;">${cell}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-
-      return htmlSafe(html);
-    },
     clearCreateNoteFields(caseObj) {
       const issueFields = caseObj.__state.issueFields;
 
@@ -1193,6 +1244,9 @@ polarity.export = PolarityComponent.extend({
           this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
         } else {
           this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
+        }
+        if (field === 'associatedCases') {
+          this.parseMarkdownTablesForIndicator(indicatorId);
         }
       }
     } catch (err) {

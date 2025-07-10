@@ -46,9 +46,7 @@ async function addIntegrationDataAsNote(payload, options) {
       const chunk = [...chunks[i]];
       const finalChunk = [];
 
-      if (i === 0) {
-        finalChunk.push(...headerLines);
-      }
+      finalChunk.push(...headerLines);
 
       finalChunk.push(...TABLE_HEADER);
 
@@ -135,24 +133,43 @@ function formatAnnotationsAsFixedWidthText(annotations) {
   if (!annotations || !annotations.data || annotations.data.length === 0) return '';
 
   const headers = Array.from(
-    new Set(annotations.data.flatMap((a) => Object.keys(a || {})).filter((k) => typeof k === 'string'))
+    new Set(
+      annotations.data
+        .flatMap(function (a) {
+          return Object.keys(a || {});
+        })
+        .filter(function (k) {
+          return typeof k === 'string';
+        })
+    )
   );
 
-  const rows = annotations.data.map((entry) => headers.map((key) => (entry[key] != null ? String(entry[key]) : '')));
+  const capitalizedHeaders = headers.map(function (h) {
+    return h.charAt(0).toUpperCase() + h.slice(1).toLowerCase();
+  });
 
-  const columnWidths = headers.map((_, i) => Math.max(headers[i].length, ...rows.map((row) => row[i]?.length || 0)));
+  const rows = annotations.data.map(function (entry) {
+    return headers.map(function (key) {
+      return entry[key] != null ? String(entry[key]) : '';
+    });
+  });
 
-  const pad = (text, width) => text.padEnd(width, ' ');
+  var lines = [];
 
-  const lines = [];
+  lines.push('| ' + capitalizedHeaders.join(' | ') + ' |');
+  lines.push(
+    '| ' +
+      headers
+        .map(function () {
+          return '---';
+        })
+        .join(' | ') +
+      ' |'
+  );
 
-  const headerLabels = headers.map((h) => h.charAt(0).toUpperCase() + h.slice(1).toLowerCase());
-  lines.push(headerLabels.map((h, i) => pad(h, columnWidths[i])).join(' | '));
-  lines.push(columnWidths.map((w) => '-'.repeat(w)).join('-|-'));
-
-  for (const row of rows) {
-    lines.push(row.map((cell, i) => pad(cell, columnWidths[i])).join(' | '));
-  }
+  rows.forEach(function (row) {
+    lines.push('| ' + row.join(' | ') + ' |');
+  });
 
   return lines.join('\n');
 }
@@ -172,7 +189,6 @@ async function addNote(caseId, options, noteBody) {
 
   Logger.debug(
     {
-      //requestOptions,
       textNodeLength: countTextNodeLength(requestOptions.body),
       commentLength: noteString.length,
       fileSize: getStringSize(noteString)
@@ -196,58 +212,6 @@ async function addNote(caseId, options, noteBody) {
   }
 
   return apiResponse.body;
-}
-
-function flattenContentDataToText(contentData) {
-  if (!contentData) return [];
-  if (Array.isArray(contentData)) {
-    return contentData.map((block) => flattenSingleBlock(block)).flat();
-  } else {
-    return flattenSingleBlock(contentData);
-  }
-}
-
-function flattenSingleBlock(block) {
-  if (!block) return [];
-
-  switch (block.type) {
-    case 'paragraph':
-      return [block.content?.map((node) => node.text).join('') || ''];
-    case 'heading':
-      const level = block.attrs?.level || 3;
-      const hashes = '#'.repeat(level);
-      return [`${hashes} ${block.content?.map((n) => n.text).join('') || ''}`];
-    case 'rule':
-      return ['---'];
-    case 'expand':
-      return flattenContentDataToText(block.content);
-    case 'table':
-      return flattenTable(block);
-    case 'panel':
-      return flattenContentDataToText(block.content);
-    default:
-      return [];
-  }
-}
-
-function flattenTable(table) {
-  const lines = [];
-  for (const row of table.content || []) {
-    const cells = row.content || [];
-    const rowText = cells
-      .map((cell) =>
-        (cell.content || []).map((paragraph) => paragraph.content?.map((n) => n.text).join('') || '').join(' ')
-      )
-      .join(' | ');
-    lines.push(rowText);
-  }
-  return lines;
-}
-
-function formatAnnotationsAsText(annotations) {
-  return annotations.data
-    .map((a) => `- ${a.tag} (Channel: ${a.channel}, User: ${a.user}, Applied: ${a.applied})`)
-    .join('\n');
 }
 
 function truncateIfNeeded(text, limit) {
@@ -423,57 +387,6 @@ function getTagText(tag) {
   return 'Tag unavailable';
 }
 
-function getTags(tags) {
-  if (Array.isArray(tags) && tags.length === 0) {
-    tags.push('No summary tags available');
-  }
-
-  return {
-    type: 'paragraph',
-    content: [
-      ...tags
-        .map((tag) => {
-          return [
-            {
-              type: 'text',
-              text: getTagText(tag),
-              marks: [
-                {
-                  type: 'code'
-                }
-              ]
-            },
-            {
-              type: 'text',
-              text: ' '
-            }
-          ];
-        })
-        .flat()
-    ]
-  };
-}
-
-function getPanel(text, type = 'info') {
-  return {
-    type: 'panel',
-    content: [
-      {
-        type: 'paragraph',
-        content: [
-          {
-            type: 'text',
-            text: text
-          }
-        ]
-      }
-    ],
-    attrs: {
-      panelType: type
-    }
-  };
-}
-
 /**
  * Converts the flattened integration data which is in the format
  * ```
@@ -561,14 +474,12 @@ function formatTableFromFlattenedData(flattenedData, fieldWidth = 300, valueWidt
   const lines = [];
 
   for (const [key, rawValue] of Object.entries(flattenedData)) {
-    // Format and truncate key
     const truncatedKey = truncateAndEscape(String(key), fieldWidth);
 
-    // Format and truncate value
     const raw = formatValue(rawValue);
     const truncatedValue = truncateAndEscape(raw, valueWidth);
 
-    lines.push(`${truncatedKey} | ${truncatedValue}`);
+    lines.push(`| ${truncatedKey} | ${truncatedValue} |`);
   }
 
   return lines;
@@ -577,88 +488,6 @@ function formatTableFromFlattenedData(flattenedData, fieldWidth = 300, valueWidt
 function truncateAndEscape(text, maxLength) {
   const clean = text.replace(/\|/g, '\\|');
   return clean.length > maxLength ? clean.slice(0, maxLength - 3) + '...' : clean;
-}
-
-/**
- * Get a table row for a flat object (i.e., an object where every value is a primitive value and there is no nesting).
- * For Flat objects we format the entire into the table cell as key: value pairs just like in integration details block.
- * The key is colored in a light gray and the value is the default color (black).
- * @param data
- * @returns {{type: string, content: [{type: string, attrs: {}, content: [{type: string, content: [{type: string, text}]}]},{type: string, attrs: {}, content: [{type: string, content: FlatArray<([{type: string, text: string, marks: [{type: string, attrs: {color: string}}]},{type: string, text: string}]|undefined)[], 1>[]}]}]}}
- */
-function getFlatObjectTableRow(data) {
-  const row = {
-    type: 'tableRow',
-    content: [
-      {
-        type: 'tableCell',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              {
-                type: 'text',
-                text: data.key
-              }
-            ]
-          }
-        ]
-      },
-      {
-        type: 'tableCell',
-        attrs: {},
-        content: [
-          {
-            type: 'paragraph',
-            content: [
-              // data.value is a flat object (i.e., every value is a primitive value and there is no nesting)
-              ...Object.keys(data.value)
-                .map((key, index) => {
-                  // We don't want to
-                  if (!isValueToIgnore(data.value[key])) {
-                    const line = [
-                      {
-                        type: 'text',
-                        text: key,
-                        marks: [
-                          {
-                            type: 'textColor',
-                            attrs: {
-                              color: '#97a0af'
-                            }
-                          }
-                        ]
-                      },
-                      {
-                        type: 'text',
-                        text: `: ${data.value[key]}`
-                      }
-                    ];
-                    // Ensure no line break for the last key-value pair
-                    if (index !== Object.keys(data.value).length - 1) {
-                      line.push({
-                        type: 'hardBreak'
-                      });
-                    }
-                    return line;
-                  }
-                  return [];
-                })
-                .flat()
-            ]
-          }
-        ]
-      }
-    ]
-  };
-
-  if (row.content[1].content[0].content.length === 0) {
-    // returning an empty object will leave this out of the note
-    return [];
-  }
-
-  return row;
 }
 
 function stringIsBase64Image(value) {

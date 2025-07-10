@@ -1586,7 +1586,6 @@
 
                     <div class="pr-1">
                       {{#each case.notes.data as |note noteIndex|}}
-                        
                         {{#if note}}
                           <div class="card">
                             <div class="card-title-no-border">
@@ -1604,7 +1603,8 @@
                               <div
                                 class="note-summary {{if note.__isExpanded 'expanded'}}"
                                 data-note-id="note-{{case.id}}-{{noteIndex}}"
-                              >{{note.text}}</div>
+                              >{{{note.__renderedHtml}}}
+                              </div>
                             </div>
                             {{#if note.__showToggle}}
                               <div class="view-toggle-wrapper">

@@ -733,7 +733,7 @@ a.tc-link-tag:hover {
 }
 
 .note-container {
-  max-height: 200px;
+  max-height: 500px;
   overflow-y: auto;
   overflow-x: auto;
   margin: 6px;
@@ -839,13 +839,52 @@ a.tc-link-tag:hover {
     background-color: #00000000;
     color: black;
     border-color: #00000000;
-    font-weight: 500;
+    font-weight: 400;
   }
 
   &.cancel:active {
     background-color: #00000000;
     color: black;
     border-color: #00000000;
-    font-weight: 500;
+    font-weight: 400;
   }
+}
+
+.table-wrapper {
+  width: 100%;
+}
+
+.table-body-wrapper {
+  max-height: 20px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.equal-width-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.equal-width-table thead,
+.equal-width-table tbody,
+.equal-width-table tr {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+
+.equal-width-table th,
+.equal-width-table td {
+  min-width: 100px;
+  width: 1%; /* helps equalize columns */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  padding: 6px;
+  text-align: left;
+}
+
+.note-summary.expanded .table-body-wrapper {
+  max-height: none;
 }
