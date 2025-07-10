@@ -568,7 +568,7 @@ function formatTableFromFlattenedData(flattenedData, fieldWidth = 300, valueWidt
     const raw = formatValue(rawValue);
     const truncatedValue = truncateAndEscape(raw, valueWidth);
 
-    lines.push(`| ${truncatedKey} | ${truncatedValue} |`);
+    lines.push(`${truncatedKey} | ${truncatedValue}`);
   }
 
   return lines;

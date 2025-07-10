@@ -897,6 +897,56 @@ polarity.export = PolarityComponent.extend({
           }
         });
     },
+    transformNoteText(noteText) {
+      if (!noteText || typeof noteText !== 'string') {
+        return htmlSafe('<pre>Invalid note</pre>');
+      }
+
+      const lines = noteText.trim().split('\n');
+
+      const tableStartIndex = lines.findIndex(
+        (line, idx) => line.includes('|') && lines[idx + 1]?.includes('|') && lines[idx + 2].includes('|')
+      );
+
+      if (tableStartIndex === -1) {
+        return htmlSafe(`<pre>${Ember.Handlebars.Utils.escapeExpression(noteText)}</pre>`);
+      }
+
+      const preTable = lines.slice(0, tableStartIndex).join('<br/>');
+      const headerLine = lines[tableStartIndex];
+      const tableLines = [];
+
+      for (let i = tableStartIndex + 2; i < lines.length; i++) {
+        const line = lines[i];
+        if (!line.includes('|')) break;
+        tableLines.push(line);
+      }
+
+      const headers = headerLine.split('|').map((h) => h.trim());
+      const rows = tableLines.map((line) => line.split('|').map((cell) => cell.trim()));
+
+      let html = '';
+      if (preTable) {
+        html += `<pre>${Ember.Handlebars.Utils.escapeExpression(preTable)}</pre>`;
+      }
+
+      html += '<table style="border-collapse: collapse; width: 100%;">';
+      html += '<thead><tr>';
+      headers.forEach((header) => {
+        html += `<th style="border: 1px solid #ccc; padding: 4px; background: #f9f9f9;">${header}</th>`;
+      });
+      html += '</tr></thead><tbody>';
+      rows.forEach((row) => {
+        html += '<tr>';
+        row.forEach((cell) => {
+          html += `<td style="border: 1px solid #ccc; padding: 4px;">${cell}</td>`;
+        });
+        html += '</tr>';
+      });
+      html += '</tbody></table>';
+
+      return htmlSafe(html);
+    },
     clearCreateNoteFields(caseObj) {
       const issueFields = caseObj.__state.issueFields;
 
