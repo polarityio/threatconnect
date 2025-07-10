@@ -305,7 +305,7 @@ async function onMessage(payload, options, cb) {
       Logger.info('Adding integration data as note', payload);
       Logger.info('Options:', options.enableAddingNotes);
       try {
-        let note;
+        let notes;
         if (!options.enableAddingNotes) {
           return cb(null, {
             error: {
@@ -315,10 +315,10 @@ async function onMessage(payload, options, cb) {
         }
 
         if (payload.includeIntegrationData) {
-          note = await addIntegrationDataAsNote(payload, options);
+          notes = await addIntegrationDataAsNote(payload, options);
         }
         cb(null, {
-          note
+          notes
         });
       } catch (error) {
         cb(error, {

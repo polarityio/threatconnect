@@ -87,69 +87,64 @@ polarity.export = PolarityComponent.extend({
         Ember.set(caseObj, '__severityColor', '');
     }
   },
-  parseMarkdownTablesForIndicator(indicatorId) {
-    const casePath = `indicators.${indicatorId}.indicator.associatedCases.data`;
-    const casesArray = this.get(casePath) || [];
+  parseMarkdownTables({ text, indicatorId } = {}) {
+    // Fallback: if `text` is not directly passed, try to resolve via indicatorId
+    if (!text && indicatorId) {
+      const casePath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(casePath) || [];
 
-    casesArray.forEach((caseObj, caseIndex) => {
-      const notesPath = `${casePath}.${caseIndex}.notes.data`;
-      const notesArray = this.get(notesPath) || [];
+      casesArray.forEach((caseObj, caseIndex) => {
+        const notesPath = `${casePath}.${caseIndex}.notes.data`;
+        const notesArray = this.get(notesPath) || [];
 
-      notesArray.forEach((note) => {
-        const markdown = note.text;
-        if (!markdown || !markdown.includes('|')) {
-          Ember.set(note, '__renderedHtml', markdown);
-          return;
-        }
-
-        const lines = markdown.trim().split('\n');
-
-        if (lines.length < 2) {
-          Ember.set(note, '__renderedHtml', markdown);
-          return;
-        }
-
-        const headers = lines[0]
-          .split('|')
-          .map((h) => h.trim())
-          .filter(Boolean);
-        const rows = lines
-          .slice(1)
-          .filter(function (line) {
-            return !/^\s*\|?(?:\s*:?-+:?\s*\|)+\s*$/.test(line.trim());
-          })
-          .map(function (line) {
-            return line
-              .split('|')
-              .map(function (cell) {
-                return cell.trim();
-              })
-              .filter(Boolean);
-          });
-
-        let html = '<div class="table-wrapper">';
-        html += '<table class="markdown-table equal-width-table"><thead><tr>';
-
-        headers.forEach(function (header) {
-          html += '<th>' + header + '</th>';
+        notesArray.forEach((note) => {
+          note.__renderedHtml = this.parseMarkdownTables({ text: note.text });
         });
-        html += '</tr></thead></table>';
-
-        html += '<div class="table-body-wrapper">';
-        html += '<table class="markdown-table equal-width-table"><tbody>';
-        rows.forEach(function (row) {
-          html += '<tr>';
-          row.forEach(function (cell) {
-            html += '<td>' + cell + '</td>';
-          });
-          html += '</tr>';
-        });
-        html += '</tbody></table></div>'; // END wrapper
-        html += '</div>';
-
-        Ember.set(note, '__renderedHtml', html);
       });
+
+      return; // we're done (batch mutation mode)
+    }
+
+    // === Parse single text input ===
+    if (!text || !text.includes('|')) return text;
+
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return text;
+
+    const headers = lines[0]
+      .split('|')
+      .map((h) => h.trim())
+      .filter(Boolean);
+
+    const rows = lines
+      .slice(1)
+      .filter((line) => !/^\s*\|?(?:\s*:?-+:?\s*\|)+\s*$/.test(line.trim()))
+      .map((line) =>
+        line
+          .split('|')
+          .map((cell) => cell.trim())
+          .filter(Boolean)
+      );
+
+    let html = '<div class="table-wrapper">';
+    html += '<table class="markdown-table equal-width-table"><thead><tr>';
+    headers.forEach((header) => {
+      html += `<th>${header}</th>`;
     });
+    html += '</tr></thead></table>';
+
+    html += '<div class="table-body-wrapper">';
+    html += '<table class="markdown-table equal-width-table"><tbody>';
+    rows.forEach((row) => {
+      html += '<tr>';
+      row.forEach((cell) => {
+        html += `<td>${cell}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    return html;
   },
   init() {
     let array = new Uint32Array(5);
@@ -191,43 +186,6 @@ polarity.export = PolarityComponent.extend({
     }
   },
   actions: {
-    transformMarkdownTable(note) {
-      console.log('Transforming markdown table for note:', note);
-      const markdown = note.text;
-      const lines = markdown.trim().split('\n');
-
-      if (lines.length < 2) {
-        Ember.set(note, '__renderedHtml', '<p>Invalid markdown table</p>');
-        return;
-      }
-
-      const headers = lines[0]
-        .split('|')
-        .map((h) => h.trim())
-        .filter(Boolean);
-      const rows = lines.slice(2).map((line) =>
-        line
-          .split('|')
-          .map((cell) => cell.trim())
-          .filter(Boolean)
-      );
-
-      let html = '<table class="markdown-table"><thead><tr>';
-      headers.forEach((header) => {
-        html += `<th>${header}</th>`;
-      });
-      html += '</tr></thead><tbody>';
-      rows.forEach((row) => {
-        html += '<tr>';
-        row.forEach((cell) => {
-          html += `<td>${cell}</td>`;
-        });
-        html += '</tr>';
-      });
-      html += '</tbody></table>';
-
-      Ember.set(note, '__renderedHtml', html);
-    },
     toggleEdit(caseId, indicatorId) {
       const indicatorPath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(indicatorPath);
@@ -947,7 +905,6 @@ polarity.export = PolarityComponent.extend({
       let annotations;
 
       if (state.integrations) {
-        console.log('INTEGRATIONS', state.integrations);
         selectedIntegrations = state.integrations.filter(
           (integration) => integration.selected && !integration.isAnnotations
         );
@@ -959,10 +916,7 @@ polarity.export = PolarityComponent.extend({
         return;
       }
 
-      console.log('ANNOTATIONS', annotations);
-      console.log('SELECTED INTEGRATIONS', selectedIntegrations);
       console.log('Obj id', caseObj);
-      Ember.set(state, 'isCreatingNote', true);
 
       const payload = {
         action: 'ADD_INTEGRATION_DATA_AS_NOTE',
@@ -980,6 +934,32 @@ polarity.export = PolarityComponent.extend({
         .then((result) => {
           console.log('Result', result);
           this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
+
+          const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
+          const casesArray = this.get(indicatorPath);
+
+          const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
+          if (caseToUpdate) {
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
+          }
+
+          const rawNotes = (result.notes || []).map((entry) => entry.data.notes.data || []).flat();
+
+          const processedNotes = rawNotes.map((note) => {
+            const text = note.text || '';
+            return Object.assign({}, note, {
+              __renderedHtml: this.parseMarkdownTables({ text: text }),
+              __isExpanded: false
+            });
+          });
+          console.log('Processed Notes', processedNotes);
+          this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.notes.data`, processedNotes);
+          this.checkNoteOverflow(caseObj.id, caseObj.indicatorId);
+          this.set(
+            `${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__successMessage`,
+            'Note created successfully'
+          );
+
           Ember.set(state, 'lastCreatedNote', result.note);
           Ember.set(state, 'showCreateNote', false);
         })
@@ -1246,7 +1226,7 @@ polarity.export = PolarityComponent.extend({
           this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
         }
         if (field === 'associatedCases') {
-          this.parseMarkdownTablesForIndicator(indicatorId);
+          this.parseMarkdownTables({ indicatorId });
         }
       }
     } catch (err) {
