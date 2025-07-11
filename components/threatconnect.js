@@ -897,8 +897,6 @@ polarity.export = PolarityComponent.extend({
     createNote(caseObj) {
       const state = caseObj.__state;
 
-      // this.clearErrorsForCase(caseObj);
-
       const includeIntegrationData = state.showIntegrationData;
       let selectedIntegrations = [];
       let annotations;
