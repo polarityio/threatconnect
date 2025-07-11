@@ -941,13 +941,15 @@ polarity.export = PolarityComponent.extend({
 
           const rawNotes = (result.notes || []).map((entry) => entry.data.notes.data || []).flat();
 
-          const processedNotes = rawNotes.map((note) => {
-            const text = note.text || '';
-            return Object.assign({}, note, {
-              __renderedHtml: this.parseMarkdownTables({ text: text }),
-              __isExpanded: false
+          const processedNotes = rawNotes
+            .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+            .map((note) => {
+              const text = note.text || '';
+              return Object.assign({}, note, {
+                __renderedHtml: this.parseMarkdownTables({ text: text }),
+                __isExpanded: false
+              });
             });
-          });
           this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.notes.data`, processedNotes);
           this.send('checkNoteOverflow', caseObj.id, caseObj.indicatorId);
           this.set(
