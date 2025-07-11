@@ -886,7 +886,6 @@ polarity.export = PolarityComponent.extend({
       this.setNumSelectedIntegrations(caseObj);
     },
     toggleCaseIntegrationCheckbox(caseObj, event) {
-      console.log('Got here 1');
       const checked = event.target.checked;
 
       Ember.set(caseObj.__state, 'showIntegrationData', checked);
@@ -916,8 +915,6 @@ polarity.export = PolarityComponent.extend({
         return;
       }
 
-      console.log('Obj id', caseObj);
-
       const payload = {
         action: 'ADD_INTEGRATION_DATA_AS_NOTE',
         caseId: caseObj.id,
@@ -932,7 +929,6 @@ polarity.export = PolarityComponent.extend({
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
-          console.log('Result', result);
           this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
 
           const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
@@ -952,9 +948,8 @@ polarity.export = PolarityComponent.extend({
               __isExpanded: false
             });
           });
-          console.log('Processed Notes', processedNotes);
           this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.notes.data`, processedNotes);
-          this.checkNoteOverflow(caseObj.id, caseObj.indicatorId);
+          this.send('checkNoteOverflow', caseObj.id, caseObj.indicatorId);
           this.set(
             `${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__successMessage`,
             'Note created successfully'
@@ -1002,10 +997,8 @@ polarity.export = PolarityComponent.extend({
     }
   },
   refreshIntegrationsForCase(caseObj) {
-    console.log('Got here 2');
     const integrationData = this.getIntegrationData();
     const annotations = this.getAnnotations();
-    console.log('INTEGRATION DATA', integrationData);
     if (Array.isArray(annotations) && annotations.length > 0) {
       integrationData.unshift({
         integrationName: 'Polarity Annotations',
