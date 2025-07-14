@@ -1256,7 +1256,10 @@
                             {{on "input" (pick "target.value" (set case "__newDescription"))}}
                           >{{or case.__newDescription case.description}}</textarea>
                         {{else}}
-                          <span class="info-bar-value" style="white-space: pre-line;">{{case.description}}</span>
+                          <span class="info-bar-value" style="white-space: pre-line;">{{or
+                              case.description
+                              "---"
+                            }}</span>
                         {{/if}}
                       </div>
                       <div class="info-bar-row">
