@@ -136,7 +136,8 @@ polarity.export = PolarityComponent.extend({
     rows.forEach((row) => {
       html += '<tr>';
       row.forEach((cell) => {
-        html += `<td>${cell}</td>`;
+        const processed = cell.replace(/([^\s:]+:\s[^:\n]+)(?=\s|$)/g, '$1<br>').trim();
+        html += `<td>${processed}</td>`;
       });
       html += '</tr>';
     });
