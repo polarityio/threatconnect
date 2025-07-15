@@ -92,9 +92,9 @@
       "adminOnly": false
     },
     {
-      "key": "enableAddingNotes",
-      "name": "Enable Adding Notes to a Case",
-      "description": "If enabled, users will be able to add notes to a case. This option must be set to \"Lock and show option for all users\".",
+      "key": "enableAddingIntegrationData",
+      "name": "Enable Adding Integration Data to a Case",
+      "description": "If enabled, users will be able to add integration data to a case. This option must be set to \"Lock and show option for all users\".",
       "default": false,
       "type": "boolean",
       "userCanEdit": false,

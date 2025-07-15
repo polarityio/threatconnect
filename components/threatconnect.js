@@ -88,7 +88,6 @@ polarity.export = PolarityComponent.extend({
     }
   },
   parseMarkdownTables({ text, indicatorId } = {}) {
-    // Fallback: if `text` is not directly passed, try to resolve via indicatorId
     if (!text && indicatorId) {
       const casePath = `indicators.${indicatorId}.indicator.associatedCases.data`;
       const casesArray = this.get(casePath) || [];
@@ -102,10 +101,9 @@ polarity.export = PolarityComponent.extend({
         });
       });
 
-      return; // we're done (batch mutation mode)
+      return;
     }
 
-    // === Parse single text input ===
     if (!text || !text.includes('|')) return text;
 
     const lines = text.trim().split('\n');
@@ -880,7 +878,7 @@ polarity.export = PolarityComponent.extend({
         Ember.set(integration, 'selected', hasUnselected);
       });
 
-      this.setNumSelectedIntegrationsForCase(caseObj);
+      this.setNumSelectedIntegrations(caseObj);
     },
     addNoteIntegrationSelected(caseObj) {
       this.setNumSelectedIntegrations(caseObj);
@@ -891,7 +889,7 @@ polarity.export = PolarityComponent.extend({
       Ember.set(caseObj.__state, 'showIntegrationData', checked);
 
       if (checked) {
-        this.refreshIntegrationsForCase(caseObj);
+        this.send('refreshIntegrations', caseObj);
       }
     },
     createNote(caseObj) {
@@ -927,36 +925,41 @@ polarity.export = PolarityComponent.extend({
 
       this.sendIntegrationMessage(payload)
         .then((result) => {
-          this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this.flashMessage(`${result.error.detail}`, 'danger');
+          } else {
+            this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
 
-          const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
-          const casesArray = this.get(indicatorPath);
+            const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
+            const casesArray = this.get(indicatorPath);
 
-          const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
-          if (caseToUpdate) {
-            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
-          }
+            const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
+            if (caseToUpdate) {
+              this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
+            }
 
-          const rawNotes = (result.notes || []).map((entry) => entry.data.notes.data || []).flat();
+            const rawNotes = (result.notes || []).map((entry) => entry.data.notes.data || []).flat();
 
-          const processedNotes = rawNotes
-            .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
-            .map((note) => {
-              const text = note.text || '';
-              return Object.assign({}, note, {
-                __renderedHtml: this.parseMarkdownTables({ text: text }),
-                __isExpanded: false
+            const processedNotes = rawNotes
+              .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+              .map((note) => {
+                const text = note.text || '';
+                return Object.assign({}, note, {
+                  __renderedHtml: this.parseMarkdownTables({ text: text }),
+                  __isExpanded: false
+                });
               });
-            });
-          this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.notes.data`, processedNotes);
-          this.send('checkNoteOverflow', caseObj.id, caseObj.indicatorId);
-          this.set(
-            `${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__successMessage`,
-            'Note created successfully'
-          );
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.notes.data`, processedNotes);
+            this.send('checkNoteOverflow', caseObj.id, caseObj.indicatorId);
+            this.set(
+              `${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__successMessage`,
+              'Note created successfully'
+            );
 
-          Ember.set(state, 'lastCreatedNote', result.note);
-          Ember.set(state, 'showCreateNote', false);
+            Ember.set(state, 'lastCreatedNote', result.note);
+            Ember.set(state, 'showCreateNote', false);
+          }
         })
         .catch((e) => {
           console.error('Failed to create note', e);
@@ -994,22 +997,21 @@ polarity.export = PolarityComponent.extend({
     cancelIntegrationNote(caseObj) {
       Ember.set(caseObj.__state, 'showIntegrationData', false);
       this.send('clearCreateNoteFields', caseObj);
-    }
-  },
-  refreshIntegrationsForCase(caseObj) {
-    const integrationData = this.getIntegrationData();
-    const annotations = this.getAnnotations();
-    if (Array.isArray(annotations) && annotations.length > 0) {
-      integrationData.unshift({
-        integrationName: 'Polarity Annotations',
-        data: annotations,
-        selected: false,
-        isAnnotations: true
-      });
-    }
+    },
+    refreshIntegrations(caseObj) {
+      console.log('got gere');
+      if (!caseObj || !caseObj.__state) return;
 
-    Ember.set(caseObj.__state, 'integrations', integrationData);
-    Ember.set(caseObj.__state, 'numSelectedWriteIntegrations', 0);
+      Ember.set(caseObj.__state, 'spinRefresh', true);
+
+      this.send('setIntegrationSelection', caseObj);
+
+      setTimeout(() => {
+        if (!this.isDestroyed && caseObj.__state) {
+          Ember.set(caseObj.__state, 'spinRefresh', false);
+        }
+      }, 1000);
+    }
   },
   setIssueState: function (issueIndex, key, value) {
     if (!this.get(`pagedPagingData.${issueIndex}.__state`)) {
@@ -1018,6 +1020,7 @@ polarity.export = PolarityComponent.extend({
     this.set(`pagedPagingData.${issueIndex}.__state.${key}`, value);
   },
   getIntegrationData: function () {
+    console.log('Gets here');
     const notificationList = this.notificationsData.getNotificationList();
     const integrationBlocks = notificationList.findByValue(this.get('block.entity.value').toLowerCase());
     return integrationBlocks.blocks.reduce((accum, block) => {
@@ -1052,18 +1055,6 @@ polarity.export = PolarityComponent.extend({
       return annotations;
     }
     return null;
-  },
-  setNumSelectedIntegrationsForCase(caseObj) {
-    const integrations = caseObj.__state.integrations || [];
-    let selectedCount = 0;
-
-    integrations.forEach((integration) => {
-      if (integration.selected) {
-        selectedCount++;
-      }
-    });
-
-    Ember.set(caseObj.__state, 'numSelectedWriteIntegrations', selectedCount);
   },
   setNumSelectedIntegrations(caseObj) {
     if (!caseObj || !caseObj.__state || !Array.isArray(caseObj.__state.integrations)) {

@@ -302,11 +302,9 @@ async function onMessage(payload, options, cb) {
       }
       break;
     case 'ADD_INTEGRATION_DATA_AS_NOTE':
-      Logger.info('Adding integration data as note', payload);
-      Logger.info('Options:', options.enableAddingNotes);
       try {
         let notes;
-        if (!options.enableAddingNotes) {
+        if (!options.enableAddingIntegrationData) {
           return cb(null, {
             error: {
               detail: 'Adding notes is not enabled in the configuration.'
