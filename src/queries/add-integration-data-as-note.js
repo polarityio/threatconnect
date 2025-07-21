@@ -445,7 +445,7 @@ function flattenDeepObject(obj, parentKey = '') {
       const isShallow = keys.every((k) => typeof current[k] !== 'object' || current[k] === null);
 
       if (isShallow) {
-        const collapsed = keys.map((k) => `${k}: ${formatValue(current[k])}`).join(' ');
+        const collapsed = keys.map((k) => `${k}: ${formatValue(current[k])}`).join('<br>');
         if (!isValueToIgnore(collapsed)) {
           result[keyPath] = collapsed;
         }

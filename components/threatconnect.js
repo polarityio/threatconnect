@@ -136,8 +136,7 @@ polarity.export = PolarityComponent.extend({
     rows.forEach((row) => {
       html += '<tr>';
       row.forEach((cell) => {
-        const processed = cell.replace(/([^\s:]+:\s[^:\n]+)(?=\s|$)/g, '$1<br>').trim();
-        html += `<td>${processed}</td>`;
+        html += `<td>${cell}</td>`;
       });
       html += '</tr>';
     });
@@ -493,6 +492,8 @@ polarity.export = PolarityComponent.extend({
           } else {
             this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
 
+            result.data.indicatorId = indicatorId;
+
             let cases = this.get(`${indicatorPath}.associatedCases.data`);
             if (associate) {
               cases.unshiftObject(result.data);
@@ -501,6 +502,7 @@ polarity.export = PolarityComponent.extend({
             const createdCase = cases.find((caseObj) => caseObj.id === result.data.id);
 
             if (createdCase) {
+              this.send('initCaseState', createdCase);
               this.applySeverityColorToCase(createdCase);
               this.applyStatusColorToCase(createdCase);
             }
@@ -575,6 +577,14 @@ polarity.export = PolarityComponent.extend({
       e.stopPropagation();
       return false;
     },
+    initCaseState(caseObj) {
+      Ember.set(caseObj, '__state', {
+        integrations: [],
+        numSelectedWriteIntegrations: 0,
+        showIntegrationData: false,
+        spinRefresh: false
+      });
+    },
     changeTab: async function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
       if (
@@ -588,12 +598,7 @@ polarity.export = PolarityComponent.extend({
           this.applyStatusColorToCase(caseObj);
 
           if (!caseObj.__state) {
-            Ember.set(caseObj, '__state', {
-              showIntegrationData: false,
-              integrations: [],
-              numSelectedWriteIntegrations: 0,
-              spinRefresh: false
-            });
+            this.send('initCaseState', caseObj);
           }
           Ember.set(caseObj.__state, 'displayNoteFields', this.displayNoteFieldsForCase(caseObj));
         });
@@ -864,12 +869,7 @@ polarity.export = PolarityComponent.extend({
     },
     toggleAllIntegrations(caseObj) {
       if (!caseObj.__state) {
-        Ember.set(caseObj, '__state', {
-          integrations: [],
-          numSelectedWriteIntegrations: 0,
-          showIntegrationData: false,
-          spinRefresh: false
-        });
+        this.send('initCaseState', caseObj);
       }
 
       const integrations = caseObj.__state.integrations || [];
@@ -895,6 +895,14 @@ polarity.export = PolarityComponent.extend({
     },
     createNote(caseObj) {
       const state = caseObj.__state;
+
+      const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+
+      const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
+      if (caseToUpdate) {
+        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
+      }
 
       const includeIntegrationData = state.showIntegrationData;
       let selectedIntegrations = [];
@@ -931,14 +939,6 @@ polarity.export = PolarityComponent.extend({
             this.flashMessage(`${result.error.detail}`, 'danger');
           } else {
             this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
-
-            const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
-            const casesArray = this.get(indicatorPath);
-
-            const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
-            if (caseToUpdate) {
-              this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
-            }
 
             const rawNotes = (result.notes || []).map((entry) => entry.data.notes.data || []).flat();
 
@@ -1000,7 +1000,6 @@ polarity.export = PolarityComponent.extend({
       this.send('clearCreateNoteFields', caseObj);
     },
     refreshIntegrations(caseObj) {
-      console.log('got gere');
       if (!caseObj || !caseObj.__state) return;
 
       Ember.set(caseObj.__state, 'spinRefresh', true);
@@ -1021,7 +1020,6 @@ polarity.export = PolarityComponent.extend({
     this.set(`pagedPagingData.${issueIndex}.__state.${key}`, value);
   },
   getIntegrationData: function () {
-    console.log('Gets here');
     const notificationList = this.notificationsData.getNotificationList();
     const integrationBlocks = notificationList.findByValue(this.get('block.entity.value').toLowerCase());
     return integrationBlocks.blocks.reduce((accum, block) => {
