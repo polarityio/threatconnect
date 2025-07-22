@@ -1563,11 +1563,11 @@
                           {{action "createNote" case}}
                           disabled={{or
                             (not displayNoteFieldsForCase)
-                            case.__state.isCreatingNote
+                            case.__state.__isCreatingNote
                             (eq case.__state.numSelectedWriteIntegrations 0)
                           }}
                         >
-                          {{#if case.__state.isCreatingNote}}
+                          {{#if case.__state.__isCreatingNote}}
                             {{fa-icon icon="spinner-third" spin=true fixedWidth=true}}
                           {{else}}
                             Create
@@ -1577,7 +1577,7 @@
                         <button
                           class="btn btn-push-data cancel"
                           {{action "cancelIntegrationNote" case}}
-                          disabled={{case.__state.isCreatingNote}}
+                          disabled={{case.__state.__isCreatingNote}}
                         >
                           Cancel
                         </button>
@@ -1590,7 +1590,7 @@
                     <div class="alert alert-danger error-message mt-2">
                       <div class="d-flex justify-content-between align-items-center mb-2">
                         <div class="error-message-title">
-                          Error pushing integration data as note
+                          {{case.__state.__errorTitle}}
                         </div>
                         <div>
                           {{fa-icon

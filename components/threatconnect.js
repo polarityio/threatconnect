@@ -902,9 +902,14 @@ polarity.export = PolarityComponent.extend({
       const casesArray = this.get(indicatorPath);
 
       const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
-      if (caseToUpdate) {
-        this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
+      if (!caseToUpdate) {
+        const msg = `Could not find case with ID ${caseObj.id}`;
+        console.error(msg);
+        throw new Error(msg);
       }
+
+      const caseIndex = casesArray.indexOf(caseToUpdate);
+      this.set(`${indicatorPath}.${caseIndex}.__state.__isCreatingNote`, true);
 
       Ember.set(state, '__error', false);
       Ember.set(state, '__errorMessage', null);
@@ -979,7 +984,7 @@ polarity.export = PolarityComponent.extend({
           Ember.set(state, '__errorTitle', 'Failed to create note');
         })
         .finally(() => {
-          Ember.set(state, 'isCreatingNote', false);
+          Ember.set(state, '__isCreatingNote', false);
           if (state.integrations) {
             state.integrations.forEach((integration) => {
               Ember.set(integration, 'selected', false);
