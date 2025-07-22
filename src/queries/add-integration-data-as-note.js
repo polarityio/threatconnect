@@ -177,7 +177,7 @@ function formatAnnotationsAsFixedWidthText(annotations) {
 async function addNote(caseId, options, noteBody) {
   const Logger = getLogger();
 
-  fields = 'notes';
+  const fields = 'notes';
 
   const requestOptions = {
     uri: `${options.url}/v3/cases/${caseId}`,

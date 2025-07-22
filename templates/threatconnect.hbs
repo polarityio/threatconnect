@@ -985,7 +985,7 @@
                               icon="times"
                               fixedWidth=true
                               class="close-icon"
-                              click=(action "clearErrorField" indicatorId "workflowTemplates")
+                              click=(action "clearErrorField" indicatorId "__newCase.workflowTemplates")
                             }}
                           </div>
                         </div>
@@ -1211,7 +1211,7 @@
                   </div>
                 {{/if}}
               </h1>
-              {{#each orgData.indicator.__associatedCasesFiltered as |case|}}
+              {{#each orgData.indicator.__associatedCasesFiltered as |case caseIndex|}}
                 <div class="card">
                   <div class="card-title">
                     <div class="d-flex align-items-start justify-content-between">
@@ -1469,7 +1469,7 @@
                       Notes
                     </div>
                   </div>
-                  
+
                   {{! Add Integration Data Notes }}
                   {{#if block.userOptions.enableAddingIntegrationData}}
                     <label
@@ -1585,6 +1585,29 @@
                     {{/if}}
                   {{/if}}
                   {{! End Add Integration Data Notes }}
+
+                  {{#if case.__state.__error}}
+                    <div class="alert alert-danger error-message mt-2">
+                      <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="error-message-title">
+                          Error pushing integration data as note
+                        </div>
+                        <div>
+                          {{fa-icon
+                            icon="times"
+                            fixedWidth=true
+                            class="close-icon"
+                            click=(action
+                              "clearErrorField" indicatorId (concat "associatedCases.data." caseIndex ".__state")
+                            )
+                          }}
+                        </div>
+                      </div>
+                      <div class="error-scrolling-container">
+                        <pre class="no-border">{{case.__state.__errorMessage}}</pre>
+                      </div>
+                    </div>
+                  {{/if}}
 
                   <div class="note-container">
                     {{#unless (gt (get case.notes.data "length") 0)}}

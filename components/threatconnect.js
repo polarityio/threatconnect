@@ -405,10 +405,12 @@ polarity.export = PolarityComponent.extend({
       }
     },
     clearErrorField(indicatorId, pathToField) {
-      const fullPath = `indicators.${indicatorId}.indicator.__newCase.${pathToField}`;
+      const basePath = `indicators.${indicatorId}.indicator`;
+      const fullPath = `${basePath}.${pathToField}`;
       if (this.get(fullPath)) {
         this.set(`${fullPath}.__error`, false);
         this.set(`${fullPath}.__errorMessage`, '');
+        this.set(`${fullPath}.__errorTitle`, '');
       }
     },
     onWorkflowTemplateChange(indicatorId, workflowId) {
@@ -904,6 +906,10 @@ polarity.export = PolarityComponent.extend({
         this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__isCreatingNote`, true);
       }
 
+      Ember.set(state, '__error', false);
+      Ember.set(state, '__errorMessage', null);
+      Ember.set(state, '__errorTitle', null);
+
       const includeIntegrationData = state.showIntegrationData;
       let selectedIntegrations = [];
       let annotations;
@@ -937,6 +943,9 @@ polarity.export = PolarityComponent.extend({
           if (result.error) {
             console.error('Result Error', result.error);
             this.flashMessage(`${result.error.detail}`, 'danger');
+            Ember.set(state, '__error', true);
+            Ember.set(state, '__errorMessage', JSON.stringify(result.error, null, 2));
+            Ember.set(state, '__errorTitle', 'Failed to create note');
           } else {
             this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
 
@@ -965,8 +974,9 @@ polarity.export = PolarityComponent.extend({
         .catch((e) => {
           console.error('Failed to create note', e);
           this.flashMessage('Failed to create note', 'danger');
-          Ember.set(state, 'errorMessage', JSON.stringify(e, null, 2));
-          Ember.set(state, 'errorTitle', 'Failed to create note');
+          Ember.set(state, '__error', true);
+          Ember.set(state, '__errorMessage', JSON.stringify(e, null, 2));
+          Ember.set(state, '__errorTitle', 'Failed to create note');
         })
         .finally(() => {
           Ember.set(state, 'isCreatingNote', false);
@@ -988,8 +998,9 @@ polarity.export = PolarityComponent.extend({
         });
       }
       Ember.set(caseObj.__state, 'missingIntegrations', false);
-      Ember.set(caseObj.__state, 'errorMessage', '');
-      Ember.set(caseObj.__state, 'errorTitle', '');
+      Ember.set(caseObj.__state, '__error', false);
+      Ember.set(caseObj.__state, '__errorMessage', '');
+      Ember.set(caseObj.__state, '__errorTitle', '');
       Ember.set(caseObj.__state, 'shortErrorMessage', '');
     },
     toggleShowCreateNote(caseObj) {
