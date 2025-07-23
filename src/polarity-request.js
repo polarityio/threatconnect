@@ -9,7 +9,7 @@ const { NetworkError } = require('./errors');
 
 const {
   request: { ca, cert, key, passphrase, rejectUnauthorized, proxy }
-} = require('../config/config.js');
+} = require('../config/config.json');
 
 const _configFieldIsValid = (field) => typeof field === 'string' && field.length > 0;
 
