@@ -42,6 +42,16 @@ polarity.export = PolarityComponent.extend({
   isCreatingCase: {},
   newCaseFields: {},
   isDescription: false,
+  notificationsData: Ember.inject.service('notificationsData'),
+  displayNoteFieldsForCase(caseObj) {
+    const projectId = caseObj.__state.selectedProjectId;
+    const issueType = caseObj.__state.selectedIssueType;
+
+    const isValidProject = projectId != null && projectId !== '' && typeof projectId !== 'undefined';
+    const isValidIssueType = issueType != null && issueType !== '' && typeof issueType !== 'undefined';
+
+    return isValidProject && isValidIssueType;
+  },
   flashMessage(message, type = 'info') {
     this.flashMessages.add({
       message: `${this.block.acronym}: ${message}`,
@@ -76,6 +86,63 @@ polarity.export = PolarityComponent.extend({
       default:
         Ember.set(caseObj, '__severityColor', '');
     }
+  },
+  parseMarkdownTables({ text, indicatorId } = {}) {
+    if (!text && indicatorId) {
+      const casePath = `indicators.${indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(casePath) || [];
+
+      casesArray.forEach((caseObj, caseIndex) => {
+        const notesPath = `${casePath}.${caseIndex}.notes.data`;
+        const notesArray = this.get(notesPath) || [];
+
+        notesArray.forEach((note) => {
+          note.__renderedHtml = this.parseMarkdownTables({ text: note.text });
+        });
+      });
+
+      return;
+    }
+
+    if (!text || !text.includes('|')) return text;
+
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return text;
+
+    const headers = lines[0]
+      .split('|')
+      .map((h) => h.trim())
+      .filter(Boolean);
+
+    const rows = lines
+      .slice(1)
+      .filter((line) => !/^\s*\|?(?:\s*:?-+:?\s*\|)+\s*$/.test(line.trim()))
+      .map((line) =>
+        line
+          .split('|')
+          .map((cell) => cell.trim())
+          .filter(Boolean)
+      );
+
+    let html = '<div class="table-wrapper">';
+    html += '<table class="markdown-table equal-width-table"><thead><tr>';
+    headers.forEach((header) => {
+      html += `<th>${header}</th>`;
+    });
+    html += '</tr></thead></table>';
+
+    html += '<div class="table-body-wrapper">';
+    html += '<table class="markdown-table equal-width-table"><tbody>';
+    rows.forEach((row) => {
+      html += '<tr>';
+      row.forEach((cell) => {
+        html += `<td>${cell}</td>`;
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
+
+    return html;
   },
   init() {
     let array = new Uint32Array(5);
@@ -113,8 +180,6 @@ polarity.export = PolarityComponent.extend({
         if (indicator.associatedIndicators && indicator.associatedIndicators.data) {
           totalAssociations += indicator.associatedIndicators.data.length;
         }
-
-        indicator.__totalAssociations = totalAssociations;
       }
     }
   },
@@ -340,10 +405,12 @@ polarity.export = PolarityComponent.extend({
       }
     },
     clearErrorField(indicatorId, pathToField) {
-      const fullPath = `indicators.${indicatorId}.indicator.__newCase.${pathToField}`;
+      const basePath = `indicators.${indicatorId}.indicator`;
+      const fullPath = `${basePath}.${pathToField}`;
       if (this.get(fullPath)) {
         this.set(`${fullPath}.__error`, false);
         this.set(`${fullPath}.__errorMessage`, '');
+        this.set(`${fullPath}.__errorTitle`, '');
       }
     },
     onWorkflowTemplateChange(indicatorId, workflowId) {
@@ -427,6 +494,8 @@ polarity.export = PolarityComponent.extend({
           } else {
             this.flashMessage(`Case with ID ${result.data.id} created successfully`, 'success');
 
+            result.data.indicatorId = indicatorId;
+
             let cases = this.get(`${indicatorPath}.associatedCases.data`);
             if (associate) {
               cases.unshiftObject(result.data);
@@ -435,6 +504,7 @@ polarity.export = PolarityComponent.extend({
             const createdCase = cases.find((caseObj) => caseObj.id === result.data.id);
 
             if (createdCase) {
+              this.send('initCaseState', createdCase);
               this.applySeverityColorToCase(createdCase);
               this.applyStatusColorToCase(createdCase);
             }
@@ -509,6 +579,14 @@ polarity.export = PolarityComponent.extend({
       e.stopPropagation();
       return false;
     },
+    initCaseState(caseObj) {
+      Ember.set(caseObj, '__state', {
+        integrations: [],
+        numSelectedWriteIntegrations: 0,
+        showIntegrationData: false,
+        spinRefresh: false
+      });
+    },
     changeTab: async function (tabName, indicatorId) {
       this.set(`indicators.${indicatorId}.__activeTab`, tabName);
       if (
@@ -517,9 +595,14 @@ polarity.export = PolarityComponent.extend({
       ) {
         await this.getField(indicatorId, 'associatedCases');
         const casesArray = this.get(`indicators.${indicatorId}.indicator.associatedCases.data`);
-        casesArray.forEach((caseObj) => {
+        casesArray.forEach((caseObj, i) => {
           this.applySeverityColorToCase(caseObj);
           this.applyStatusColorToCase(caseObj);
+
+          if (!caseObj.__state) {
+            this.send('initCaseState', caseObj);
+          }
+          Ember.set(caseObj.__state, 'displayNoteFields', this.displayNoteFieldsForCase(caseObj));
         });
 
         Ember.run.scheduleOnce('afterRender', this, () => {
@@ -765,7 +848,249 @@ polarity.export = PolarityComponent.extend({
     },
     getField(indicatorId, field) {
       this.getField(indicatorId, field);
+    },
+    setIntegrationSelection(caseObj) {
+      let integrationData = this.getIntegrationData();
+      let annotations = this.getAnnotations();
+
+      if (Array.isArray(annotations) && annotations.length > 0) {
+        integrationData.unshift({
+          integrationName: 'Polarity Annotations',
+          data: annotations,
+          selected: false,
+          isAnnotations: true
+        });
+      }
+
+      if (!caseObj.__state) {
+        Ember.set(caseObj, '__state', {});
+      }
+
+      Ember.set(caseObj.__state, 'integrations', integrationData);
+      Ember.set(caseObj.__state, 'numSelectedWriteIntegrations', this.getNumSelectedIntegration(integrationData));
+    },
+    toggleAllIntegrations(caseObj) {
+      if (!caseObj.__state) {
+        this.send('initCaseState', caseObj);
+      }
+
+      const integrations = caseObj.__state.integrations || [];
+      const hasUnselected = integrations.some((int) => !int.selected);
+
+      integrations.forEach((integration) => {
+        Ember.set(integration, 'selected', hasUnselected);
+      });
+
+      this.setNumSelectedIntegrations(caseObj);
+    },
+    addNoteIntegrationSelected(caseObj) {
+      this.setNumSelectedIntegrations(caseObj);
+    },
+    toggleCaseIntegrationCheckbox(caseObj, event) {
+      const checked = event.target.checked;
+
+      Ember.set(caseObj.__state, 'showIntegrationData', checked);
+
+      if (checked) {
+        this.send('refreshIntegrations', caseObj);
+      }
+    },
+    createNote(caseObj) {
+      const state = caseObj.__state;
+
+      const indicatorPath = `indicators.${caseObj.indicatorId}.indicator.associatedCases.data`;
+      const casesArray = this.get(indicatorPath);
+
+      const caseToUpdate = casesArray.find((c) => c.id === caseObj.id);
+      if (!caseToUpdate) {
+        const msg = `Could not find case with ID ${caseObj.id}`;
+        console.error(msg);
+        throw new Error(msg);
+      }
+
+      const caseIndex = casesArray.indexOf(caseToUpdate);
+      this.set(`${indicatorPath}.${caseIndex}.__state.__isCreatingNote`, true);
+
+      Ember.set(state, '__error', false);
+      Ember.set(state, '__errorMessage', null);
+      Ember.set(state, '__errorTitle', null);
+
+      const includeIntegrationData = state.showIntegrationData;
+      let selectedIntegrations = [];
+      let annotations;
+
+      if (state.integrations) {
+        selectedIntegrations = state.integrations.filter(
+          (integration) => integration.selected && !integration.isAnnotations
+        );
+        annotations = state.integrations.find((integration) => integration.selected && integration.isAnnotations);
+      }
+
+      if (includeIntegrationData && selectedIntegrations.length === 0 && !annotations) {
+        Ember.set(state, 'missingIntegrations', true);
+        return;
+      }
+
+      const payload = {
+        action: 'ADD_INTEGRATION_DATA_AS_NOTE',
+        caseId: caseObj.id,
+        mode: 'append',
+        includeIntegrationData
+      };
+
+      if (includeIntegrationData) {
+        payload.integrationData = selectedIntegrations;
+        payload.annotations = annotations;
+      }
+
+      this.sendIntegrationMessage(payload)
+        .then((result) => {
+          if (result.error) {
+            console.error('Result Error', result.error);
+            this.flashMessage(`${result.error.detail}`, 'danger');
+            Ember.set(state, '__error', true);
+            Ember.set(state, '__errorMessage', JSON.stringify(result.error, null, 2));
+            Ember.set(state, '__errorTitle', 'Failed to create note');
+          } else {
+            this.flashMessage(`Note created successfully for case ${caseObj.id}`, 'success');
+
+            const rawNotes = (result.notes || []).map((entry) => entry.data.notes.data || []).flat();
+
+            const processedNotes = rawNotes
+              .sort((a, b) => new Date(b.dateAdded) - new Date(a.dateAdded))
+              .map((note) => {
+                const text = note.text || '';
+                return Object.assign({}, note, {
+                  __renderedHtml: this.parseMarkdownTables({ text: text }),
+                  __isExpanded: false
+                });
+              });
+            this.set(`${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.notes.data`, processedNotes);
+            this.send('checkNoteOverflow', caseObj.id, caseObj.indicatorId);
+            this.set(
+              `${indicatorPath}.${casesArray.indexOf(caseToUpdate)}.__successMessage`,
+              'Note created successfully'
+            );
+
+            Ember.set(state, 'lastCreatedNote', result.note);
+            Ember.set(state, 'showCreateNote', false);
+          }
+        })
+        .catch((e) => {
+          console.error('Failed to create note', e);
+          this.flashMessage('Failed to create note', 'danger');
+          Ember.set(state, '__error', true);
+          Ember.set(state, '__errorMessage', JSON.stringify(e, null, 2));
+          Ember.set(state, '__errorTitle', 'Failed to create note');
+        })
+        .finally(() => {
+          Ember.set(state, '__isCreatingNote', false);
+          if (state.integrations) {
+            state.integrations.forEach((integration) => {
+              Ember.set(integration, 'selected', false);
+            });
+          }
+        });
+    },
+    clearCreateNoteFields(caseObj) {
+      const issueFields = caseObj.__state.issueFields;
+
+      if (Array.isArray(issueFields)) {
+        issueFields.forEach((field) => {
+          if (field.__isRendered && field.__value) {
+            field.__value = '';
+          }
+        });
+      }
+      Ember.set(caseObj.__state, 'missingIntegrations', false);
+      Ember.set(caseObj.__state, '__error', false);
+      Ember.set(caseObj.__state, '__errorMessage', '');
+      Ember.set(caseObj.__state, '__errorTitle', '');
+      Ember.set(caseObj.__state, 'shortErrorMessage', '');
+    },
+    toggleShowCreateNote(caseObj) {
+      Ember.set(caseObj.__state, 'showCreateNote', !caseObj.__state.showCreateNote);
+    },
+    cancelIntegrationNote(caseObj) {
+      Ember.set(caseObj.__state, 'showIntegrationData', false);
+      this.send('clearCreateNoteFields', caseObj);
+    },
+    refreshIntegrations(caseObj) {
+      if (!caseObj || !caseObj.__state) return;
+
+      Ember.set(caseObj.__state, 'spinRefresh', true);
+
+      this.send('setIntegrationSelection', caseObj);
+
+      setTimeout(() => {
+        if (!this.isDestroyed && caseObj.__state) {
+          Ember.set(caseObj.__state, 'spinRefresh', false);
+        }
+      }, 1000);
     }
+  },
+  setIssueState: function (issueIndex, key, value) {
+    if (!this.get(`pagedPagingData.${issueIndex}.__state`)) {
+      this.set(`pagedPagingData.${issueIndex}.__state`, {});
+    }
+    this.set(`pagedPagingData.${issueIndex}.__state.${key}`, value);
+  },
+  getIntegrationData: function () {
+    const notificationList = this.notificationsData.getNotificationList();
+    const integrationBlocks = notificationList.findByValue(this.get('block.entity.value').toLowerCase());
+    return integrationBlocks.blocks.reduce((accum, block) => {
+      if (block.integrationName !== this.get('block.integrationName') && block.type !== 'polarity') {
+        accum.push({
+          integrationName: block.integrationName,
+          data: block.data,
+          selected: false
+        });
+      }
+      return accum;
+    }, []);
+  },
+  getAnnotations: function () {
+    const notificationList = this.notificationsData.getNotificationList();
+    const integrationBlocks = notificationList.findByValue(this.get('block.entity.value').toLowerCase());
+    const polarityBlock = integrationBlocks.blocks.find((block) => {
+      if (block.type === 'polarity') {
+        return block;
+      }
+    });
+    if (polarityBlock) {
+      let annotations = [];
+      polarityBlock.tagEntityPairs.forEach((pair) => {
+        annotations.push({
+          tag: pair.tag.tagName,
+          channel: pair.channel.channelName,
+          user: pair.get('user.username'),
+          applied: pair.applied
+        });
+      });
+      return annotations;
+    }
+    return null;
+  },
+  setNumSelectedIntegrations(caseObj) {
+    if (!caseObj || !caseObj.__state || !Array.isArray(caseObj.__state.integrations)) {
+      return;
+    }
+
+    const integrations = caseObj.__state.integrations;
+    const numSelected = integrations.filter((integration) => integration.selected).length;
+
+    Ember.set(caseObj.__state, 'numSelectedWriteIntegrations', numSelected);
+  },
+  getNumSelectedIntegration(integrations) {
+    let selectedCount = 0;
+    if (integrations) {
+      integrations.forEach((integration) => {
+        if (integration.selected) {
+          selectedCount++;
+        }
+      });
+    }
+    return selectedCount;
   },
   getScoreHuman(score) {
     if (score >= 801) {
@@ -898,6 +1223,9 @@ polarity.export = PolarityComponent.extend({
           this.notifyPropertyChange(`${field}${indicatorId}NextButtonDisabled`);
         } else {
           this.set(`details.indicators.${indicatorId}.indicator.__${field}Count`, 0);
+        }
+        if (field === 'associatedCases') {
+          this.parseMarkdownTables({ indicatorId });
         }
       }
     } catch (err) {
