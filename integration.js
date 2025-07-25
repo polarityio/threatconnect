@@ -17,6 +17,7 @@ const { updateCaseTags } = require('./src/queries/update-cases');
 const { updateCase } = require('./src/queries/update-cases');
 const { createCase } = require('./src/queries/create-case');
 const { getWorkflowTemplates } = require('./src/queries/get-workflow-templates');
+const { addIntegrationDataAsNote } = require('./src/queries/add-integration-data-as-note');
 
 const MAX_TASKS_AT_A_TIME = 2;
 const VALID_UPDATE_FIELDS = ['rating', 'confidence', 'tags'];
@@ -295,6 +296,32 @@ async function onMessage(payload, options, cb) {
         cb(error, {
           error: {
             detail: 'Error fetching workflow templates',
+            error
+          }
+        });
+      }
+      break;
+    case 'ADD_INTEGRATION_DATA_AS_NOTE':
+      try {
+        let notes;
+        if (!options.enableAddingIntegrationData) {
+          return cb(null, {
+            error: {
+              detail: 'Adding notes is not enabled in the configuration.'
+            }
+          });
+        }
+
+        if (payload.includeIntegrationData) {
+          notes = await addIntegrationDataAsNote(payload, options);
+        }
+        cb(null, {
+          notes
+        });
+      } catch (error) {
+        cb(error, {
+          error: {
+            detail: 'Error adding note',
             error
           }
         });

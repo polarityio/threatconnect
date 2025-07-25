@@ -250,6 +250,10 @@ a.tc-link-tag {
     margin-bottom: 0px;
   }
 
+  &:first-child {
+    margin-top: 10px;
+  }
+
   .card-title {
     border-bottom: 1px solid #eee;
     margin: 0px;
@@ -729,7 +733,7 @@ a.tc-link-tag:hover {
 }
 
 .note-container {
-  max-height: 200px;
+  max-height: 500px;
   overflow-y: auto;
   overflow-x: auto;
   margin: 6px;
@@ -766,4 +770,123 @@ a.tc-link-tag:hover {
   justify-content: flex-end;
   align-items: center;
   height: 25px;
+}
+
+.add-integration-data-label {
+  cursor: pointer;
+  margin: 0px;
+  border-radius: 4px;
+
+  .label-text {
+    padding-left: 5px;
+  }
+
+  &:hover {
+    background-color: #eee;
+  }
+}
+
+.integration-data-container {
+  margin: 0px 6px 0px 6px;
+}
+
+.write-container {
+  .integration-labels-description {
+    margin: 5px 0px 5px 3px;
+  }
+
+  .integration-labels-container {
+    max-height: 200px;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 4px;
+    resize: vertical;
+
+    &.disabled {
+      background-color: #f6f6f2;
+    }
+
+    .integration-write-label {
+      cursor: pointer;
+      padding: 3px;
+      margin: 0px;
+      border-radius: 4px;
+
+      .label-text {
+        padding-left: 5px;
+      }
+
+      &:hover {
+        background-color: #eee;
+      }
+    }
+  }
+}
+
+.btn-push-data {
+  height: 27px !important;
+  width: 91px;
+  font-size: 12px !important;
+  color: #ffffff;
+  background-color: #7bc942;
+  border-color: #7bc942;
+
+  &:hover {
+    background-color: #63a830;
+    border-color: #63a830;
+  }
+
+  &.cancel {
+    background-color: #00000000;
+    color: black;
+    border-color: #00000000;
+    font-weight: 400;
+  }
+
+  &.cancel:active {
+    background-color: #00000000;
+    color: black;
+    border-color: #00000000;
+    font-weight: 400;
+  }
+}
+
+.table-wrapper {
+  width: 100%;
+}
+
+.table-body-wrapper {
+  max-height: 20px;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+
+.equal-width-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.equal-width-table thead,
+.equal-width-table tbody,
+.equal-width-table tr {
+  width: 100%;
+  display: table;
+  table-layout: fixed;
+}
+
+.equal-width-table th,
+.equal-width-table td {
+  min-width: 100px;
+  width: 1%; /* helps equalize columns */
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  padding: 6px;
+  text-align: left;
+}
+
+.note-summary.expanded .table-body-wrapper {
+  max-height: none;
 }
